@@ -11,7 +11,16 @@ import { NextResponse, type NextRequest } from 'next/server'
  * request is redirected to /login before any page code runs.
  */
 
-const PUBLIC_PATHS = ['/login', '/signup', '/offline']
+const PUBLIC_PATHS = [
+  '/login',
+  '/signup',
+  '/offline',
+  '/forgot-password',
+  // Set by following an emailed link; the page itself verifies the session.
+  '/reset-password',
+  // Exchanges the emailed one-time code for a session.
+  '/auth/callback',
+]
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })

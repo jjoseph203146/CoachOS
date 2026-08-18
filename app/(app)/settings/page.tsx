@@ -1,4 +1,5 @@
 import { requireCoachPage } from '@/lib/auth'
+import { supportedTimeZones } from '@/lib/domain/dates'
 import { centsToInput } from '@/lib/domain/money'
 import { SettingsView } from './SettingsView'
 
@@ -16,7 +17,9 @@ export default async function SettingsPage() {
         rate: centsToInput(coach.defaultRateCents),
         attendanceWindow: coach.attendanceWindow,
         theme: coach.theme,
+        timezone: coach.timezone,
       }}
+      timezones={supportedTimeZones()}
     />
   )
 }

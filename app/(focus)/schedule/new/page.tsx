@@ -1,8 +1,9 @@
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock } from '@/lib/services/clock'
 import { centsToInput } from '@/lib/domain/money'
 import { defaultPriceCents } from '@/lib/domain/sessions'
 import { formatShort } from '@/lib/domain/dates'
-import { defaultClock, listSelectablePlayers } from '@/lib/services/players'
+import { listSelectablePlayers } from '@/lib/services/players'
 import { buildDuplicateDraft } from '@/lib/services/sessions'
 import { NewSessionForm } from './NewSessionForm'
 
@@ -15,7 +16,7 @@ export default async function NewSessionPage({
   searchParams: { type?: string; date?: string; player?: string; duplicate?: string }
 }) {
   const { store, coachId, coach } = await requireCoachPage()
-  const clock = defaultClock()
+  const clock = coachClock(coach)
 
   const [players, sessions] = await Promise.all([
     listSelectablePlayers(store, coachId),

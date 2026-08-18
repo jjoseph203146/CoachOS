@@ -64,7 +64,7 @@ beforeEach(async () => {
   })
   bSessionId = session.id
 
-  const finance = await loadFinance(store, coachB)
+  const finance = await loadFinance(store, coachB, TODAY)
   bChargeId = finance.forSession(bSessionId)[0].charge.id
 })
 
@@ -93,8 +93,8 @@ describe('reads are scoped to the owning coach', () => {
   })
 
   it('coach A’s financial totals never include coach B’s money', async () => {
-    const financeA = await loadFinance(store, coachA)
-    const financeB = await loadFinance(store, coachB)
+    const financeA = await loadFinance(store, coachA, TODAY)
+    const financeB = await loadFinance(store, coachB, TODAY)
 
     expect(financeA.views.some((v) => v.charge.id === bChargeId)).toBe(false)
     expect(financeA.outstandingFor(bPlayerId)).toBe(0)
@@ -118,7 +118,7 @@ describe('writes are scoped to the owning coach', () => {
   })
 
   it('coach A cannot cancel or edit coach B’s session', async () => {
-    await expect(cancelSession(store, coachA, bSessionId, 'void')).rejects.toThrow(
+    await expect(cancelSession(store, coachA, bSessionId, 'void', TODAY)).rejects.toThrow(
       DomainError,
     )
     const untouched = await store.getSession(coachB, bSessionId)
@@ -135,13 +135,13 @@ describe('writes are scoped to the owning coach', () => {
 
   it('coach A cannot record a payment or credit against coach B’s charge', async () => {
     await expect(
-      recordPayment(store, coachA, { chargeId: bChargeId, amountCents: 11000 }),
+      recordPayment(store, coachA, { chargeId: bChargeId, amountCents: 11000 , today: TODAY }),
     ).rejects.toThrow(DomainError)
     await expect(
-      recordCredit(store, coachA, { chargeId: bChargeId, amountCents: 1000 }),
+      recordCredit(store, coachA, { chargeId: bChargeId, amountCents: 1000 , today: TODAY }),
     ).rejects.toThrow(DomainError)
 
-    const finance = await loadFinance(store, coachB)
+    const finance = await loadFinance(store, coachB, TODAY)
     expect(finance.byChargeId.get(bChargeId)!.outstandingCents).toBe(11000)
   })
 

@@ -49,6 +49,7 @@ export function buildSeed(
     defaultRateCents: 7000,
     attendanceWindow: '24 hours',
     theme: 'Light',
+    timezone: 'America/Los_Angeles',
     onboardedAt: NOW,
   }
 

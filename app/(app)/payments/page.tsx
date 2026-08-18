@@ -1,8 +1,9 @@
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock } from '@/lib/services/clock'
 import { formatMedium, formatShort } from '@/lib/domain/dates'
 import { CHARGE_TONE } from '@/lib/domain/finance'
 import { loadFinance } from '@/lib/services/finance'
-import { defaultClock, listSelectablePlayers } from '@/lib/services/players'
+import { listSelectablePlayers } from '@/lib/services/players'
 import { PaymentsView, type ChargeRow } from './PaymentsView'
 
 export const dynamic = 'force-dynamic'
@@ -13,8 +14,8 @@ export default async function PaymentsPage({
 }: {
   searchParams: { tab?: string; player?: string }
 }) {
-  const { store, coachId } = await requireCoachPage()
-  const clock = defaultClock()
+  const { store, coachId, coach } = await requireCoachPage()
+  const clock = coachClock(coach)
 
   const [finance, sessions, players, selectable] = await Promise.all([
     loadFinance(store, coachId, clock.today),

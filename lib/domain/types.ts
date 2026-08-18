@@ -42,6 +42,11 @@ export interface Coach {
   defaultRateCents: number
   attendanceWindow: AttendanceWindow
   theme: Theme
+  /**
+   * IANA timezone, e.g. 'America/Los_Angeles'. Every "today" and "has this
+   * ended?" decision is made in this zone, never the server's.
+   */
+  timezone: string
   onboardedAt: string | null
 }
 

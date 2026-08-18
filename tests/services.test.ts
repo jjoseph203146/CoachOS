@@ -47,7 +47,7 @@ describe('session creation', () => {
     expect(enrollments).toHaveLength(2)
     expect(enrollments.every((e) => e.attendance === 'unmarked')).toBe(true)
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const charges = finance.forSession(session.id)
     expect(charges).toHaveLength(2)
     expect(charges.every((c) => c.amountCents === 4000)).toBe(true)
@@ -71,7 +71,7 @@ describe('session creation', () => {
     const enrollments = await store.listEnrollmentsForSession(coachId, session.id)
     expect(enrollments).toHaveLength(2)
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forSession(session.id)).toHaveLength(0)
     expect(finance.outstandingForSession(session.id)).toBe(0)
   })
@@ -261,17 +261,18 @@ describe('cancellation', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    let finance = await loadFinance(store, coachId)
+    let finance = await loadFinance(store, coachId, TODAY)
     const charges = finance.forSession(session.id)
     // Pay one of the two charges in full first.
     await recordPayment(store, coachId, {
       chargeId: charges[0].charge.id,
       amountCents: 5000,
+      today: TODAY,
     })
 
-    await cancelSession(store, coachId, session.id, 'void')
+    await cancelSession(store, coachId, session.id, 'void', TODAY)
 
-    finance = await loadFinance(store, coachId)
+    finance = await loadFinance(store, coachId, TODAY)
     const after = finance.forSession(session.id)
     const paid = after.find((v) => v.charge.id === charges[0].charge.id)!
     const voided = after.find((v) => v.charge.id === charges[1].charge.id)!
@@ -299,9 +300,9 @@ describe('cancellation', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    await cancelSession(store, coachId, session.id, 'keep')
+    await cancelSession(store, coachId, session.id, 'keep', TODAY)
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.outstandingForSession(session.id)).toBe(10000)
     const updated = await store.getSession(coachId, session.id)
     expect(updated!.status).toBe('cancelled')
@@ -331,10 +332,11 @@ describe('duplication', () => {
       { playerId: 'p1', attendance: 'present' },
       { playerId: 'p2', attendance: 'absent' },
     ])
-    let finance = await loadFinance(store, coachId)
+    let finance = await loadFinance(store, coachId, TODAY)
     await recordPayment(store, coachId, {
       chargeId: finance.forSession(original.id)[0].charge.id,
       amountCents: 3000,
+      today: TODAY,
     })
 
     const draft = await buildDuplicateDraft(store, coachId, original.id, CLOCK)
@@ -359,7 +361,7 @@ describe('duplication', () => {
     // No attendance carried over.
     expect(copyEnrollments.every((e) => e.attendance === 'unmarked')).toBe(true)
 
-    finance = await loadFinance(store, coachId)
+    finance = await loadFinance(store, coachId, TODAY)
     const copyCharges = finance.forSession(copy.id)
     expect(copyCharges).toHaveLength(2)
     // Fresh charges: nothing paid, no shared identity with the originals.
@@ -388,7 +390,7 @@ describe('roster changes', () => {
 
     await addPlayerToSession(store, coachId, session.id, 'p2')
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forSession(session.id)).toHaveLength(2)
     expect(finance.outstandingForSession(session.id)).toBe(5000)
   })
@@ -409,7 +411,7 @@ describe('roster changes', () => {
 
     await addPlayerToSession(store, coachId, session.id, 'p2')
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forSession(session.id)).toHaveLength(0)
   })
 
@@ -427,12 +429,12 @@ describe('roster changes', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    await removePlayerFromSession(store, coachId, session.id, 'p2', 'keep')
+    await removePlayerFromSession(store, coachId, session.id, 'p2', 'keep', TODAY)
 
     const enrollments = await store.listEnrollmentsForSession(coachId, session.id)
     expect(enrollments).toHaveLength(1)
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     // The charge survives the removal — history is never erased.
     expect(finance.forSession(session.id)).toHaveLength(2)
     expect(finance.outstandingForSession(session.id)).toBe(5000)
@@ -452,9 +454,9 @@ describe('roster changes', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    await removePlayerFromSession(store, coachId, session.id, 'p2', 'credit')
+    await removePlayerFromSession(store, coachId, session.id, 'p2', 'credit', TODAY)
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const views = finance.forSession(session.id)
     expect(views).toHaveLength(2)
     const credited = views.find((v) => v.charge.playerId === 'p2')!
@@ -480,11 +482,12 @@ describe('price changes', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    let finance = await loadFinance(store, coachId)
+    let finance = await loadFinance(store, coachId, TODAY)
     const charges = finance.forSession(session.id)
     await recordPayment(store, coachId, {
       chargeId: charges[0].charge.id,
       amountCents: 3000,
+      today: TODAY,
     })
 
     const args = {
@@ -498,16 +501,19 @@ describe('price changes', () => {
     }
 
     // First attempt returns a decision request rather than acting.
-    const asked = await updateSession(store, coachId, session.id, args)
+    const asked = await updateSession(store, coachId, session.id, args, TODAY)
     expect(asked.requiresPriceDecision).toBe(true)
     expect(asked.unpaidCount).toBe(1)
 
-    await updateSession(store, coachId, session.id, {
-      ...args,
-      priceChangeDecision: 'update',
-    })
+    await updateSession(
+      store,
+      coachId,
+      session.id,
+      { ...args, priceChangeDecision: 'update' },
+      TODAY,
+    )
 
-    finance = await loadFinance(store, coachId)
+    finance = await loadFinance(store, coachId, TODAY)
     const after = finance.forSession(session.id)
     const paid = after.find((v) => v.charge.id === charges[0].charge.id)!
     const unpaid = after.find((v) => v.charge.id === charges[1].charge.id)!
@@ -532,14 +538,14 @@ describe('price changes', () => {
 
     await store.updatePlayer(coachId, 'p1', { defaultRateCents: 12000 })
 
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forSession(session.id)[0].amountCents).toBe(7500)
   })
 })
 
 describe('players', () => {
   it('archiving keeps history and balances intact', async () => {
-    const before = await loadFinance(store, coachId)
+    const before = await loadFinance(store, coachId, TODAY)
     const owedBefore = before.outstandingFor('p1')
 
     await setPlayerArchived(store, coachId, 'p1', true)
@@ -548,13 +554,13 @@ describe('players', () => {
     expect(player!.archived).toBe(true)
     expect(player!.deletedAt).toBeNull()
 
-    const after = await loadFinance(store, coachId)
+    const after = await loadFinance(store, coachId, TODAY)
     expect(after.outstandingFor('p1')).toBe(owedBefore)
     expect(after.forPlayer('p1').length).toBe(before.forPlayer('p1').length)
   })
 
   it('deleting is a soft delete that preserves financial records', async () => {
-    const before = await loadFinance(store, coachId)
+    const before = await loadFinance(store, coachId, TODAY)
     const chargeCount = before.forPlayer('p1').length
     expect(chargeCount).toBeGreaterThan(0)
 
@@ -563,7 +569,7 @@ describe('players', () => {
     const player = await store.getPlayer(coachId, 'p1')
     expect(player!.deletedAt).not.toBeNull()
 
-    const after = await loadFinance(store, coachId)
+    const after = await loadFinance(store, coachId, TODAY)
     expect(after.forPlayer('p1').length).toBe(chargeCount)
   })
 
@@ -582,7 +588,7 @@ describe('players', () => {
       defaultRateCents: null,
       notes: '',
     })
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forPlayer(player.id)).toHaveLength(0)
     expect(finance.outstandingFor(player.id)).toBe(0)
   })
@@ -602,13 +608,14 @@ describe('payment recording', () => {
       capacity: null,
       playerIds: ['p1'],
     })
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const chargeId = finance.forSession(session.id)[0].charge.id
 
     await recordPayment(store, coachId, {
       chargeId,
       amountCents: 5000,
       expectedOutstandingCents: 5000,
+      today: TODAY,
     })
 
     // The same submission replayed must not record the money twice.
@@ -617,21 +624,23 @@ describe('payment recording', () => {
         chargeId,
         amountCents: 5000,
         expectedOutstandingCents: 5000,
-      }),
+      today: TODAY,
+    }),
     ).rejects.toThrow(DomainError)
 
-    const after = await loadFinance(store, coachId)
+    const after = await loadFinance(store, coachId, TODAY)
     expect(after.forSession(session.id)[0].paidCents).toBe(5000)
   })
 
   it('rejects a payment larger than the balance', async () => {
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const pending = finance.pending()[0]
     await expect(
       recordPayment(store, coachId, {
         chargeId: pending.charge.id,
         amountCents: pending.outstandingCents + 1,
-      }),
+      today: TODAY,
+    }),
     ).rejects.toThrow(DomainError)
   })
 
@@ -648,36 +657,36 @@ describe('payment recording', () => {
       capacity: null,
       playerIds: ['p1'],
     })
-    let finance = await loadFinance(store, coachId)
+    let finance = await loadFinance(store, coachId, TODAY)
     const chargeId = finance.forSession(session.id)[0].charge.id
 
-    await recordPayment(store, coachId, { chargeId, amountCents: 2000 })
-    finance = await loadFinance(store, coachId)
+    await recordPayment(store, coachId, { chargeId, amountCents: 2000 , today: TODAY })
+    finance = await loadFinance(store, coachId, TODAY)
     let view = finance.forSession(session.id)[0]
     expect(view.outstandingCents).toBe(3000)
     expect(view.status).toBe('partial')
 
-    await recordPayment(store, coachId, { chargeId, amountCents: 3000 })
-    finance = await loadFinance(store, coachId)
+    await recordPayment(store, coachId, { chargeId, amountCents: 3000 , today: TODAY })
+    finance = await loadFinance(store, coachId, TODAY)
     view = finance.forSession(session.id)[0]
     expect(view.outstandingCents).toBe(0)
     expect(view.status).toBe('paid')
   })
 
   it('mark unpaid removes payments and returns the charge to pending', async () => {
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const paid = finance.views.find((v) => v.status === 'paid')!
 
     await markUnpaid(store, coachId, paid.charge.id)
 
-    const after = await loadFinance(store, coachId)
+    const after = await loadFinance(store, coachId, TODAY)
     const view = after.byChargeId.get(paid.charge.id)!
     expect(view.paidCents).toBe(0)
     expect(view.isPending).toBe(true)
   })
 
   it('credits reduce the balance without counting as revenue', async () => {
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const pending = finance.pending().find((v) => v.outstandingCents >= 2000)!
     const revenueBefore = finance.revenue(addDays(TODAY, -365), addDays(TODAY, 365))
 
@@ -685,9 +694,10 @@ describe('payment recording', () => {
       chargeId: pending.charge.id,
       amountCents: 2000,
       reason: 'Goodwill',
+      today: TODAY,
     })
 
-    const after = await loadFinance(store, coachId)
+    const after = await loadFinance(store, coachId, TODAY)
     const view = after.byChargeId.get(pending.charge.id)!
     expect(view.outstandingCents).toBe(pending.outstandingCents - 2000)
     expect(after.revenue(addDays(TODAY, -365), addDays(TODAY, 365))).toBe(revenueBefore)
@@ -696,7 +706,7 @@ describe('payment recording', () => {
 
 describe('consistency across screens', () => {
   it('player, session and global totals all come from the same derivation', async () => {
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
 
     const perPlayerSum = [...new Set(finance.views.map((v) => v.charge.playerId))]
       .map((playerId) => finance.outstandingFor(playerId))
@@ -720,7 +730,7 @@ describe('consistency across screens', () => {
   })
 
   it('seed data exercises every charge status', async () => {
-    const finance = await loadFinance(store, coachId)
+    const finance = await loadFinance(store, coachId, TODAY)
     const statuses = new Set(finance.views.map((v) => v.status))
     expect(statuses).toContain('paid')
     expect(statuses).toContain('unpaid')

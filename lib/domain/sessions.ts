@@ -2,8 +2,10 @@
  * Session and attendance derivation, ported from the prototype's logic.
  */
 
+import { minutesBetween } from './dates'
 import type {
   AttendanceStatus,
+  AttendanceWindow,
   Enrollment,
   ISODate,
   Session,
@@ -48,18 +50,51 @@ export function attendanceState(
 }
 
 /**
+ * Grace period, in minutes, that the coach's "attendance window" setting
+ * allows after a session ends before it is reported as missing.
+ * 'Same day' means no grace: it is missing as soon as the session ends.
+ */
+export function attendanceGraceMinutes(window: AttendanceWindow): number {
+  switch (window) {
+    case 'Same day':
+      return 0
+    case '24 hours':
+      return 24 * 60
+    case '48 hours':
+      return 48 * 60
+    case '72 hours':
+      return 72 * 60
+    default:
+      return 24 * 60
+  }
+}
+
+/**
  * Does this session still owe the coach an attendance decision?
- * Cancelled and skipped sessions never do.
+ *
+ * Cancelled and skipped sessions never do. A session that ended within the
+ * coach's attendance window is not nagged about yet — that setting is what the
+ * window controls.
  */
 export function attendanceMissing(
   session: Session,
   enrollments: Enrollment[],
   clock: Clock,
+  graceMinutes = 0,
 ): boolean {
   if (session.status === 'cancelled') return false
   if (session.attendanceSkipped) return false
   if (enrollments.length === 0) return false
   if (!isPast(session, clock)) return false
+
+  const sinceEnd = minutesBetween(
+    session.date,
+    sessionEndMin(session),
+    clock.today,
+    clock.nowMinutes,
+  )
+  if (sinceEnd < graceMinutes) return false
+
   return attendanceState(session, enrollments) !== 'complete'
 }
 

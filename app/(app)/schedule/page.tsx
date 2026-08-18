@@ -1,14 +1,15 @@
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock, coachGraceMinutes } from '@/lib/services/clock'
 import { attendanceMissing, attendanceState, isPast } from '@/lib/domain/sessions'
-import { defaultClock } from '@/lib/services/players'
 import { ScheduleView, type ScheduleRow } from './ScheduleView'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Schedule — CoachOS' }
 
 export default async function SchedulePage() {
-  const { store, coachId } = await requireCoachPage()
-  const clock = defaultClock()
+  const { store, coachId, coach } = await requireCoachPage()
+  const clock = coachClock(coach)
+  const grace = coachGraceMinutes(coach)
 
   const [sessions, enrollments, players] = await Promise.all([
     store.listSessions(coachId),
@@ -34,7 +35,7 @@ export default async function SchedulePage() {
 
     let badge: ScheduleRow['badge'] = null
     if (cancelled) badge = { text: 'Cancelled', bg: '#EDEDE8', fg: '#6B706C' }
-    else if (attendanceMissing(session, roster, clock))
+    else if (attendanceMissing(session, roster, clock, grace))
       badge = { text: 'Attendance missing', bg: '#F6EEDB', fg: '#96690F' }
     else if (ended && state === 'complete')
       badge = { text: 'Done', bg: '#EDEDE8', fg: '#6B706C' }

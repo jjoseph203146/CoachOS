@@ -27,6 +27,14 @@ export function OnboardingFlow({
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
+  const detectedTimezone = (() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+    } catch {
+      return undefined
+    }
+  })()
+
   const next = () => setStep((current) => Math.min(4, current + 1))
   const prev = () => setStep((current) => Math.max(0, current - 1))
 
@@ -37,6 +45,8 @@ export function OnboardingFlow({
         name,
         businessName: business,
         rate,
+        // The browser knows the coach's real zone; the server (UTC) does not.
+        timezone: detectedTimezone,
       })
       if (!result.ok) {
         setError(result.error)
@@ -165,6 +175,12 @@ export function OnboardingFlow({
             <div className="text-t14 text-muted mt-2">
               Add players and schedule your first session.
             </div>
+            {detectedTimezone ? (
+              <div className="text-t115 text-subtle mt-3">
+                Timezone set to {detectedTimezone.replace(/_/g, ' ')} — change it any
+                time in Settings.
+              </div>
+            ) : null}
           </div>
           {error ? (
             <div className="mt-4">

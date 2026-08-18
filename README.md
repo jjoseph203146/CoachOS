@@ -33,8 +33,9 @@ To run against a real database, follow **Database setup** below.
 | `npm run dev` | Start the dev server |
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
-| `npm test` | Run the test suite once |
+| `npm test` | Run the offline test suite once |
 | `npm run test:watch` | Run tests in watch mode |
+| `npm run test:integration` | Run the live-database suite (skips unless configured — see `tests/integration/README.md`) |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` | ESLint |
 | `npm run schema` | Regenerate `supabase/schema.sql` from the migrations |
@@ -73,14 +74,26 @@ The migrations are:
 | `0002_financial_integrity.sql` | Triggers that make over-payment, over-crediting and cross-tenant financial writes impossible |
 | `0003_rls_policies.sql` | Row-level security: every table scoped to the owning coach |
 | `0004_new_coach_bootstrap.sql` | Creates a `coaches` row automatically when an auth user signs up |
+| `0005_coach_timezone.sql` | Per-coach IANA timezone — every calendar decision is made in it |
+
+> Upgrading an existing database? Apply `0005_coach_timezone.sql`. Rows default
+> to `UTC`; each coach sets their real zone at onboarding or in Settings.
 
 ### 3. Configure auth
 
 **Authentication → Providers → Email**: enable it. For local testing, turning
 **Confirm email** off lets you sign in immediately after signing up.
 
-**Authentication → URL Configuration**: set the Site URL to your dev or
-production origin.
+**Authentication → URL Configuration**:
+- **Site URL** — your dev or production origin.
+- **Redirect URLs** — add `<origin>/auth/callback`. Both the signup
+  confirmation and the password-reset links land there; without it those links
+  will be rejected.
+
+**Authentication → Rate Limits**: check the built-in limits are enabled. The
+app adds a small in-process throttle on sign-in, signup and password reset, but
+that only covers a single server instance — Supabase's limits are the real
+protection. See `lib/security/rate-limit.ts`, which says so plainly.
 
 ### 4. Set environment variables
 
@@ -93,7 +106,12 @@ Fill in:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000     # your real origin in production
 ```
+
+`NEXT_PUBLIC_SITE_URL` is what confirmation and password-reset emails link
+back to. Without it the app guesses from request headers, which works for
+Vercel previews but is not reliable for emailed links.
 
 `.env.local` is gitignored. The `service_role` key is deliberately **not** used
 anywhere in this application — it bypasses row-level security, so it must never
@@ -119,17 +137,19 @@ demo never goes stale. **Do not run it against production.**
 2. In Vercel, **Add New → Project**, import the repository.
 3. Framework preset: **Next.js**. Build command `next build`, output directory
    left at its default — no overrides needed.
-4. Add the two environment variables under **Settings → Environment Variables**
+4. Add the environment variables under **Settings → Environment Variables**
    (Production, Preview and Development):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SITE_URL` — the deployed origin, e.g. `https://coachos.vercel.app`
 5. Deploy.
-6. Back in Supabase, add the deployed origin to **Authentication → URL
-   Configuration → Site URL / Redirect URLs**.
+6. Back in Supabase, set **Authentication → URL Configuration → Site URL** to
+   the deployed origin and add `<origin>/auth/callback` to **Redirect URLs**.
 
-> If you deploy without the two variables set, the app still builds and runs,
-> but on the in-memory demo store — every visitor sees the same demo data and
-> nothing persists. Set the variables before sharing the link with anyone.
+> **A production deploy without Supabase credentials refuses to start.** Demo
+> mode serves the same seeded coach to every visitor with no authentication, so
+> the app fails loudly rather than silently exposing it. If you genuinely want a
+> public demo build, set `COACHOS_ALLOW_DEMO_MODE=true` deliberately.
 
 ### Installing it as an app
 
@@ -158,11 +178,14 @@ lib/
   services/               use cases: players, sessions, finance, settings, dashboard
   validation/             zod schemas — every mutation is validated server-side
   actions/                server actions: auth check → validate → service → revalidate
+  security/               auth throttling
+  observability/          structured logging (pluggable error reporter)
   data/                   the DataStore port and its two adapters
     mock/                 in-memory (development + tests)
     supabase/             Postgres via Supabase
 supabase/migrations/      schema, integrity triggers, RLS policies
-tests/                    vitest suites
+tests/                    offline vitest suites
+tests/integration/        live-Supabase suite (RLS + adapter), env-gated
 docs/CoachOS.dc.html      the design prototype (UI source of truth)
 ```
 
@@ -207,12 +230,39 @@ session stops appearing in "needs attention" and is excluded from attendance
 percentages. Marking is two dedicated buttons per player, never tap-to-cycle;
 tapping the active choice again clears it back to `unmarked`.
 
+### Time
+
+Every calendar decision — "today", whether a session has ended, whether a
+charge is overdue — is made in the **coach's own IANA timezone**, stored on
+`coaches.timezone`. The server runs in UTC on Vercel, so reading the server's
+local date would roll a Californian coach's dashboard over to tomorrow at 5pm,
+mid-evening-sessions. The zone is detected from the browser at onboarding and
+editable in Settings, which shows the current local time so a wrong pick is
+obvious.
+
+`coachClock()` in `lib/services/clock.ts` is the only sanctioned way to build
+the clock; there is no server-local fallback left in the codebase.
+
+The **attendance window** setting is wired to this too: a session is only
+reported as missing attendance once the chosen grace period (same day / 24 /
+48 / 72 hours) has elapsed since it ended.
+
 ### Authentication and authorization
 
 Authentication is Supabase Auth (email + password). This application never sees,
 hashes or stores a password. Sessions live in **httpOnly cookies** managed by
 `@supabase/ssr` — never `localStorage` — and `middleware.ts` refreshes them on
 each request and redirects signed-out traffic away from authenticated routes.
+
+Full account lifecycle:
+
+- **Signup** → confirmation email → `/auth/callback` exchanges the one-time
+  code for a session → onboarding.
+- **Forgot password** → `/forgot-password` → reset email → `/auth/callback` →
+  `/reset-password`. The request endpoint always reports success whether or not
+  the address has an account, so it cannot be used to enumerate users.
+- `/auth/callback` only forwards to an allow-listed same-origin path, so a
+  crafted link cannot turn it into an open redirect.
 
 Authorization is enforced in the **database**, not the frontend:
 
@@ -257,15 +307,38 @@ npm test
 ## Known limitations
 
 - **Dark theme** is a stored preference only; the dark palette is not
-  implemented, and Settings says so rather than pretending otherwise.
+  implemented, and Settings says so rather than pretending otherwise. The
+  design prototype only ever specified the light palette.
 - **Transactions on Supabase.** PostgREST has no client-side `BEGIN`/`COMMIT`.
   Multi-step writes use a compensating-rollback unit of work, with the database
   triggers in `0002_financial_integrity.sql` as the real guarantee. Moving the
   compound operations into Postgres functions is the natural next step.
+- **Rate limiting is per-instance.** `lib/security/rate-limit.ts` is a speed
+  bump, not a distributed limiter. Supabase Auth's own limits and a platform
+  WAF are the real defence.
+- **Error reporting is not wired to a service.** Logging is structured and
+  funnelled through `lib/observability/logger.ts`; call `setReporter()` with a
+  Sentry (or similar) adapter to start receiving alerts.
 - **The in-memory store is not persistent** and is single-process. It is for
-  local development and tests only.
+  local development and tests only, and a production runtime refuses to use it.
 - **"Send Reminder"** from the prototype is not implemented — it would require
   messaging, which is out of scope for the MVP.
-- **Attendance window** is stored and editable but does not yet change when a
-  session is reported as missing attendance (currently: as soon as it ends).
 - No payment processing. CoachOS records money, it never moves it.
+
+## Still on you before selling this
+
+Engineering-side work is done; these need decisions or accounts, not code.
+
+- **Billing.** Deliberately out of scope. Subscriptions/Stripe is its own
+  project.
+- **Legal.** Privacy policy and terms. Note the shape of the problem: your
+  coaches store *third parties'* names, phones and emails, which makes each
+  coach a data controller and you a processor. That implies a DPA, a data
+  export path, and a documented hard-delete on request. Player deletion here is
+  currently a soft delete — correct for preserving financial history, and not
+  sufficient on its own for an erasure request.
+- **Backups.** Confirm point-in-time recovery is enabled on your Supabase plan.
+  This is financial data.
+- **Run the integration suite** against your real project once (see
+  `tests/integration/README.md`). It is the only thing that proves your
+  deployed RLS policies actually isolate tenants.

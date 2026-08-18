@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock } from '@/lib/services/clock'
 import { formatLong, formatTime } from '@/lib/domain/dates'
 import { CHARGE_TONE } from '@/lib/domain/finance'
 import { formatMoney, centsToInput } from '@/lib/domain/money'
 import { attendanceLabel, sessionEndMin } from '@/lib/domain/sessions'
 import { isDomainError } from '@/lib/services/errors'
 import { loadFinance } from '@/lib/services/finance'
-import { defaultClock, listSelectablePlayers } from '@/lib/services/players'
+import { listSelectablePlayers } from '@/lib/services/players'
 import { getSessionDetail } from '@/lib/services/sessions'
 import { SessionDetailView } from './SessionDetailView'
 
@@ -17,8 +18,8 @@ export default async function SessionDetailPage({
 }: {
   params: { id: string }
 }) {
-  const { store, coachId } = await requireCoachPage()
-  const clock = defaultClock()
+  const { store, coachId, coach } = await requireCoachPage()
+  const clock = coachClock(coach)
 
   let detail
   try {

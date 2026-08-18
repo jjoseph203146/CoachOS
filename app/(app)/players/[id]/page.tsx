@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock } from '@/lib/services/clock'
 import { formatMedium, formatRelative, formatTime } from '@/lib/domain/dates'
 import { formatMoney } from '@/lib/domain/money'
 import {
@@ -10,14 +11,14 @@ import {
 } from '@/lib/domain/sessions'
 import { isDomainError } from '@/lib/services/errors'
 import { loadFinance } from '@/lib/services/finance'
-import { defaultClock, getPlayer } from '@/lib/services/players'
+import { getPlayer } from '@/lib/services/players'
 import { PlayerDetailView } from './PlayerDetailView'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
-  const { store, coachId } = await requireCoachPage()
-  const clock = defaultClock()
+  const { store, coachId, coach } = await requireCoachPage()
+  const clock = coachClock(coach)
 
   let player
   try {

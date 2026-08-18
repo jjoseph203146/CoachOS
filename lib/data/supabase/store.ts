@@ -53,6 +53,7 @@ function mapCoach(row: Row): Coach {
     defaultRateCents: row.default_rate_cents ?? 0,
     attendanceWindow: row.attendance_window ?? '24 hours',
     theme: row.theme ?? 'Light',
+    timezone: row.timezone || 'UTC',
     onboardedAt: row.onboarded_at ?? null,
   }
 }
@@ -223,6 +224,7 @@ export class SupabaseDataStore implements DataStore {
       payload.attendance_window = patch.attendanceWindow
     }
     if (patch.theme !== undefined) payload.theme = patch.theme
+    if (patch.timezone !== undefined) payload.timezone = patch.timezone
     if (patch.onboardedAt !== undefined) payload.onboarded_at = patch.onboardedAt
 
     const row = await this.unwrap(

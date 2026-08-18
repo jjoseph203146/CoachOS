@@ -6,7 +6,7 @@ import { getStore } from '@/lib/data'
 import { getMockStore } from '@/lib/data/mock/store'
 import type { DataStore } from '@/lib/data/store'
 import type { Coach } from '@/lib/domain/types'
-import { isSupabaseConfigured } from '@/lib/supabase/env'
+import { resolveBackend } from '@/lib/supabase/env'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { DomainError } from '@/lib/services/errors'
 
@@ -26,7 +26,9 @@ export interface AuthContext {
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   const store = getStore()
 
-  if (!isSupabaseConfigured()) {
+  // Demo mode is unauthenticated by construction; resolveBackend() has already
+  // refused to allow it in a production runtime.
+  if (resolveBackend() === 'demo') {
     const mock = getMockStore()
     const coach = await mock.getCoachByAuthId('demo-auth-user')
     if (!coach) return null

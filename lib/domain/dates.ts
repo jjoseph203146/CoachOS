@@ -175,3 +175,107 @@ export function greetingFor(minutes: number): string {
   if (hour < 17) return 'Good afternoon'
   return 'Good evening'
 }
+
+// ---------------------------------------------------------------------------
+// Timezone-aware clock
+//
+// The server runs in UTC (Vercel does), so `new Date()` local parts are NOT the
+// coach's calendar. Every "today", "has this ended?" and overdue decision must
+// be made in the coach's own zone, or an evening session rolls into tomorrow
+// for anyone west of Greenwich.
+// ---------------------------------------------------------------------------
+
+/** Fallback used when a coach has no timezone recorded yet. */
+export const DEFAULT_TIME_ZONE = 'UTC'
+
+/**
+ * Current calendar date and minutes-past-midnight in the given IANA zone.
+ * `en-CA` formats dates as YYYY-MM-DD, which is exactly our ISODate shape.
+ */
+export function zonedNow(
+  timeZone: string,
+  now: Date = new Date(),
+): { today: ISODate; minutes: number } {
+  let parts: Intl.DateTimeFormatPart[]
+  try {
+    parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(now)
+  } catch {
+    // An invalid/unknown zone must never take the app down.
+    return zonedNow(DEFAULT_TIME_ZONE, now)
+  }
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '00'
+
+  // Some ICU builds render midnight as hour "24".
+  const hour = parseInt(get('hour'), 10) % 24
+  const minute = parseInt(get('minute'), 10)
+
+  return {
+    today: `${get('year')}-${get('month')}-${get('day')}`,
+    minutes: hour * 60 + minute,
+  }
+}
+
+/** True when the string is an IANA zone this runtime understands. */
+export function isValidTimeZone(timeZone: string): boolean {
+  if (!timeZone) return false
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Every IANA zone this runtime knows, for the settings picker.
+ * `Intl.supportedValuesOf` is Node 18+/modern browsers; fall back to a short
+ * list of common zones if it is unavailable.
+ */
+export function supportedTimeZones(): string[] {
+  const intl = Intl as typeof Intl & {
+    supportedValuesOf?: (key: string) => string[]
+  }
+  if (typeof intl.supportedValuesOf === 'function') {
+    try {
+      return intl.supportedValuesOf('timeZone')
+    } catch {
+      // fall through
+    }
+  }
+  return [
+    'UTC',
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Los_Angeles',
+    'Europe/London',
+    'Europe/Paris',
+    'Australia/Sydney',
+  ]
+}
+
+/**
+ * Whole minutes between two calendar moments, each expressed as an ISO date
+ * plus minutes-past-midnight. Used for attendance grace periods.
+ */
+export function minutesBetween(
+  fromDate: ISODate,
+  fromMinutes: number,
+  toDate: ISODate,
+  toMinutes: number,
+): number {
+  const dayDelta = Math.round(
+    (parseISO(toDate).getTime() - parseISO(fromDate).getTime()) / 86400000,
+  )
+  return dayDelta * 1440 + (toMinutes - fromMinutes)
+}

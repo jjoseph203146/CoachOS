@@ -17,11 +17,18 @@ interface SettingsValues {
   rate: string
   attendanceWindow: AttendanceWindow
   theme: Theme
+  timezone: string
 }
 
 const WINDOWS: AttendanceWindow[] = ['Same day', '24 hours', '48 hours', '72 hours']
 
-export function SettingsView({ initial }: { initial: SettingsValues }) {
+export function SettingsView({
+  initial,
+  timezones,
+}: {
+  initial: SettingsValues
+  timezones: string[]
+}) {
   const router = useRouter()
   const { toast } = useToast()
   const [values, setValues] = useState(initial)
@@ -33,6 +40,20 @@ export function SettingsView({ initial }: { initial: SettingsValues }) {
   const dirty = (Object.keys(values) as Array<keyof SettingsValues>).some(
     (key) => values[key] !== initial[key],
   )
+
+  // Shows the coach immediately whether they picked the right zone.
+  const localTime = (() => {
+    try {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: values.timezone,
+        weekday: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date())
+    } catch {
+      return '—'
+    }
+  })()
 
   const set = <K extends keyof SettingsValues>(key: K, value: SettingsValues[K]) =>
     setValues((current) => ({ ...current, [key]: value }))
@@ -128,6 +149,29 @@ export function SettingsView({ initial }: { initial: SettingsValues }) {
               <span className="text-chevron text-t15">›</span>
             </div>
           </button>
+
+          <div className="mt-[14px]">
+            <div className="text-t135 font-semibold">Timezone</div>
+            <div className="text-t115 text-subtle mt-[2px] mb-[6px]">
+              Your schedule, “today” and overdue dates are all calculated in this
+              zone.
+            </div>
+            <select
+              value={values.timezone}
+              aria-label="Timezone"
+              onChange={(event) => set('timezone', event.target.value)}
+              className="w-full h-[42px] border border-line rounded-r10 bg-card px-3 text-t14 font-medium"
+            >
+              {timezones.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </select>
+            <div className="text-t115 text-subtle mt-[6px] tnum">
+              Local time now: {localTime}
+            </div>
+          </div>
         </div>
       </div>
 

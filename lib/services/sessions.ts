@@ -195,6 +195,7 @@ export async function updateSession(
   coachId: string,
   sessionId: string,
   args: UpdateSessionArgs,
+  today: ISODate,
 ): Promise<{ requiresPriceDecision: boolean; unpaidCount: number }> {
   const session = await getSession(store, coachId, sessionId)
   if (!args.name.trim()) throw new DomainError('INVALID', 'Session needs a name.')
@@ -214,7 +215,7 @@ export async function updateSession(
     throw new DomainError('CONFLICT', `Conflicts with ${conflict.name} that day.`)
   }
 
-  const finance = await loadFinance(store, coachId)
+  const finance = await loadFinance(store, coachId, today)
   const unpaid = finance.forSession(sessionId).filter((v) => v.isPending)
   const priceChanged = !session.isFree && args.priceCents !== session.priceCents
 
@@ -255,13 +256,14 @@ export async function cancelSession(
   coachId: string,
   sessionId: string,
   chargeDecision: 'void' | 'keep',
+  today: ISODate,
 ): Promise<void> {
   const session = await getSession(store, coachId, sessionId)
   if (session.status === 'cancelled') {
     throw new DomainError('CONFLICT', 'This session is already cancelled.')
   }
 
-  const finance = await loadFinance(store, coachId)
+  const finance = await loadFinance(store, coachId, today)
   const unpaid = finance.forSession(sessionId).filter((v) => v.isPending)
   const stamp = new Date().toISOString()
 
@@ -286,8 +288,9 @@ export async function cancellationImpact(
   store: DataStore,
   coachId: string,
   sessionId: string,
+  today: ISODate,
 ): Promise<{ unpaidCount: number; unpaidCents: number }> {
-  const finance = await loadFinance(store, coachId)
+  const finance = await loadFinance(store, coachId, today)
   const unpaid = finance.forSession(sessionId).filter((v) => v.isPending)
   return {
     unpaidCount: unpaid.length,
@@ -397,9 +400,10 @@ export async function removePlayerFromSession(
   sessionId: string,
   playerId: string,
   chargeDecision: 'keep' | 'credit',
+  today: ISODate,
 ): Promise<void> {
   await getSession(store, coachId, sessionId)
-  const finance = await loadFinance(store, coachId)
+  const finance = await loadFinance(store, coachId, today)
   const pending = finance
     .forSession(sessionId)
     .filter((v) => v.charge.playerId === playerId && v.isPending)
@@ -486,6 +490,7 @@ export async function sessionsNeedingAttendance(
   store: DataStore,
   coachId: string,
   clock: Clock,
+  graceMinutes = 0,
 ): Promise<Array<{ session: Session; enrollments: Enrollment[] }>> {
   const [sessions, enrollments] = await Promise.all([
     store.listSessions(coachId),
@@ -498,7 +503,7 @@ export async function sessionsNeedingAttendance(
     bySession.set(e.sessionId, list)
   }
   return sessions
-    .filter((s) => attendanceMissing(s, bySession.get(s.id) ?? [], clock))
+    .filter((s) => attendanceMissing(s, bySession.get(s.id) ?? [], clock, graceMinutes))
     .sort(compareSessions)
     .map((session) => ({ session, enrollments: bySession.get(session.id) ?? [] }))
 }

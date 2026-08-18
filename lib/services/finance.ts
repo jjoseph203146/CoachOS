@@ -7,7 +7,6 @@
  */
 
 import type { DataStore } from '@/lib/data/store'
-import { todayISO } from '@/lib/domain/dates'
 import {
   creditFits,
   outstandingTotal,
@@ -35,11 +34,17 @@ export interface FinanceSnapshot {
   revenue(from: ISODate, to: ISODate): number
 }
 
-/** Load and derive the coach's entire financial picture in one pass. */
+/**
+ * Load and derive the coach's entire financial picture in one pass.
+ *
+ * `today` is required on purpose. Overdue status depends on it, and the server
+ * runs in UTC — a default here would quietly reintroduce the timezone bug this
+ * signature exists to prevent. Callers pass `coachClock(coach).today`.
+ */
 export async function loadFinance(
   store: DataStore,
   coachId: string,
-  today: ISODate = todayISO(),
+  today: ISODate,
 ): Promise<FinanceSnapshot> {
   const [charges, payments, credits] = await Promise.all([
     store.listCharges(coachId),
@@ -93,7 +98,7 @@ export async function getChargeView(
   store: DataStore,
   coachId: string,
   chargeId: string,
-  today: ISODate = todayISO(),
+  today: ISODate,
 ): Promise<ChargeView> {
   const charge = await store.getCharge(coachId, chargeId)
   if (!charge) throw new DomainError('NOT_FOUND', 'That charge could not be found.')
@@ -118,12 +123,14 @@ export async function recordPayment(
   args: {
     chargeId: string
     amountCents: number
+    /** The coach's current date — dates the payment and drives overdue status. */
+    today: ISODate
     paidOn?: ISODate
     note?: string
     expectedOutstandingCents?: number
   },
 ): Promise<void> {
-  const today = todayISO()
+  const today = args.today
   await store.transaction(async (tx) => {
     const view = await getChargeView(tx, coachId, args.chargeId, today)
 
@@ -162,9 +169,15 @@ export async function recordPayment(
 export async function recordCredit(
   store: DataStore,
   coachId: string,
-  args: { chargeId: string; amountCents: number; reason?: string },
+  args: {
+    chargeId: string
+    amountCents: number
+    /** The coach's current date, used for status derivation. */
+    today: ISODate
+    reason?: string
+  },
 ): Promise<void> {
-  const today = todayISO()
+  const today = args.today
   await store.transaction(async (tx) => {
     const view = await getChargeView(tx, coachId, args.chargeId, today)
 

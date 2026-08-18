@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod'
+import { isValidTimeZone } from '@/lib/domain/dates'
 import { parseMoneyToCents } from '@/lib/domain/money'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -208,6 +209,13 @@ export const manualChargeSchema = z.object({
 
 // ---- settings / onboarding ----
 
+/** An IANA zone this runtime actually understands. */
+export const timezone = z
+  .string()
+  .trim()
+  .min(1, 'Choose a timezone.')
+  .refine(isValidTimeZone, { message: 'That timezone is not recognised.' })
+
 export const settingsSchema = z.object({
   name: z.string().trim().min(1, 'Name is required.').max(120),
   email: emailOptional,
@@ -215,12 +223,15 @@ export const settingsSchema = z.object({
   rate: moneyCents,
   attendanceWindow: z.enum(['Same day', '24 hours', '48 hours', '72 hours']),
   theme: z.enum(['Light', 'Dark']),
+  timezone,
 })
 
 export const onboardingSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name.').max(120),
   businessName: z.string().trim().max(140),
   rate: moneyCents,
+  /** Detected from the browser; falls back server-side when absent. */
+  timezone: timezone.optional(),
 })
 
 // ---- auth ----
@@ -229,6 +240,20 @@ export const loginSchema = z.object({
   email: z.string().trim().email('Enter a valid email.'),
   password: z.string().min(1, 'Enter your password.'),
 })
+
+export const passwordResetRequestSchema = z.object({
+  email: z.string().trim().email('Enter a valid email.'),
+})
+
+export const passwordUpdateSchema = z
+  .object({
+    password: z.string().min(8, 'Use at least 8 characters.').max(200),
+    confirm: z.string(),
+  })
+  .refine((value) => value.password === value.confirm, {
+    path: ['confirm'],
+    message: 'Passwords don’t match.',
+  })
 
 export const signupSchema = z
   .object({

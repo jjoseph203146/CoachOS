@@ -6,11 +6,17 @@ import { signInAction } from '@/lib/actions/auth'
 import { Button, FieldLabel, TextInput } from '@/components/ui/controls'
 import { ErrorBanner } from '@/components/ui/primitives'
 
-export function LoginForm({ demoMode }: { demoMode: boolean }) {
+export function LoginForm({
+  demoMode,
+  linkError = '',
+}: {
+  demoMode: boolean
+  linkError?: string
+}) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(linkError)
   const [pending, startTransition] = useTransition()
 
   const submit = () => {
@@ -77,7 +83,13 @@ export function LoginForm({ demoMode }: { demoMode: boolean }) {
         </div>
       </form>
 
-      <div className="text-center text-t13 text-muted mt-[18px]">
+      <div className="text-center mt-4">
+        <a href="/forgot-password" className="text-t13 font-semibold text-accent">
+          Forgot your password?
+        </a>
+      </div>
+
+      <div className="text-center text-t13 text-muted mt-[14px]">
         New here?{' '}
         <a href="/signup" className="text-accent font-semibold">
           Create account

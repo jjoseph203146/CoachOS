@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { isSupabaseConfigured } from '@/lib/supabase/env'
+import { isSupabaseConfigured, resolveBackend } from '@/lib/supabase/env'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { getMockStore } from './mock/store'
 import { SupabaseDataStore } from './supabase/store'
@@ -14,7 +14,9 @@ import type { DataStore } from './store'
  * no fabricated credentials, no silent failure.
  */
 export function getStore(): DataStore {
-  if (isSupabaseConfigured()) {
+  // Throws rather than silently falling back to the shared demo store when a
+  // production deploy is missing its Supabase credentials.
+  if (resolveBackend() === 'supabase') {
     return new SupabaseDataStore(createSupabaseServerClient())
   }
   return getMockStore()

@@ -17,6 +17,7 @@ export interface SettingsPatch {
   defaultRateCents: number
   attendanceWindow: AttendanceWindow
   theme: Theme
+  timezone: string
 }
 
 export async function updateSettings(
@@ -35,6 +36,7 @@ export async function updateSettings(
     defaultRateCents: patch.defaultRateCents,
     attendanceWindow: patch.attendanceWindow,
     theme: patch.theme,
+    timezone: patch.timezone,
   })
 }
 
@@ -42,13 +44,19 @@ export async function updateSettings(
 export async function completeOnboarding(
   store: DataStore,
   coachId: string,
-  input: { name: string; businessName: string; defaultRateCents: number },
+  input: {
+    name: string
+    businessName: string
+    defaultRateCents: number
+    timezone?: string
+  },
 ): Promise<Coach> {
   if (!input.name.trim()) throw new DomainError('INVALID', 'Enter your name.')
   return store.updateCoach(coachId, {
     name: input.name.trim(),
     businessName: input.businessName.trim(),
     defaultRateCents: input.defaultRateCents,
+    ...(input.timezone ? { timezone: input.timezone } : {}),
     onboardedAt: new Date().toISOString(),
   })
 }

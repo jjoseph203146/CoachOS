@@ -4,7 +4,6 @@
  */
 
 import type { DataStore, NewPlayerInput } from '@/lib/data/store'
-import { todayISO } from '@/lib/domain/dates'
 import { activityLabel, compareSessions, isPast, type Clock } from '@/lib/domain/sessions'
 import type { Player } from '@/lib/domain/types'
 import { DomainError } from './errors'
@@ -140,9 +139,4 @@ export async function listSelectablePlayers(
   return players
     .filter((p) => !p.archived && !p.deletedAt)
     .sort((a, b) => (a.name < b.name ? -1 : 1))
-}
-
-export function defaultClock(): Clock {
-  const now = new Date()
-  return { today: todayISO(now), nowMinutes: now.getHours() * 60 + now.getMinutes() }
 }

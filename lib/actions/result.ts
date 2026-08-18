@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { ZodError } from 'zod'
+import { logError } from '@/lib/observability/logger'
 import { isDomainError } from '@/lib/services/errors'
 
 /** Uniform result shape returned by every server action. */
@@ -45,7 +46,9 @@ export function toActionError(error: unknown, context: string): ActionResult<nev
   }
 
   // Anything else is unexpected: log the detail, show the user a safe message.
-  console.error(`[coachos] ${context}`, error)
+  // Note the log carries the operation name only — never the input, which
+  // would put player names, emails and amounts into the log drain.
+  logError('Unhandled action failure', { operation: context }, error)
   return fail('Something went wrong. Please try again.', undefined, 'INTERNAL')
 }
 

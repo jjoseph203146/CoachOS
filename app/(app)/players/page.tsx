@@ -1,5 +1,5 @@
 import { requireCoachPage } from '@/lib/auth'
-import { defaultClock } from '@/lib/services/players'
+import { coachClock } from '@/lib/services/clock'
 import { listPlayers } from '@/lib/services/players'
 import { formatRelative } from '@/lib/domain/dates'
 import { formatMoney } from '@/lib/domain/money'
@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Players — CoachOS' }
 
 export default async function PlayersPage() {
-  const { store, coachId } = await requireCoachPage()
-  const clock = defaultClock()
+  const { store, coachId, coach } = await requireCoachPage()
+  const clock = coachClock(coach)
 
   const [active, archived] = await Promise.all([
     listPlayers(store, coachId, { tab: 'active', clock }),

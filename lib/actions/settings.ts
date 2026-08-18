@@ -13,6 +13,7 @@ export async function updateSettingsAction(input: {
   rate: string
   attendanceWindow: string
   theme: string
+  timezone: string
 }): Promise<ActionResult> {
   return runAction('updateSettings', async () => {
     const { store, coachId } = await requireCoachAction()
@@ -24,6 +25,7 @@ export async function updateSettingsAction(input: {
       defaultRateCents: data.rate,
       attendanceWindow: data.attendanceWindow,
       theme: data.theme,
+      timezone: data.timezone,
     })
     revalidatePath('/settings')
     revalidatePath('/dashboard')
@@ -35,6 +37,7 @@ export async function completeOnboardingAction(input: {
   name: string
   businessName: string
   rate: string
+  timezone?: string
 }): Promise<ActionResult> {
   return runAction('completeOnboarding', async () => {
     const { store, coachId } = await requireCoachAction()
@@ -43,6 +46,7 @@ export async function completeOnboardingAction(input: {
       name: data.name,
       businessName: data.businessName,
       defaultRateCents: data.rate,
+      timezone: data.timezone,
     })
     revalidatePath('/dashboard')
     return ok()

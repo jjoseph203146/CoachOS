@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireCoachAction } from '@/lib/auth'
-import { defaultClock } from '@/lib/services/players'
+import { coachClock } from '@/lib/services/clock'
 import {
   addPlayerToSession,
   cancelSession,
@@ -45,7 +45,7 @@ export async function createSessionAction(input: {
   allowConflict?: boolean
 }): Promise<ActionResult<{ sessionId: string }>> {
   return runAction('createSession', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = createSessionSchema.parse(input)
 
     const session = await createSession(store, coachId, {
@@ -79,19 +79,25 @@ export async function updateSessionAction(input: {
   priceChangeDecision?: 'keep' | 'update'
 }): Promise<ActionResult<{ requiresPriceDecision: boolean; unpaidCount: number }>> {
   return runAction('updateSession', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = updateSessionSchema.parse(input)
 
-    const result = await updateSession(store, coachId, data.sessionId, {
-      name: data.name,
-      date: data.date,
-      startMin: data.startMin,
-      durationMin: data.durationMin,
-      priceCents: data.priceCents,
-      location: data.location,
-      capacity: data.capacity ?? null,
-      priceChangeDecision: data.priceChangeDecision,
-    })
+    const result = await updateSession(
+      store,
+      coachId,
+      data.sessionId,
+      {
+        name: data.name,
+        date: data.date,
+        startMin: data.startMin,
+        durationMin: data.durationMin,
+        priceCents: data.priceCents,
+        location: data.location,
+        capacity: data.capacity ?? null,
+        priceChangeDecision: data.priceChangeDecision,
+      },
+      coachClock(coach).today,
+    )
 
     revalidateSessionViews(data.sessionId)
     return ok(result)
@@ -103,9 +109,15 @@ export async function cancelSessionAction(input: {
   chargeDecision: 'void' | 'keep'
 }): Promise<ActionResult> {
   return runAction('cancelSession', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = cancelSessionSchema.parse(input)
-    await cancelSession(store, coachId, data.sessionId, data.chargeDecision)
+    await cancelSession(
+      store,
+      coachId,
+      data.sessionId,
+      data.chargeDecision,
+      coachClock(coach).today,
+    )
     revalidateSessionViews(data.sessionId)
     return ok()
   })
@@ -116,7 +128,7 @@ export async function addPlayerToSessionAction(input: {
   playerId: string
 }): Promise<ActionResult> {
   return runAction('addPlayerToSession', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = sessionPlayerSchema.parse(input)
     await addPlayerToSession(store, coachId, data.sessionId, data.playerId)
     revalidateSessionViews(data.sessionId)
@@ -130,7 +142,7 @@ export async function removePlayerFromSessionAction(input: {
   chargeDecision: 'keep' | 'credit'
 }): Promise<ActionResult> {
   return runAction('removePlayerFromSession', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = removePlayerSchema.parse(input)
     await removePlayerFromSession(
       store,
@@ -138,6 +150,7 @@ export async function removePlayerFromSessionAction(input: {
       data.sessionId,
       data.playerId,
       data.chargeDecision,
+      coachClock(coach).today,
     )
     revalidateSessionViews(data.sessionId)
     return ok()
@@ -149,7 +162,7 @@ export async function saveAttendanceAction(input: {
   marks: Array<{ playerId: string; attendance: 'unmarked' | 'present' | 'absent' | 'skipped' }>
 }): Promise<ActionResult> {
   return runAction('saveAttendance', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = saveAttendanceSchema.parse(input)
     await saveAttendance(store, coachId, data.sessionId, data.marks)
     revalidateSessionViews(data.sessionId)
@@ -161,7 +174,7 @@ export async function skipAttendanceAction(input: {
   sessionId: string
 }): Promise<ActionResult> {
   return runAction('skipAttendance', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = skipAttendanceSchema.parse(input)
     await skipAttendance(store, coachId, data.sessionId)
     revalidateSessionViews(data.sessionId)
@@ -174,13 +187,13 @@ export async function duplicateSessionDraftAction(input: {
   sessionId: string
 }): Promise<ActionResult<Record<string, unknown>>> {
   return runAction('duplicateSessionDraft', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const { buildDuplicateDraft } = await import('@/lib/services/sessions')
     const draft = await buildDuplicateDraft(
       store,
       coachId,
       input.sessionId,
-      defaultClock(),
+      coachClock(coach),
     )
     return ok(draft as unknown as Record<string, unknown>)
   })

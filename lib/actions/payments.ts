@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireCoachAction } from '@/lib/auth'
+import { coachClock } from '@/lib/services/clock'
 import {
   createManualCharge,
   getChargeView,
@@ -37,13 +38,15 @@ export async function markPaidAction(input: {
   expectedOutstanding: number
 }): Promise<ActionResult> {
   return runAction('markPaid', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = markPaidSchema.parse(input)
-    const view = await getChargeView(store, coachId, data.chargeId)
+    const today = coachClock(coach).today
+    const view = await getChargeView(store, coachId, data.chargeId, today)
 
     await recordPayment(store, coachId, {
       chargeId: data.chargeId,
       amountCents: view.outstandingCents,
+      today,
       expectedOutstandingCents: data.expectedOutstanding,
     })
 
@@ -60,12 +63,13 @@ export async function recordPaymentAction(input: {
   note?: string
 }): Promise<ActionResult> {
   return runAction('recordPayment', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = recordPaymentSchema.parse(input)
 
     await recordPayment(store, coachId, {
       chargeId: data.chargeId,
       amountCents: data.amount,
+      today: coachClock(coach).today,
       expectedOutstandingCents: data.expectedOutstanding,
       note: data.note,
     })
@@ -79,7 +83,7 @@ export async function markUnpaidAction(input: {
   chargeId: string
 }): Promise<ActionResult> {
   return runAction('markUnpaid', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = markUnpaidSchema.parse(input)
     await markUnpaid(store, coachId, data.chargeId)
     revalidateMoneyViews()
@@ -93,11 +97,12 @@ export async function recordCreditAction(input: {
   reason?: string
 }): Promise<ActionResult> {
   return runAction('recordCredit', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = recordCreditSchema.parse(input)
     await recordCredit(store, coachId, {
       chargeId: data.chargeId,
       amountCents: data.amount,
+      today: coachClock(coach).today,
       reason: data.reason,
     })
     revalidateMoneyViews()
@@ -112,7 +117,7 @@ export async function createManualChargeAction(input: {
   label: string
 }): Promise<ActionResult> {
   return runAction('createManualCharge', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, coach } = await requireCoachAction()
     const data = manualChargeSchema.parse(input)
     await createManualCharge(store, coachId, {
       playerId: data.playerId,

@@ -1,0 +1,30 @@
+name: Supabase integration
+
+# The integration suite talks to a real Supabase project, so it only runs when
+# the repository has credentials configured. Without them the job is skipped
+# rather than failing, which keeps forks and PRs from strangers green.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+jobs:
+  integration:
+    name: RLS and adapter against a live database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:integration
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+          COACHOS_TEST_COACH_A_EMAIL: ${{ secrets.COACHOS_TEST_COACH_A_EMAIL }}
+          COACHOS_TEST_COACH_A_PASSWORD: ${{ secrets.COACHOS_TEST_COACH_A_PASSWORD }}
+          COACHOS_TEST_COACH_B_EMAIL: ${{ secrets.COACHOS_TEST_COACH_B_EMAIL }}
+          COACHOS_TEST_COACH_B_PASSWORD: ${{ secrets.COACHOS_TEST_COACH_B_PASSWORD }}

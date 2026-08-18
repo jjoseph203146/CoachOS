@@ -10,6 +10,7 @@
  * layer has a fast, deterministic backend to test against.
  */
 
+import { DEFAULT_TIME_ZONE } from '@/lib/domain/dates'
 import type {
   AttendanceStatus,
   Charge,
@@ -114,6 +115,7 @@ export class MockDataStore implements DataStore {
       defaultRateCents: 7000,
       attendanceWindow: '24 hours',
       theme: 'Light',
+      timezone: DEFAULT_TIME_ZONE,
       onboardedAt: null,
     }
     this.db.coaches.push(coach)

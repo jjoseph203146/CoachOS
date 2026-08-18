@@ -54,13 +54,14 @@ export async function loadDashboard(
   store: DataStore,
   coachId: string,
   clock: Clock,
+  graceMinutes = 0,
 ): Promise<DashboardModel> {
   const [sessions, enrollments, players, finance, needsAttendance] = await Promise.all([
     store.listSessions(coachId),
     store.listEnrollments(coachId),
     store.listPlayers(coachId, { includeDeleted: true }),
     loadFinance(store, coachId, clock.today),
-    sessionsNeedingAttendance(store, coachId, clock),
+    sessionsNeedingAttendance(store, coachId, clock, graceMinutes),
   ])
 
   const playerMap = new Map(players.map((p) => [p.id, p]))

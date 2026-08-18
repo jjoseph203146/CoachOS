@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { requireCoachPage } from '@/lib/auth'
+import { coachClock, coachGraceMinutes } from '@/lib/services/clock'
 import { ScreenBody } from '@/components/shell/AppShell'
 import {
   Card,
@@ -14,11 +15,9 @@ import {
   formatRelative,
   formatTime,
   greetingFor,
-  todayISO,
 } from '@/lib/domain/dates'
 import { formatMoney } from '@/lib/domain/money'
 import { loadDashboard } from '@/lib/services/dashboard'
-import { defaultClock } from '@/lib/services/players'
 import { AccountButton } from './AccountButton'
 
 export const dynamic = 'force-dynamic'
@@ -26,10 +25,10 @@ export const metadata = { title: 'Home — CoachOS' }
 
 export default async function DashboardPage() {
   const { store, coachId, coach } = await requireCoachPage()
-  const clock = defaultClock()
-  const model = await loadDashboard(store, coachId, clock)
+  const clock = coachClock(coach)
+  const model = await loadDashboard(store, coachId, clock, coachGraceMinutes(coach))
 
-  const today = todayISO()
+  const today = clock.today
   const up = model.upNext
 
   return (
