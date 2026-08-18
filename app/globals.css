@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base resets copied verbatim from the design prototype's <helmet> block. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #e7e8e2;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+a {
+  color: #3fa66b;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #2e7d4f;
+}
+
+input,
+textarea,
+button,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a2a69f;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+/* Skeleton shimmer — exact gradient + background-size from the prototype. */
+.skeleton {
+  background: linear-gradient(90deg, #ecece7 25%, #f4f4ef 42%, #ecece7 60%);
+  background-size: 780px 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -390px 0;
+  }
+  to {
+    background-position: 390px 0;
+  }
+}
+
+/* Numeric alignment used throughout money/time displays. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.pretty {
+  text-wrap: pretty;
+}

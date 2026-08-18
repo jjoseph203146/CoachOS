@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#E7E8E2;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;scrollbar-width:none;}
+*::-webkit-scrollbar{display:none;}
+a{color:#3FA66B;text-decoration:none;}
+a:hover{color:#2E7D4F;}
+input,textarea,button{font-family:inherit;color:inherit;}
+input:focus,textarea:focus{outline:none;}
+input::placeholder,textarea::placeholder{color:#A2A69F;}
+@keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes popIn{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:none;}}
+@keyframes toastUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes shimmer{from{background-position:-390px 0;}to{background-position:390px 0;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</helmet>
+<div style="min-height:100dvh;display:flex;justify-content:center;align-items:stretch;background:#E7E8E2;font-family:'Geist','Helvetica Neue',-apple-system,sans-serif;color:#171918">
+<div style="width:100%;max-width:430px;height:100dvh;background:#F7F7F3;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 0 1px #DEDFD8">
+
+<div style="height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex:none">
+  <div style="font-size:13px;font-weight:600;letter-spacing:.01em">{{ ui.time }}</div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <div style="display:flex;align-items:flex-end;gap:2px">
+      <div style="width:3px;height:4px;background:#171918;border-radius:1px"></div>
+      <div style="width:3px;height:6px;background:#171918;border-radius:1px"></div>
+      <div style="width:3px;height:8px;background:#171918;border-radius:1px"></div>
+      <div style="width:3px;height:10px;background:#171918;border-radius:1px"></div>
+    </div>
+    <div style="width:22px;height:11px;border:1px solid #171918;border-radius:3.5px;padding:1.5px;margin-left:2px"><div style="width:70%;height:100%;background:#171918;border-radius:1.5px"></div></div>
+  </div>
+</div>
+
+<sc-if value="{{ scr.dash }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Dashboard" style="flex:1;overflow-y:auto;padding:4px 20px 130px">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-top:12px">
+    <div>
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">{{ dash.dateLine }}</div>
+      <div style="font-size:25px;font-weight:700;letter-spacing:-.02em;margin-top:6px">{{ dash.greeting }}</div>
+    </div>
+    <div onClick="{{ dash.openMore }}" style="width:40px;height:40px;border-radius:50%;background:#171918;color:#F7F7F3;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;cursor:pointer;flex:none;margin-top:4px">{{ dash.avatarTxt }}</div>
+  </div>
+
+  <sc-if value="{{ dash.skel }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px;height:170px;border-radius:18px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:14px;height:88px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:14px;height:88px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  </sc-if>
+
+  <sc-if value="{{ dash.ready }}" hint-placeholder-val="{{ true }}">
+
+    <sc-if value="{{ dash.isNew }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:18px;box-shadow:0 1px 2px rgba(23,25,24,.04);padding:22px;margin-top:24px">
+        <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#3FA66B">Welcome</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-.01em;margin-top:8px">Set up your coaching base</div>
+        <div style="font-size:14px;color:#6B706C;margin-top:6px;line-height:1.55;text-wrap:pretty">Add your first player, then schedule your first session. Everything else builds from there.</div>
+        <div onClick="{{ dash.addFirstPlayer }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:18px">Add Your First Player</div>
+        <div onClick="{{ dash.schedFirst }}" style="height:48px;border-radius:12px;background:#FFFFFF;border:1px solid #E5E6E1;color:#171918;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:10px">Schedule a Session</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ dash.notNew }}" hint-placeholder-val="{{ true }}">
+
+      <sc-if value="{{ dash.hasUpNext }}" hint-placeholder-val="{{ true }}">
+        <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:18px;box-shadow:0 1px 2px rgba(23,25,24,.05);padding:18px;margin-top:24px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#3FA66B">Up next</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#A2A69F">{{ dash.up.typeLabel }}</div>
+          </div>
+          <div onClick="{{ dash.up.open }}" style="cursor:pointer">
+            <div style="font-size:22px;font-weight:700;letter-spacing:-.015em;margin-top:12px">{{ dash.up.title }}</div>
+            <div style="font-size:14px;color:#6B706C;margin-top:5px">{{ dash.up.meta }}</div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+              <span style="font-size:15px;font-weight:600;font-variant-numeric:tabular-nums">{{ dash.up.price }}</span>
+              <sc-if value="{{ dash.up.unpaid }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F6EEDB;color:#96690F">{{ dash.up.unpaidTxt }}</span>
+              </sc-if>
+            </div>
+          </div>
+          <sc-if value="{{ dash.up.showTakeAtt }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ dash.up.takeAtt }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Take Attendance</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dash.upEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:18px;padding:22px;margin-top:24px;text-align:center">
+          <div style="font-size:15px;font-weight:600">No sessions scheduled</div>
+          <div style="font-size:13.5px;color:#6B706C;margin-top:4px">Your calendar is clear.</div>
+          <div onClick="{{ dash.schedFirst }}" style="height:46px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">Schedule Session</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dash.hasAlso }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:26px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Also today</div>
+          <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:10px;overflow:hidden">
+            <sc-for list="{{ dash.also }}" as="r" hint-placeholder-count="0">
+              <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-top:{{ r.bt }};opacity:{{ r.o }}">
+                <div style="width:64px;flex:none;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ r.time }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14.5px;font-weight:600">{{ r.title }}</div>
+                  <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.sub }}</div>
+                </div>
+                <sc-if value="{{ r.hasTag }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:11.5px;font-weight:600;color:{{ r.tagFg }}">{{ r.tag }}</span>
+                </sc-if>
+                <span style="color:#B9BDB6;font-size:17px;line-height:1">›</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="margin-top:26px">
+        <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Needs attention</div>
+        <sc-if value="{{ dash.caughtUp }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;margin-top:10px;padding:16px;display:flex;align-items:center;gap:10px">
+            <div style="width:22px;height:22px;border-radius:50%;background:#E4F2E9;color:#2E7D4F;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none">✓</div>
+            <div style="font-size:14px;color:#6B706C">All attendance is caught up</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ dash.hasAttn }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:10px;overflow:hidden">
+            <sc-for list="{{ dash.attn }}" as="r" hint-placeholder-count="2">
+              <div onClick="{{ r.go }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-top:{{ r.bt }}">
+                <div style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }};flex:none"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14.5px;font-weight:600">{{ r.main }}</div>
+                  <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.sub }}</div>
+                </div>
+                <span style="font-size:12.5px;font-weight:600;color:#3FA66B;flex:none">{{ r.cta }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="margin-top:26px">
+        <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">This month</div>
+        <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:10px;padding:16px 18px;display:flex;align-items:stretch;gap:18px">
+          <div style="flex:1">
+            <div style="font-size:12px;color:#6B706C;font-weight:500">Sessions</div>
+            <div style="font-size:24px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums">{{ dash.month.sessions }}</div>
+          </div>
+          <div style="width:1px;background:#F0F1EC"></div>
+          <div style="flex:1">
+            <div style="font-size:12px;color:#6B706C;font-weight:500">Attendance</div>
+            <div style="font-size:24px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums">{{ dash.month.att }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:26px">
+        <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Outstanding</div>
+        <sc-if value="{{ dash.out.show }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ dash.out.go }}" style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:10px;padding:16px 18px;display:flex;align-items:center;cursor:pointer">
+            <div style="flex:1">
+              <div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums">{{ dash.out.amt }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:2px">{{ dash.out.sub }}</div>
+            </div>
+            <span style="color:#B9BDB6;font-size:17px">›</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ dash.out.zero }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;margin-top:10px;padding:16px 18px">
+            <div style="font-size:14px;font-weight:600">No outstanding payments</div>
+            <div style="font-size:12.5px;color:#6B706C;margin-top:2px">Everything is settled.</div>
+          </div>
+        </sc-if>
+      </div>
+
+    </sc-if>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.sched }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Schedule" style="flex:1;overflow-y:auto;padding:4px 0 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 0">
+    <div style="font-size:25px;font-weight:700;letter-spacing:-.02em">Schedule</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <sc-if value="{{ sched.showToday }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ sched.goToday }}" style="font-size:12.5px;font-weight:600;color:#3FA66B;padding:7px 12px;border:1px solid #D5E5DB;border-radius:999px;cursor:pointer;background:#FFFFFF">Today</div>
+      </sc-if>
+      <div style="display:flex;background:#ECECE7;border-radius:10px;padding:2px">
+        <div onClick="{{ sched.setWeek }}" style="padding:6px 13px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:{{ sched.wSeg.bg }};color:{{ sched.wSeg.fg }};box-shadow:{{ sched.wSeg.sh }}">Week</div>
+        <div onClick="{{ sched.setMonth }}" style="padding:6px 13px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:{{ sched.mSeg.bg }};color:{{ sched.mSeg.fg }};box-shadow:{{ sched.mSeg.sh }}">Month</div>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ sched.isWeek }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding:16px 20px 4px">
+      <sc-for list="{{ sched.days }}" as="d" hint-placeholder-count="7">
+        <div onClick="{{ d.pick }}" style="flex:none;width:52px;padding:9px 0 8px;border-radius:13px;background:{{ d.bg }};border:1px solid {{ d.bd }};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="font-family:'Geist Mono',monospace;font-size:9.5px;letter-spacing:.08em;color:{{ d.sub }}">{{ d.dow }}</div>
+          <div style="font-size:16px;font-weight:700;color:{{ d.fg }};font-variant-numeric:tabular-nums">{{ d.dom }}</div>
+          <div style="display:flex;gap:3px;height:4px;margin-top:2px">
+            <sc-for list="{{ d.dots }}" as="o" hint-placeholder-count="0"><div style="width:4px;height:4px;border-radius:50%;background:{{ o.c }}"></div></sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sched.isMonth }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div onClick="{{ sched.mPrev }}" style="width:34px;height:34px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:#6B706C;padding-bottom:2px">‹</div>
+        <div style="font-size:14.5px;font-weight:600">{{ sched.mLabel }}</div>
+        <div onClick="{{ sched.mNext }}" style="width:34px;height:34px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:#6B706C;padding-bottom:2px">›</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:12px">
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">SUN</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">MON</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">TUE</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">WED</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">THU</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">FRI</div>
+        <div style="text-align:center;font-family:'Geist Mono',monospace;font-size:9.5px;color:#8A8E89;padding:4px 0">SAT</div>
+        <sc-for list="{{ sched.cells }}" as="d" hint-placeholder-count="0">
+          <div onClick="{{ d.pick }}" style="height:46px;border-radius:10px;background:{{ d.bg }};border:1px solid {{ d.bd }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer">
+            <div style="font-size:13px;font-weight:600;color:{{ d.fg }};font-variant-numeric:tabular-nums">{{ d.dom }}</div>
+            <div style="display:flex;gap:2px;height:3px">
+              <sc-for list="{{ d.dots }}" as="o" hint-placeholder-count="0"><div style="width:3px;height:3px;border-radius:50%;background:{{ o.c }}"></div></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="padding:20px 20px 0">
+    <div style="display:flex;align-items:baseline;gap:8px">
+      <div style="font-size:18px;font-weight:700;letter-spacing:-.01em">{{ sched.dayL1 }}</div>
+      <div style="font-size:13px;color:#6B706C">{{ sched.dayL2 }}</div>
+    </div>
+    <sc-if value="{{ sched.hasRows }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:12px;overflow:hidden">
+        <sc-for list="{{ sched.rows }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-top:{{ r.bt }};opacity:{{ r.o }}">
+            <div style="width:64px;flex:none">
+              <div style="font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums">{{ r.time }}</div>
+              <div style="font-size:11px;color:#8A8E89;margin-top:1px">{{ r.dur }}</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14.5px;font-weight:600;text-decoration:{{ r.deco }}">{{ r.title }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:1px;text-decoration:{{ r.deco }}">{{ r.sub }}</div>
+            </div>
+            <sc-if value="{{ r.hasB }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:{{ r.bBg }};color:{{ r.bFg }};flex:none">{{ r.bTxt }}</span>
+            </sc-if>
+            <span style="color:#B9BDB6;font-size:17px">›</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ sched.emptyDay }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;padding:26px 22px;margin-top:12px;text-align:center">
+        <div style="font-size:14.5px;font-weight:600">No sessions scheduled</div>
+        <div style="font-size:13px;color:#6B706C;margin-top:3px">This day is open.</div>
+        <div onClick="{{ sched.addHere }}" style="height:46px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Schedule Session</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ sched.cancBtnShow }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ sched.toggleCanc }}" style="text-align:center;font-size:12.5px;font-weight:600;color:#6B706C;padding:16px;cursor:pointer">{{ sched.cancBtnTxt }}</div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.players }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Players" style="flex:1;overflow-y:auto;padding:4px 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px">
+    <div style="font-size:25px;font-weight:700;letter-spacing:-.02em">Players</div>
+    <div onClick="{{ pl.add }}" style="width:38px;height:38px;border-radius:50%;background:#171918;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F7F7F3" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:9px;background:#ECECE7;border-radius:11px;height:42px;padding:0 13px;margin-top:14px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8E89" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+    <input value="{{ pl.q }}" onChange="{{ pl.setQ }}" placeholder="Search players" style="flex:1;border:none;background:transparent;font-size:14.5px;height:100%;min-width:0">
+  </div>
+  <div style="display:flex;background:#ECECE7;border-radius:11px;padding:2px;margin-top:12px">
+    <div onClick="{{ pl.setActive }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pl.aSeg.bg }};color:{{ pl.aSeg.fg }};box-shadow:{{ pl.aSeg.sh }}">Active</div>
+    <div onClick="{{ pl.setArch }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pl.rSeg.bg }};color:{{ pl.rSeg.fg }};box-shadow:{{ pl.rSeg.sh }}">Archived</div>
+  </div>
+  <sc-if value="{{ pl.skel }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;height:70px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:10px;height:70px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:10px;height:70px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  </sc-if>
+  <sc-if value="{{ pl.ready }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ pl.hasRows }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:14px;overflow:hidden">
+        <sc-for list="{{ pl.rows }}" as="r" hint-placeholder-count="5">
+          <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-top:{{ r.bt }}">
+            <div style="width:40px;height:40px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none">{{ r.init }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:15px;font-weight:600">{{ r.name }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.sub }}</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font-size:12px;color:#6B706C">{{ r.next }}</div>
+              <sc-if value="{{ r.showOut }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12.5px;font-weight:700;color:#96690F;margin-top:2px;font-variant-numeric:tabular-nums">{{ r.out }}</div>
+              </sc-if>
+            </div>
+            <span style="color:#B9BDB6;font-size:17px">›</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pl.emptySearch }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:44px 20px 0">
+        <div style="font-size:14.5px;font-weight:600">No players match “{{ pl.qEcho }}”</div>
+        <div style="font-size:13px;color:#6B706C;margin-top:4px">Try a different name.</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pl.emptyNone }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;padding:28px 22px;margin-top:14px;text-align:center">
+        <div style="font-size:15px;font-weight:600">No players yet</div>
+        <div style="font-size:13px;color:#6B706C;margin-top:4px">Add your first player to start scheduling.</div>
+        <div onClick="{{ pl.add }}" style="height:46px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Add Your First Player</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pl.emptyArch }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:44px 20px 0">
+        <div style="font-size:14.5px;font-weight:600">No archived players</div>
+        <div style="font-size:13px;color:#6B706C;margin-top:4px">Players you archive appear here.</div>
+      </div>
+    </sc-if>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.pay }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Payments" style="flex:1;overflow-y:auto;padding:4px 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px">
+    <div style="font-size:25px;font-weight:700;letter-spacing:-.02em">Payments</div>
+    <div onClick="{{ pay.addCharge }}" style="font-size:12.5px;font-weight:600;padding:9px 13px;border-radius:999px;background:#171918;color:#F7F7F3;cursor:pointer">Add Charge</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:9px;background:#ECECE7;border-radius:11px;height:42px;padding:0 13px;margin-top:14px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8E89" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+    <input value="{{ pay.q }}" onChange="{{ pay.setQ }}" placeholder="Search payments" style="flex:1;border:none;background:transparent;font-size:14.5px;height:100%;min-width:0">
+  </div>
+  <sc-if value="{{ pay.hasFilter }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;margin-top:12px">
+      <div onClick="{{ pay.clearFilter }}" style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;background:#E4F2E9;color:#2E7D4F;padding:7px 12px;border-radius:999px;cursor:pointer">
+        <span>{{ pay.filterName }}</span><span style="font-size:11px">✕</span>
+      </div>
+    </div>
+  </sc-if>
+  <div style="display:flex;background:#ECECE7;border-radius:11px;padding:2px;margin-top:12px">
+    <div onClick="{{ pay.setPend }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pay.pSeg.bg }};color:{{ pay.pSeg.fg }};box-shadow:{{ pay.pSeg.sh }}">Pending</div>
+    <div onClick="{{ pay.setPaid }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pay.dSeg.bg }};color:{{ pay.dSeg.fg }};box-shadow:{{ pay.dSeg.sh }}">Paid</div>
+    <div onClick="{{ pay.setOver }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ pay.oSeg.bg }};color:{{ pay.oSeg.fg }};box-shadow:{{ pay.oSeg.sh }}">Overdue</div>
+  </div>
+  <sc-if value="{{ pay.skel }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;height:76px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:10px;height:70px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+    <div style="margin-top:10px;height:70px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  </sc-if>
+  <sc-if value="{{ pay.ready }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ pay.totShow }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C">{{ pay.totLabel }}</div>
+          <div style="font-size:24px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums">{{ pay.totAmt }}</div>
+        </div>
+        <div style="font-size:12px;color:#6B706C;text-align:right">{{ pay.totSub }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pay.hasRows }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:12px;overflow:hidden">
+        <sc-for list="{{ pay.rows }}" as="r" hint-placeholder-count="4">
+          <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-top:{{ r.bt }}">
+            <div style="width:40px;height:40px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none">{{ r.init }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:15px;font-weight:600">{{ r.name }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.sub }}</div>
+            </div>
+            <div style="text-align:right;flex:none">
+              <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{ r.amt }}</div>
+              <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:{{ r.stBg }};color:{{ r.stFg }};display:inline-block;margin-top:3px">{{ r.st }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ pay.hasRows }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;font-size:11.5px;color:#A2A69F;padding:14px 0 0">Tap a row for details and actions</div>
+    </sc-if>
+  </sc-if>
+  <sc-if value="{{ pay.showEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;padding:44px 20px 0">
+      <div style="font-size:14.5px;font-weight:600">{{ pay.emptyTxt }}</div>
+      <div style="font-size:13px;color:#6B706C;margin-top:4px">{{ pay.emptySub }}</div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.sd }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Session Detail" style="flex:1;overflow-y:auto;padding:0 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ sd.back }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C">{{ sd.typeChip }}</div>
+    <div style="width:36px"></div>
+  </div>
+  <sc-if value="{{ sd.isCanc }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#EDEDE8;border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:600;color:#6B706C;text-align:center">This session was cancelled</div>
+  </sc-if>
+  <div style="font-size:23px;font-weight:700;letter-spacing:-.015em;margin-top:16px">{{ sd.title }}</div>
+  <div style="font-size:13px;color:#6B706C;margin-top:5px;font-weight:500">{{ sd.statusLine }}</div>
+
+  <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:16px;padding:2px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0">
+      <span style="font-size:13px;color:#6B706C">Date</span><span style="font-size:13.5px;font-weight:600">{{ sd.dateLine }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #F0F1EC">
+      <span style="font-size:13px;color:#6B706C">Time</span><span style="font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ sd.timeLine }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #F0F1EC">
+      <span style="font-size:13px;color:#6B706C">Location</span><span style="font-size:13.5px;font-weight:600">{{ sd.locLine }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #F0F1EC">
+      <span style="font-size:13px;color:#6B706C">Price</span><span style="font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ sd.priceLine }}</span>
+    </div>
+    <sc-if value="{{ sd.isGroup }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #F0F1EC">
+        <span style="font-size:13px;color:#6B706C">Capacity</span><span style="font-size:13.5px;font-weight:600">{{ sd.capLine }}</span>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ sd.showTakeAtt }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ sd.takeAtt }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">Take Attendance</div>
+  </sc-if>
+
+  <div style="margin-top:26px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Roster</div>
+    <sc-if value="{{ sd.isGroup }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#6B706C">{{ sd.capLine }}</div></sc-if>
+  </div>
+  <sc-if value="{{ sd.hasRoster }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:10px;overflow:hidden">
+      <sc-for list="{{ sd.rows }}" as="r" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:11px;padding:13px 12px 13px 16px;border-top:{{ r.bt }}">
+          <div style="width:40px;height:40px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none">{{ r.init }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">{{ r.name }}</div>
+            <div style="font-size:12.5px;margin-top:1px;font-weight:500;color:{{ r.attFg }}">{{ r.attTxt }}</div>
+          </div>
+          <sc-if value="{{ r.hasPay }}" hint-placeholder-val="{{ false }}">
+            <span onClick="{{ r.openPay }}" style="font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:999px;background:{{ r.payBg }};color:{{ r.payFg }};cursor:pointer;flex:none;font-variant-numeric:tabular-nums">{{ r.payTxt }}</span>
+          </sc-if>
+          <sc-if value="{{ r.freeTag }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:999px;background:#EDEDE8;color:#6B706C;flex:none">Free</span>
+          </sc-if>
+          <div onClick="{{ r.menu }}" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#8A8E89;font-size:17px;font-weight:700;flex:none;letter-spacing:.5px">⋯</div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+  <sc-if value="{{ sd.emptyRoster }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;padding:22px;text-align:center;margin-top:10px">
+      <div style="font-size:14px;font-weight:600">No players on this session</div>
+      <div style="font-size:12.5px;color:#6B706C;margin-top:3px">Add a player to build the roster.</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ sd.canAdd }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ sd.addPlayer }}" style="margin-top:10px;height:44px;border:1px dashed #C9CCC3;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:600;color:#3FA66B;cursor:pointer;background:#FFFFFF">+ Add Player</div>
+  </sc-if>
+
+  <sc-if value="{{ sd.showActions }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:26px">
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Actions</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div onClick="{{ sd.edit }}" style="height:46px;border-radius:12px;border:1px solid #E5E6E1;background:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Edit</div>
+        <div onClick="{{ sd.dup }}" style="height:46px;border-radius:12px;border:1px solid #E5E6E1;background:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Duplicate</div>
+      </div>
+      <div onClick="{{ sd.cancel }}" style="margin-top:10px;height:46px;border-radius:12px;border:1px solid #EBD4D0;background:#FFFFFF;color:#B3402F;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Cancel Session</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ sd.isCanc }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ sd.dup }}" style="margin-top:26px;height:46px;border-radius:12px;border:1px solid #E5E6E1;background:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Duplicate as New Session</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.att }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Attendance" style="flex:1;overflow-y:auto;padding:0 20px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ att.back }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-size:15px;font-weight:700">Attendance</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="margin-top:18px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">{{ att.typeLabel }}</div>
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.015em;margin-top:6px">{{ att.title }}</div>
+    <div style="font-size:13px;color:#6B706C;margin-top:3px">{{ att.when }}</div>
+  </div>
+  <div style="margin-top:18px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;font-variant-numeric:tabular-nums">{{ att.progress }}</div>
+    <div style="height:5px;background:#E5E6E1;border-radius:3px;margin-top:7px;overflow:hidden">
+      <div style="height:100%;background:#3FA66B;border-radius:3px;width:{{ att.pct }};transition:width .25s ease"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <div onClick="{{ att.allP }}" style="flex:1;height:40px;border-radius:10px;border:1px solid #D5E5DB;background:#FFFFFF;color:#2E7D4F;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">All Present</div>
+    <div onClick="{{ att.clear }}" style="flex:1;height:40px;border-radius:10px;border:1px solid #E5E6E1;background:#FFFFFF;color:#6B706C;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Clear</div>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:16px;box-shadow:0 1px 2px rgba(23,25,24,.04);margin-top:14px;overflow:hidden">
+    <sc-for list="{{ att.rows }}" as="r" hint-placeholder-count="2">
+      <div style="padding:14px 16px;border-top:{{ r.bt }}">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none">{{ r.init }}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">{{ r.name }}</div>
+            <div style="font-size:12px;color:#8A8E89;margin-top:1px">{{ r.sub }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:11px">
+          <div onClick="{{ r.setP }}" style="flex:1;height:44px;border-radius:11px;border:1px solid {{ r.pBd }};background:{{ r.pBg }};color:{{ r.pFg }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Present</div>
+          <div onClick="{{ r.setA }}" style="flex:1;height:44px;border-radius:11px;border:1px solid {{ r.aBd }};background:{{ r.aBg }};color:{{ r.aFg }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Absent</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ att.empty }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;padding:30px 20px 0">
+      <div style="font-size:14px;font-weight:600">No players on this session</div>
+      <div style="font-size:12.5px;color:#6B706C;margin-top:3px">Add players from the session screen first.</div>
+    </div>
+  </sc-if>
+  <div onClick="{{ att.done }}" style="height:48px;border-radius:12px;background:#171918;color:#F7F7F3;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:18px">Done</div>
+  <div onClick="{{ att.skip }}" style="text-align:center;font-size:13px;font-weight:600;color:#8A8E89;padding:16px;cursor:pointer">Skip attendance for this session</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.ns }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="New Session" style="flex:1;overflow-y:auto;padding:0 20px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ ns.close }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#171918">✕</div>
+    <div style="font-size:15px;font-weight:700">{{ ns.title }}</div>
+    <div style="width:36px"></div>
+  </div>
+  <sc-if value="{{ ns.hasFrom }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;font-size:11.5px;color:#8A8E89;margin-top:8px">{{ ns.fromTxt }}</div>
+  </sc-if>
+
+  <div style="margin-top:22px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Who</div>
+    <sc-if value="{{ ns.noPlayers }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;padding:18px;text-align:center;margin-top:10px">
+        <div style="font-size:14px;font-weight:600">No players available</div>
+        <div style="font-size:12.5px;color:#6B706C;margin-top:3px">Add a player to schedule this session.</div>
+        <div onClick="{{ ns.addFirst }}" style="height:42px;border-radius:11px;background:#171918;color:#F7F7F3;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:12px">Add Player</div>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+      <sc-for list="{{ ns.chips }}" as="c" hint-placeholder-count="4">
+        <div onClick="{{ c.tap }}" style="padding:9px 14px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:13.5px;font-weight:600;cursor:pointer">{{ c.txt }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ns.hasSelSub }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12px;color:#6B706C;margin-top:9px">{{ ns.selSub }}</div>
+    </sc-if>
+  </div>
+
+  <div style="margin-top:26px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">When</div>
+    <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:2px">
+      <sc-for list="{{ ns.dates }}" as="d" hint-placeholder-count="7">
+        <div onClick="{{ d.tap }}" style="flex:none;width:52px;padding:8px 0;border-radius:12px;background:{{ d.bg }};border:1px solid {{ d.bd }};cursor:pointer;text-align:center">
+          <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.08em;color:{{ d.sub }}">{{ d.dow }}</div>
+          <div style="font-size:15px;font-weight:700;color:{{ d.fg }};margin-top:1px;font-variant-numeric:tabular-nums">{{ d.dom }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px;padding-bottom:2px">
+      <sc-for list="{{ ns.times }}" as="t" hint-placeholder-count="6">
+        <div onClick="{{ t.tap }}" style="flex:none;padding:9px 13px;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }};font-size:13px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums">{{ t.txt }}</div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <sc-for list="{{ ns.durs }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.tap }}" style="flex:none;padding:9px 13px;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ t.txt }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ns.conflict }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:9px;margin-top:12px;background:#F6EEDB;border-radius:11px;padding:10px 13px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#C77E1F;flex:none"></div>
+        <div style="font-size:12.5px;font-weight:500;color:#96690F">{{ ns.conflictTxt }}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="margin-top:26px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">How much</div>
+    <div style="display:flex;background:#ECECE7;border-radius:11px;padding:2px;margin-top:10px">
+      <div onClick="{{ ns.setCharge }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ ns.chSeg.bg }};color:{{ ns.chSeg.fg }};box-shadow:{{ ns.chSeg.sh }}">Charge</div>
+      <div onClick="{{ ns.setFree }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ ns.frSeg.bg }};color:{{ ns.frSeg.fg }};box-shadow:{{ ns.frSeg.sh }}">Free</div>
+    </div>
+    <sc-if value="{{ ns.showPrice }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+        <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:52px;padding:0 16px;flex:1">
+          <span style="font-size:19px;font-weight:700;color:#8A8E89">$</span>
+          <input value="{{ ns.priceStr }}" onChange="{{ ns.setPrice }}" inputMode="decimal" placeholder="0" style="flex:1;border:none;background:transparent;font-size:22px;font-weight:700;padding-left:6px;min-width:0;font-variant-numeric:tabular-nums">
+        </div>
+        <sc-if value="{{ ns.isGroup }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:#6B706C;flex:none">per player</span></sc-if>
+      </div>
+      <div style="font-size:12px;color:#8A8E89;margin-top:7px">{{ ns.prov }}</div>
+      <sc-if value="{{ ns.showTotal }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums">{{ ns.totalLine }}</div>
+      </sc-if>
+    </sc-if>
+    <sc-if value="{{ ns.isFree }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12px;color:#8A8E89;margin-top:10px">Free session — no charges will be created.</div>
+    </sc-if>
+  </div>
+
+  <div style="margin-top:26px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Details</div>
+    <div style="margin-top:10px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Session name</div>
+      <input value="{{ ns.name }}" onChange="{{ ns.setName }}" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    </div>
+    <div style="margin-top:12px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Location</div>
+      <input value="{{ ns.loc }}" onChange="{{ ns.setLoc }}" placeholder="Court 1, Main Gym…" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    </div>
+    <sc-if value="{{ ns.isGroup }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;font-weight:600;color:#6B706C">Capacity</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div onClick="{{ ns.capDec }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:#171918;padding-bottom:2px">−</div>
+          <div style="font-size:17px;font-weight:700;width:24px;text-align:center;font-variant-numeric:tabular-nums">{{ ns.cap }}</div>
+          <div onClick="{{ ns.capInc }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;color:#171918;padding-bottom:2px">+</div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ ns.hasErr }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:16px;background:#F7E9E6;border-radius:11px;padding:11px 14px;font-size:12.5px;font-weight:500;color:#B3402F">{{ ns.err }}</div>
+  </sc-if>
+
+  <div onClick="{{ ns.save }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:18px;opacity:{{ ns.saveOp }}">{{ ns.saveLabel }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.pf }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Player Form" style="flex:1;overflow-y:auto;padding:0 20px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ pf.close }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#171918">✕</div>
+    <div style="font-size:15px;font-weight:700">{{ pf.title }}</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Name</div>
+    <input value="{{ pf.name }}" onChange="{{ pf.setName }}" placeholder="Full name" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Phone</div>
+      <input value="{{ pf.phone }}" onChange="{{ pf.setPhone }}" placeholder="(555) 555-0100" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14px;font-weight:500">
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Email</div>
+      <input value="{{ pf.email }}" onChange="{{ pf.setEmail }}" placeholder="name@email.com" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14px;font-weight:500">
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:8px">Level</div>
+    <div style="display:flex;gap:8px">
+      <sc-for list="{{ pf.levels }}" as="c" hint-placeholder-count="3">
+        <div onClick="{{ c.tap }}" style="padding:9px 14px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ c.txt }}</div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Default rate</div>
+    <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:46px;padding:0 14px">
+      <span style="font-size:15px;font-weight:700;color:#8A8E89">$</span>
+      <input value="{{ pf.rateStr }}" onChange="{{ pf.setRate }}" inputMode="decimal" placeholder="0" style="flex:1;border:none;background:transparent;font-size:15px;font-weight:600;padding-left:6px;min-width:0;font-variant-numeric:tabular-nums">
+      <span style="font-size:12px;color:#8A8E89">per session</span>
+    </div>
+    <div style="font-size:11.5px;color:#8A8E89;margin-top:6px">{{ pf.rateHint }}</div>
+  </div>
+  <div style="margin-top:14px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Coach notes</div>
+    <textarea value="{{ pf.notes }}" onChange="{{ pf.setNotes }}" rows="4" placeholder="Technique focus, goals, injuries…" style="width:100%;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:12px 14px;font-size:14px;line-height:1.5;resize:none"></textarea>
+  </div>
+  <sc-if value="{{ pf.hasErr }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#F7E9E6;border-radius:11px;padding:11px 14px;font-size:12.5px;font-weight:500;color:#B3402F">{{ pf.err }}</div>
+  </sc-if>
+  <div onClick="{{ pf.save }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:18px">{{ pf.saveLabel }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.pd }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Player Detail" style="flex:1;overflow-y:auto;padding:0 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ pd.back }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div onClick="{{ pd.edit }}" style="font-size:13px;font-weight:600;color:#3FA66B;cursor:pointer;padding:8px 4px">Edit</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;margin-top:12px">
+    <div style="width:54px;height:54px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex:none">{{ pd.init }}</div>
+    <div>
+      <div style="font-size:22px;font-weight:700;letter-spacing:-.015em">{{ pd.name }}</div>
+      <div style="font-size:13px;color:#6B706C;margin-top:2px">{{ pd.level }}</div>
+    </div>
+  </div>
+  <sc-if value="{{ pd.isArch }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#EDEDE8;border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:600;color:#6B706C;text-align:center">Archived — hidden from active lists and pickers</div>
+  </sc-if>
+  <sc-if value="{{ pd.notArch }}" hint-placeholder-val="{{ true }}">
+    <div onClick="{{ pd.schedule }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Schedule Session</div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">
+    <sc-for list="{{ pd.tiles }}" as="t" hint-placeholder-count="4">
+      <div onClick="{{ t.tap }}" style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;padding:12px 14px;cursor:{{ t.cur }}">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;color:#6B706C;font-weight:500">{{ t.k }}</div>
+          <sc-if value="{{ t.hasTap }}" hint-placeholder-val="{{ false }}"><span style="color:#B9BDB6;font-size:13px">›</span></sc-if>
+        </div>
+        <div style="font-size:17px;font-weight:700;margin-top:4px;color:{{ t.fg }};font-variant-numeric:tabular-nums">{{ t.v }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ pd.hasNotes }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px">
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Coach notes</div>
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px;font-size:14px;line-height:1.55;text-wrap:pretty">{{ pd.notes }}</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ pd.hasUp }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px">
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Upcoming</div>
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;overflow:hidden">
+        <sc-for list="{{ pd.up }}" as="r" hint-placeholder-count="2">
+          <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-top:{{ r.bt }}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600">{{ r.l1 }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.l2 }}</div>
+            </div>
+            <span style="color:#B9BDB6;font-size:16px">›</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ pd.isNewPl }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;padding:22px;text-align:center">
+      <div style="font-size:14px;font-weight:600">No session history yet</div>
+      <div style="font-size:12.5px;color:#6B706C;margin-top:3px">Schedule their first session.</div>
+      <div onClick="{{ pd.firstCTA }}" style="height:44px;border-radius:11px;background:#171918;color:#F7F7F3;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">Schedule First Session</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ pd.hasHist }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px">
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">History</div>
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;overflow:hidden">
+        <sc-for list="{{ pd.hist }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-top:{{ r.bt }}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600">{{ r.l1 }}</div>
+              <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ r.l2 }}</div>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:{{ r.rFg }}">{{ r.r }}</span>
+            <span style="color:#B9BDB6;font-size:16px">›</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+  <div style="margin-top:24px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Payments</div>
+    <div onClick="{{ pd.payGo }}" style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px;display:flex;align-items:center;cursor:pointer">
+      <div style="flex:1;font-size:13.5px;font-weight:600">{{ pd.paySum }}</div>
+      <span style="color:#B9BDB6;font-size:16px">›</span>
+    </div>
+  </div>
+  <sc-if value="{{ pd.hasContact }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:24px">
+      <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Contact</div>
+      <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:2px 16px">
+        <sc-if value="{{ pd.hasPhone }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;padding:11px 0">
+            <span style="font-size:13px;color:#6B706C">Phone</span><span style="font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ pd.phone }}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ pd.hasEmail }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid #F0F1EC">
+            <span style="font-size:13px;color:#6B706C">Email</span><span style="font-size:13.5px;font-weight:600">{{ pd.email }}</span>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+  <div style="margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div onClick="{{ pd.edit }}" style="height:46px;border-radius:12px;border:1px solid #E5E6E1;background:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Edit</div>
+    <div onClick="{{ pd.archive }}" style="height:46px;border-radius:12px;border:1px solid #E5E6E1;background:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">{{ pd.archLabel }}</div>
+  </div>
+  <div onClick="{{ pd.del }}" style="margin-top:10px;height:46px;border-radius:12px;border:1px solid #EBD4D0;background:#FFFFFF;color:#B3402F;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">Delete Player</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.login }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Login" style="flex:1;overflow-y:auto;padding:0 24px 40px;display:flex;flex-direction:column;justify-content:center">
+  <div style="text-align:center">
+    <div style="font-size:30px;font-weight:800;letter-spacing:-.03em">Coach<span style="color:#3FA66B">OS</span></div>
+    <div style="font-size:13.5px;color:#6B706C;margin-top:6px">Your coaching command center</div>
+  </div>
+  <div style="margin-top:36px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Email</div>
+    <input value="{{ auth.email }}" onChange="{{ auth.setEmail }}" style="width:100%;height:48px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin:14px 0 6px">Password</div>
+    <input type="password" value="{{ auth.pw }}" onChange="{{ auth.setPw }}" style="width:100%;height:48px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+  </div>
+  <sc-if value="{{ auth.hasErr }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#F7E9E6;border-radius:11px;padding:11px 14px;font-size:12.5px;font-weight:500;color:#B3402F">{{ auth.err }}</div>
+  </sc-if>
+  <div onClick="{{ auth.signIn }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:20px">
+    <sc-if value="{{ auth.notBusy }}" hint-placeholder-val="{{ true }}"><span>Sign In</span></sc-if>
+    <sc-if value="{{ auth.busy }}" hint-placeholder-val="{{ false }}"><span>Signing in…</span></sc-if>
+  </div>
+  <div style="text-align:center;font-size:13px;color:#6B706C;margin-top:18px">New here? <span onClick="{{ auth.goSignup }}" style="color:#3FA66B;font-weight:600;cursor:pointer">Create account</span></div>
+  <div style="text-align:center;font-size:11.5px;color:#A2A69F;margin-top:28px">Demo credentials are pre-filled — just sign in.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.signup }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Signup" style="flex:1;overflow-y:auto;padding:0 24px 40px;display:flex;flex-direction:column;justify-content:center">
+  <div style="text-align:center">
+    <div style="font-size:26px;font-weight:800;letter-spacing:-.03em">Create your account</div>
+    <div style="font-size:13px;color:#6B706C;margin-top:5px">Coach<span style="color:#3FA66B;font-weight:700">OS</span> — free while in beta</div>
+  </div>
+  <div style="margin-top:28px">
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Name</div>
+    <input value="{{ su.name }}" onChange="{{ su.setName }}" placeholder="Your full name" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    <sc-if value="{{ su.hasEName }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#B3402F;margin-top:5px;font-weight:500">{{ su.eName }}</div></sc-if>
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin:13px 0 6px">Email</div>
+    <input value="{{ su.email }}" onChange="{{ su.setEmail }}" placeholder="you@email.com" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    <sc-if value="{{ su.hasEEmail }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#B3402F;margin-top:5px;font-weight:500">{{ su.eEmail }}</div></sc-if>
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin:13px 0 6px">Password</div>
+    <input type="password" value="{{ su.pw }}" onChange="{{ su.setPw }}" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    <sc-if value="{{ su.hasEPw }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#B3402F;margin-top:5px;font-weight:500">{{ su.ePw }}</div></sc-if>
+    <div style="font-size:12px;font-weight:600;color:#6B706C;margin:13px 0 6px">Confirm password</div>
+    <input type="password" value="{{ su.pw2 }}" onChange="{{ su.setPw2 }}" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14.5px;font-weight:500">
+    <sc-if value="{{ su.hasEPw2 }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#B3402F;margin-top:5px;font-weight:500">{{ su.ePw2 }}</div></sc-if>
+  </div>
+  <div onClick="{{ su.submit }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:20px">
+    <sc-if value="{{ su.notBusy }}" hint-placeholder-val="{{ true }}"><span>Create Account</span></sc-if>
+    <sc-if value="{{ su.busy }}" hint-placeholder-val="{{ false }}"><span>Creating account…</span></sc-if>
+  </div>
+  <div style="text-align:center;font-size:13px;color:#6B706C;margin-top:18px">Already have an account? <span onClick="{{ su.goLogin }}" style="color:#3FA66B;font-weight:600;cursor:pointer">Sign in</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.ob }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Onboarding" style="flex:1;overflow-y:auto;padding:0 24px 40px;display:flex;flex-direction:column;justify-content:center">
+  <div style="display:flex;justify-content:center;gap:6px">
+    <sc-for list="{{ ob.dots }}" as="d" hint-placeholder-count="5"><div style="width:7px;height:7px;border-radius:50%;background:{{ d.bg }}"></div></sc-for>
+  </div>
+  <sc-if value="{{ ob.isS0 }}" hint-placeholder-val="{{ true }}">
+    <div style="text-align:center;margin-top:30px">
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.03em">Coach<span style="color:#3FA66B">OS</span></div>
+      <div style="font-size:15px;color:#6B706C;margin-top:14px;line-height:1.6;text-wrap:pretty">Know what’s next, what needs doing, and who owes you — from your phone, courtside.</div>
+    </div>
+    <div onClick="{{ ob.next }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:34px">Get Started</div>
+  </sc-if>
+  <sc-if value="{{ ob.isS1 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:30px">What’s your name?</div>
+    <input value="{{ ob.name }}" onChange="{{ ob.setName }}" placeholder="Your full name" style="width:100%;height:50px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:15px;font-weight:500;margin-top:16px">
+    <div onClick="{{ ob.next }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Continue</div>
+  </sc-if>
+  <sc-if value="{{ ob.isS2 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:30px">Business or academy name</div>
+    <div style="font-size:13px;color:#6B706C;margin-top:5px">Optional — you can add this later.</div>
+    <input value="{{ ob.biz }}" onChange="{{ ob.setBiz }}" placeholder="e.g. Peak Performance Tennis" style="width:100%;height:50px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:15px;font-weight:500;margin-top:16px">
+    <div onClick="{{ ob.next }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Continue</div>
+  </sc-if>
+  <sc-if value="{{ ob.isS3 }}" hint-placeholder-val="{{ false }}">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin-top:30px">Default session rate</div>
+    <div style="font-size:13px;color:#6B706C;margin-top:5px">Used when a player doesn’t have their own rate.</div>
+    <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:54px;padding:0 16px;margin-top:16px">
+      <span style="font-size:19px;font-weight:700;color:#8A8E89">$</span>
+      <input value="{{ ob.rate }}" onChange="{{ ob.setRate }}" inputMode="decimal" style="flex:1;border:none;background:transparent;font-size:20px;font-weight:700;padding-left:6px;min-width:0">
+      <span style="font-size:12.5px;color:#8A8E89">per session</span>
+    </div>
+    <div onClick="{{ ob.next }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Continue</div>
+  </sc-if>
+  <sc-if value="{{ ob.isS4 }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;margin-top:30px">
+      <div style="width:56px;height:56px;border-radius:50%;background:#E4F2E9;color:#2E7D4F;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto">✓</div>
+      <div style="font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:18px">You’re set, {{ ob.firstName }}</div>
+      <div style="font-size:14px;color:#6B706C;margin-top:8px">Add players and schedule your first session.</div>
+    </div>
+    <div onClick="{{ ob.finish }}" style="height:50px;border-radius:13px;background:#3FA66B;color:#FFFFFF;font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:30px">Go to Dashboard</div>
+  </sc-if>
+  <sc-if value="{{ ob.showPrev }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ ob.prev }}" style="text-align:center;font-size:13px;font-weight:600;color:#6B706C;padding:14px;cursor:pointer">Back</div>
+  </sc-if>
+  <sc-if value="{{ ob.isS4 }}" hint-placeholder-val="{{ true }}"><div></div></sc-if>
+  <div onClick="{{ ob.skip }}" style="text-align:center;font-size:12.5px;font-weight:600;color:#A2A69F;padding:10px;cursor:pointer">Skip for now</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.settings }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Settings" style="flex:1;overflow-y:auto;padding:0 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ set.back }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-size:15px;font-weight:700">Settings</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Profile</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Name</div>
+      <input value="{{ set.name }}" onChange="{{ set.setName }}" style="width:100%;height:42px;border:1px solid #E5E6E1;border-radius:10px;background:#FFFFFF;padding:0 12px;font-size:14px;font-weight:500">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin:12px 0 6px">Email</div>
+      <input value="{{ set.email }}" onChange="{{ set.setEmail }}" style="width:100%;height:42px;border:1px solid #E5E6E1;border-radius:10px;background:#FFFFFF;padding:0 12px;font-size:14px;font-weight:500">
+    </div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Business</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Academy / business name</div>
+      <input value="{{ set.biz }}" onChange="{{ set.setBiz }}" style="width:100%;height:42px;border:1px solid #E5E6E1;border-radius:10px;background:#FFFFFF;padding:0 12px;font-size:14px;font-weight:500">
+    </div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Coaching</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:6px">Default session rate</div>
+      <div style="display:flex;align-items:center;border:1px solid #E5E6E1;border-radius:10px;height:42px;padding:0 12px">
+        <span style="font-size:14px;font-weight:700;color:#8A8E89">$</span>
+        <input value="{{ set.rateStr }}" onChange="{{ set.setRate }}" inputMode="decimal" style="flex:1;border:none;background:transparent;font-size:14px;font-weight:600;padding-left:5px;min-width:0">
+        <span style="font-size:11.5px;color:#8A8E89">per session</span>
+      </div>
+      <div onClick="{{ set.openAw }}" style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;cursor:pointer">
+        <div>
+          <div style="font-size:13.5px;font-weight:600">Attendance window</div>
+          <div style="font-size:11.5px;color:#8A8E89;margin-top:2px">How long after a session before attendance counts as missing</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex:none;margin-left:10px"><span style="font-size:13px;font-weight:600;color:#3FA66B">{{ set.awVal }}</span><span style="color:#B9BDB6;font-size:15px">›</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Appearance</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:#6B706C;margin-bottom:8px">Theme</div>
+      <div style="display:flex;background:#ECECE7;border-radius:11px;padding:2px">
+        <div onClick="{{ set.setLight }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ set.lSeg.bg }};color:{{ set.lSeg.fg }};box-shadow:{{ set.lSeg.sh }}">Light</div>
+        <div onClick="{{ set.setDark }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:{{ set.dSeg.bg }};color:{{ set.dSeg.fg }};box-shadow:{{ set.dSeg.sh }}">Dark</div>
+      </div>
+      <sc-if value="{{ set.isDark }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:11.5px;color:#8A8E89;margin-top:8px">Preference saved — dark theme ships with the production build; the prototype renders light.</div>
+      </sc-if>
+    </div>
+  </div>
+  <div style="margin-top:20px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Account</div>
+    <div onClick="{{ set.signOut }}" style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;padding:15px 16px;font-size:14px;font-weight:600;color:#B3402F;cursor:pointer;text-align:center">Sign Out</div>
+  </div>
+  <sc-if value="{{ set.hasErr }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#F7E9E6;border-radius:11px;padding:11px 14px;font-size:12.5px;font-weight:500;color:#B3402F">{{ set.err }}</div>
+  </sc-if>
+  <sc-if value="{{ set.dirty }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ set.save }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">{{ set.saveLabel }}</div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.help }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Help" style="flex:1;overflow-y:auto;padding:0 20px 130px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ hlp.back }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-size:15px;font-weight:700">Help</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:20px;padding:16px">
+    <div style="font-size:14px;font-weight:700">Getting started</div>
+    <div style="font-size:13px;color:#6B706C;line-height:1.6;margin-top:6px;text-wrap:pretty">Add players, then schedule sessions with the green + button. Priced sessions automatically create a pending charge per player — mark them paid as money comes in, and take attendance right from the session.</div>
+  </div>
+  <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:12px;padding:16px">
+    <div style="font-size:14px;font-weight:700">Money is recorded, not moved</div>
+    <div style="font-size:13px;color:#6B706C;line-height:1.6;margin-top:6px;text-wrap:pretty">CoachOS never processes payments. “Mark Paid” records that you collected money in person, by transfer, or however you like.</div>
+  </div>
+  <div onClick="{{ hlp.mail }}" style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:12px;padding:15px 16px;display:flex;align-items:center;cursor:pointer">
+    <div style="flex:1;font-size:14px;font-weight:600">Contact support</div>
+    <span style="color:#B9BDB6;font-size:16px">›</span>
+  </div>
+  <div style="margin-top:22px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#6B706C">Prototype states</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:10px;overflow:hidden">
+      <div onClick="{{ hlp.demoLoad }}" style="padding:14px 16px;display:flex;align-items:center;cursor:pointer">
+        <div style="flex:1;font-size:13.5px;font-weight:600">Preview loading state</div><span style="color:#B9BDB6;font-size:16px">›</span>
+      </div>
+      <div onClick="{{ hlp.demoErr }}" style="padding:14px 16px;display:flex;align-items:center;cursor:pointer;border-top:1px solid #F0F1EC">
+        <div style="flex:1;font-size:13.5px;font-weight:600">Preview error state</div><span style="color:#B9BDB6;font-size:16px">›</span>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11.5px;color:#A2A69F;margin-top:26px">CoachOS 0.1 — design prototype · mock data only</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.demoL }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Loading Demo" style="flex:1;overflow-y:auto;padding:0 20px 40px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ hlp.demoBack }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-size:15px;font-weight:700">Loading</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="margin-top:22px;height:24px;width:60%;border-radius:8px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  <div style="margin-top:16px;height:170px;border-radius:18px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  <div style="margin-top:14px;height:88px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  <div style="margin-top:14px;height:88px;border-radius:16px;background:linear-gradient(90deg,#ECECE7 25%,#F4F4EF 42%,#ECECE7 60%);background-size:780px 100%;animation:shimmer 1.2s linear infinite"></div>
+  <div style="text-align:center;font-size:11.5px;color:#A2A69F;margin-top:22px">Skeletons hold the layout — no spinners, no jumping.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ scr.demoE }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Error Demo" style="flex:1;overflow-y:auto;padding:0 20px 40px;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px">
+    <div onClick="{{ hlp.demoBack }}" style="width:36px;height:36px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:#171918;padding-bottom:2px">‹</div>
+    <div style="font-size:15px;font-weight:700">Error</div>
+    <div style="width:36px"></div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;padding-bottom:60px">
+    <div style="width:52px;height:52px;border-radius:50%;background:#F7E9E6;color:#B3402F;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;margin:0 auto">!</div>
+    <div style="font-size:17px;font-weight:700;margin-top:16px">Something went wrong</div>
+    <div style="font-size:13.5px;color:#6B706C;margin-top:6px">We couldn’t load your sessions.</div>
+    <div onClick="{{ hlp.retry }}" style="height:46px;border-radius:12px;background:#171918;color:#F7F7F3;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:20px auto 0;width:160px">Try Again</div>
+  </div>
+</div>
+</sc-if>
+
+
+<sc-if value="{{ nav.show }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:30;background:rgba(251,251,248,.94);backdrop-filter:blur(14px);border-top:1px solid #E5E6E1;padding:6px 8px 4px">
+  <div style="display:flex;align-items:center">
+    <div onClick="{{ nav.goHome }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ nav.homeC }}" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M4 10.5 12 4l8 6.5V20h-5.2v-4.8h-5.6V20H4Z"></path></svg>
+      <span style="font-size:10px;font-weight:600;color:{{ nav.homeC }}">Home</span>
+    </div>
+    <div onClick="{{ nav.goSched }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ nav.schedC }}" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="3.5" y="5.5" width="17" height="15" rx="3"></rect><path d="M3.5 10.5h17M8.5 3.5v3.5M15.5 3.5v3.5"></path></svg>
+      <span style="font-size:10px;font-weight:600;color:{{ nav.schedC }}">Schedule</span>
+    </div>
+    <div style="flex:1;display:flex;justify-content:center">
+      <div onClick="{{ nav.plus }}" style="width:52px;height:52px;border-radius:50%;background:#3FA66B;color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:-26px;box-shadow:0 6px 16px rgba(63,166,107,.38),0 1px 2px rgba(23,25,24,.15)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </div>
+    </div>
+    <div onClick="{{ nav.goPlayers }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ nav.playersC }}" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="8.6" r="3.4"></circle><path d="M5.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4"></path></svg>
+      <span style="font-size:10px;font-weight:600;color:{{ nav.playersC }}">Players</span>
+    </div>
+    <div onClick="{{ nav.goPay }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="{{ nav.payC }}" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="6.5" width="18" height="12" rx="2.5"></rect><circle cx="12" cy="12.5" r="2.4"></circle></svg>
+      <span style="font-size:10px;font-weight:600;color:{{ nav.payC }}">Payments</span>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;padding-top:7px"><div style="width:134px;height:5px;border-radius:3px;background:#171918;opacity:.85"></div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ shC.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shC.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1)">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">New Session</div>
+    <sc-if value="{{ shC.hasCtx }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#8A8E89;text-align:center;margin-top:4px">{{ shC.ctxTxt }}</div></sc-if>
+    <div onClick="{{ shC.priv }}" style="display:flex;align-items:center;gap:13px;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;padding:15px 16px;margin-top:16px;cursor:pointer">
+      <div style="width:40px;height:40px;border-radius:12px;background:#E4F2E9;display:flex;align-items:center;justify-content:center;flex:none">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2E7D4F" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="8.6" r="3.4"></circle><path d="M5.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4"></path></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Private Lesson</div><div style="font-size:12.5px;color:#6B706C;margin-top:1px">One player, one-on-one</div></div>
+      <span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+    <div onClick="{{ shC.grp }}" style="display:flex;align-items:center;gap:13px;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;padding:15px 16px;margin-top:10px;cursor:pointer">
+      <div style="width:40px;height:40px;border-radius:12px;background:#EDEDE8;display:flex;align-items:center;justify-content:center;flex:none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#171918" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><circle cx="9" cy="8.8" r="3"></circle><path d="M3.5 19c.7-3.1 2.8-4.7 5.5-4.7s4.8 1.6 5.5 4.7"></path><circle cx="16.8" cy="9.6" r="2.5"></circle><path d="M16.2 14.5c2.3.3 3.8 1.7 4.3 4.5"></path></svg>
+      </div>
+      <div style="flex:1"><div style="font-size:15px;font-weight:700">Group Session</div><div style="font-size:12.5px;color:#6B706C;margin-top:1px">Multiple players, per-player price</div></div>
+      <span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shMore.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shMore.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1)">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:2px 2px 14px;border-bottom:1px solid #F0F1EC">
+      <div style="width:44px;height:44px;border-radius:50%;background:#171918;color:#F7F7F3;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex:none">{{ shMore.init }}</div>
+      <div><div style="font-size:15px;font-weight:700">{{ shMore.name }}</div><div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ shMore.biz }}</div></div>
+    </div>
+    <div onClick="{{ shMore.settings }}" style="display:flex;align-items:center;padding:15px 2px;cursor:pointer;border-bottom:1px solid #F0F1EC">
+      <div style="flex:1;font-size:15px;font-weight:600">Settings</div><span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+    <div onClick="{{ shMore.help }}" style="display:flex;align-items:center;padding:15px 2px;cursor:pointer;border-bottom:1px solid #F0F1EC">
+      <div style="flex:1;font-size:15px;font-weight:600">Help</div><span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+    <div onClick="{{ shMore.signout }}" style="padding:15px 2px;cursor:pointer;font-size:15px;font-weight:600;color:#B3402F">Sign Out</div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ ps.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ ps.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div data-screen-label="Payment Sheet" style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1);max-height:82%;overflow-y:auto">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex:none">{{ ps.init }}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:16px;font-weight:700">{{ ps.name }}</div>
+        <div style="font-size:12.5px;color:#6B706C;margin-top:1px">{{ ps.ctx }}</div>
+      </div>
+      <span style="font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;background:{{ ps.badge.bg }};color:{{ ps.badge.fg }};flex:none">{{ ps.badge.txt }}</span>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:16px;padding:4px 16px">
+      <sc-for list="{{ ps.lines }}" as="l" hint-placeholder-count="3">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #F0F1EC">
+          <span style="font-size:13.5px;color:#6B706C">{{ l.k }}</span>
+          <span style="font-size:15px;font-variant-numeric:tabular-nums;font-weight:{{ l.w }};color:{{ l.c }}">{{ l.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ps.hasNote }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:12.5px;color:#6B706C;margin-top:12px;line-height:1.5;text-wrap:pretty">{{ ps.note }}</div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+      <sc-for list="{{ ps.acts }}" as="b" hint-placeholder-count="0">
+        <div onClick="{{ b.tap }}" style="height:47px;border-radius:12px;background:{{ b.bg }};color:{{ b.fg }};border:1px solid {{ b.bd }};font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer">{{ b.label }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ ps.hasSess }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ ps.goSess }}" style="text-align:center;font-size:13px;font-weight:600;color:#3FA66B;padding:15px 0 2px;cursor:pointer">View Session</div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shCr.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shCr.close }}" style="position:absolute;inset:0;z-index:44;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:45;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1)">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">Credit Charge</div>
+    <div style="font-size:12.5px;color:#6B706C;text-align:center;margin-top:3px">{{ shCr.name }}</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:14px;padding:4px 16px">
+      <sc-for list="{{ shCr.lines }}" as="l" hint-placeholder-count="3">
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #F0F1EC">
+          <span style="font-size:13px;color:#6B706C">{{ l.k }}</span><span style="font-size:14px;font-weight:600;font-variant-numeric:tabular-nums">{{ l.v }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:50px;padding:0 14px;margin-top:14px">
+      <span style="font-size:17px;font-weight:700;color:#8A8E89">$</span>
+      <input value="{{ shCr.amt }}" onChange="{{ shCr.setAmt }}" inputMode="decimal" placeholder="0" style="flex:1;border:none;background:transparent;font-size:18px;font-weight:700;padding-left:6px;min-width:0;font-variant-numeric:tabular-nums">
+      <span style="font-size:12px;color:#8A8E89">credit</span>
+    </div>
+    <input value="{{ shCr.note }}" onChange="{{ shCr.setNote }}" placeholder="Reason (optional)" style="width:100%;height:44px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:13.5px;font-weight:500;margin-top:10px">
+    <sc-if value="{{ shCr.hasErr }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;background:#F7E9E6;border-radius:11px;padding:10px 13px;font-size:12.5px;font-weight:500;color:#B3402F">{{ shCr.err }}</div>
+    </sc-if>
+    <div onClick="{{ shCr.apply }}" style="height:48px;border-radius:12px;background:#171918;color:#F7F7F3;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">Apply Credit</div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shMc.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shMc.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1);max-height:84%;overflow-y:auto">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">Add Manual Charge</div>
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Player</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">
+      <sc-for list="{{ shMc.chips }}" as="c" hint-placeholder-count="4">
+        <div onClick="{{ c.tap }}" style="padding:8px 13px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ c.txt }}</div>
+      </sc-for>
+    </div>
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Amount</div>
+    <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:50px;padding:0 14px;margin-top:9px">
+      <span style="font-size:17px;font-weight:700;color:#8A8E89">$</span>
+      <input value="{{ shMc.amt }}" onChange="{{ shMc.setAmt }}" inputMode="decimal" placeholder="0" style="flex:1;border:none;background:transparent;font-size:18px;font-weight:700;padding-left:6px;min-width:0;font-variant-numeric:tabular-nums">
+    </div>
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Due</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">
+      <sc-for list="{{ shMc.dues }}" as="c" hint-placeholder-count="4">
+        <div onClick="{{ c.tap }}" style="padding:8px 13px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ c.txt }}</div>
+      </sc-for>
+    </div>
+    <input value="{{ shMc.note }}" onChange="{{ shMc.setNote }}" placeholder="What’s this for? e.g. Racquet restring" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:13.5px;font-weight:500;margin-top:16px">
+    <sc-if value="{{ shMc.hasErr }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;background:#F7E9E6;border-radius:11px;padding:10px 13px;font-size:12.5px;font-weight:500;color:#B3402F">{{ shMc.err }}</div>
+    </sc-if>
+    <div onClick="{{ shMc.save }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px">{{ shMc.saveLabel }}</div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shEs.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shEs.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1);max-height:84%;overflow-y:auto">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">Edit Session</div>
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Name</div>
+    <input value="{{ shEs.name }}" onChange="{{ shEs.setName }}" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14px;font-weight:500;margin-top:9px">
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">When</div>
+    <div style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px">
+      <sc-for list="{{ shEs.dates }}" as="d" hint-placeholder-count="5">
+        <div onClick="{{ d.tap }}" style="flex:none;width:50px;padding:7px 0;border-radius:12px;background:{{ d.bg }};border:1px solid {{ d.bd }};cursor:pointer;text-align:center">
+          <div style="font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.08em;color:{{ d.sub }}">{{ d.dow }}</div>
+          <div style="font-size:14px;font-weight:700;color:{{ d.fg }};margin-top:1px;font-variant-numeric:tabular-nums">{{ d.dom }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;overflow-x:auto;margin-top:9px;padding-bottom:2px">
+      <sc-for list="{{ shEs.times }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.tap }}" style="flex:none;padding:8px 12px;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }};font-size:12.5px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums">{{ t.txt }}</div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+      <sc-for list="{{ shEs.durs }}" as="t" hint-placeholder-count="5">
+        <div onClick="{{ t.tap }}" style="flex:none;padding:8px 12px;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }};font-size:12.5px;font-weight:600;cursor:pointer">{{ t.txt }}</div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ shEs.notFree }}" hint-placeholder-val="{{ false }}">
+      <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Price</div>
+      <div style="display:flex;align-items:center;background:#FFFFFF;border:1px solid #E5E6E1;border-radius:12px;height:48px;padding:0 14px;margin-top:9px">
+        <span style="font-size:16px;font-weight:700;color:#8A8E89">$</span>
+        <input value="{{ shEs.priceStr }}" onChange="{{ shEs.setPrice }}" inputMode="decimal" style="flex:1;border:none;background:transparent;font-size:16px;font-weight:700;padding-left:6px;min-width:0;font-variant-numeric:tabular-nums">
+        <sc-if value="{{ shEs.isGroup }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#8A8E89">per player</span></sc-if>
+      </div>
+    </sc-if>
+    <div style="font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:#6B706C;margin-top:16px">Location</div>
+    <input value="{{ shEs.loc }}" onChange="{{ shEs.setLoc }}" style="width:100%;height:46px;border:1px solid #E5E6E1;border-radius:12px;background:#FFFFFF;padding:0 14px;font-size:14px;font-weight:500;margin-top:9px">
+    <sc-if value="{{ shEs.isGroup }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12.5px;font-weight:600;color:#6B706C">Capacity</div>
+        <div style="display:flex;align-items:center;gap:13px">
+          <div onClick="{{ shEs.capDec }}" style="width:34px;height:34px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;padding-bottom:2px">−</div>
+          <div style="font-size:16px;font-weight:700;width:22px;text-align:center;font-variant-numeric:tabular-nums">{{ shEs.cap }}</div>
+          <div onClick="{{ shEs.capInc }}" style="width:34px;height:34px;border-radius:50%;border:1px solid #E5E6E1;background:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;padding-bottom:2px">+</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ shEs.hasErr }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px;background:#F7E9E6;border-radius:11px;padding:10px 13px;font-size:12.5px;font-weight:500;color:#B3402F">{{ shEs.err }}</div>
+    </sc-if>
+    <div onClick="{{ shEs.save }}" style="height:48px;border-radius:12px;background:#3FA66B;color:#FFFFFF;font-size:14.5px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:16px">Save Changes</div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shAdd.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shAdd.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1);max-height:72%;overflow-y:auto">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">Add Player</div>
+    <div style="font-size:12px;color:#8A8E89;text-align:center;margin-top:4px">{{ shAdd.note }}</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:14px;overflow:hidden">
+      <sc-for list="{{ shAdd.rows }}" as="r" hint-placeholder-count="3">
+        <div onClick="{{ r.tap }}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-top:{{ r.bt }}">
+          <div style="width:38px;height:38px;border-radius:50%;background:#E9EAE4;color:#171918;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex:none">{{ r.init }}</div>
+          <div style="flex:1"><div style="font-size:14.5px;font-weight:600">{{ r.name }}</div><div style="font-size:12px;color:#6B706C">{{ r.sub }}</div></div>
+          <span style="font-size:13px;font-weight:600;color:#3FA66B">Add</span>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ shAdd.none }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;font-size:13px;color:#6B706C;padding:22px 0 6px">Every active player is already on this session.</div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shMenu.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shMenu.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1)">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">{{ shMenu.name }}</div>
+    <div onClick="{{ shMenu.msg }}" style="display:flex;align-items:center;padding:15px 2px;cursor:pointer;border-bottom:1px solid #F0F1EC;margin-top:8px">
+      <div style="flex:1;font-size:15px;font-weight:600">Message</div><span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+    <div onClick="{{ shMenu.view }}" style="display:flex;align-items:center;padding:15px 2px;cursor:pointer;border-bottom:1px solid #F0F1EC">
+      <div style="flex:1;font-size:15px;font-weight:600">View Player</div><span style="color:#B9BDB6;font-size:17px">›</span>
+    </div>
+    <sc-if value="{{ shMenu.showRemove }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ shMenu.remove }}" style="padding:15px 2px;cursor:pointer;font-size:15px;font-weight:600;color:#B3402F">Remove from Session</div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<sc-if value="{{ shAw.open }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ shAw.close }}" style="position:absolute;inset:0;z-index:40;background:rgba(23,25,24,.45);animation:fadeIn .2s ease"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#FCFCFA;border-radius:20px 20px 0 0;padding:10px 20px 34px;box-shadow:0 -12px 40px rgba(23,25,24,.18);animation:sheetUp .28s cubic-bezier(.32,.72,0,1)">
+    <div style="width:36px;height:4px;border-radius:2px;background:#DADBD4;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;text-align:center">Attendance Window</div>
+    <div style="font-size:12px;color:#8A8E89;text-align:center;margin-top:4px">How long after a session ends before attendance counts as missing</div>
+    <div style="background:#FFFFFF;border:1px solid #E5E6E1;border-radius:14px;margin-top:14px;padding:2px 16px">
+      <sc-for list="{{ shAw.opts }}" as="o" hint-placeholder-count="4">
+        <div onClick="{{ o.tap }}" style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;cursor:pointer;border-top:1px solid #F0F1EC">
+          <span style="font-size:14.5px;font-weight:600">{{ o.txt }}</span>
+          <sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><span style="color:#3FA66B;font-weight:700;font-size:15px">✓</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ dlg.open }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:60;background:rgba(23,25,24,.5);animation:fadeIn .18s ease;display:flex;align-items:center;justify-content:center;padding:28px">
+    <div style="background:#FCFCFA;border-radius:18px;padding:20px;width:100%;max-width:330px;animation:popIn .22s ease;box-shadow:0 24px 60px rgba(23,25,24,.3)">
+      <div style="font-size:16.5px;font-weight:700;letter-spacing:-.01em">{{ dlg.title }}</div>
+      <div style="font-size:13.5px;color:#6B706C;margin-top:8px;line-height:1.55;text-wrap:pretty">{{ dlg.body }}</div>
+      <sc-if value="{{ dlg.hasInput }}" hint-placeholder-val="{{ false }}">
+        <input value="{{ dlg.inVal }}" onChange="{{ dlg.setIn }}" placeholder="{{ dlg.inPh }}" style="width:100%;height:44px;border:1px solid #E5E6E1;border-radius:11px;background:#FFFFFF;padding:0 13px;font-size:14px;font-weight:500;margin-top:14px">
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+        <sc-for list="{{ dlg.btns }}" as="b" hint-placeholder-count="2">
+          <div onClick="{{ b.tap }}" style="height:45px;border-radius:12px;background:{{ b.bg }};color:{{ b.fg }};border:1px solid {{ b.bd }};font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ b.op }}">{{ b.label }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+
+<sc-if value="{{ tst.show }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:20px;right:20px;bottom:106px;z-index:80;display:flex;justify-content:center;pointer-events:none">
+  <div style="background:#171918;color:#F7F7F3;font-size:13px;font-weight:500;padding:11px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(23,25,24,.28);animation:toastUp .25s ease-out;text-align:center">{{ tst.msg }}</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;login&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;coachState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;established&quot;,&quot;brand-new&quot;],&quot;default&quot;:&quot;established&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;}}">
+class Component extends DCLogic {
+  state = this.seed();
+
+  componentDidUpdate(pp){
+    if(pp.coachState!==this.props.coachState || pp.startScreen!==this.props.startScreen){ this.setState(this.seed()); }
+  }
+
+  // ── frozen demo clock ──
+  T(){ return '2026-08-16'; }
+  NOWM(){ return 810; } // 1:30 PM
+
+  // ── date/format utils ──
+  d2(n){ return n<10 ? '0'+n : ''+n; }
+  D(iso){ return new Date(iso+'T12:00:00'); }
+  addDays(iso,n){ const d=this.D(iso); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+this.d2(d.getMonth()+1)+'-'+this.d2(d.getDate()); }
+  dow(iso){ return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][this.D(iso).getDay()]; }
+  dowFull(iso){ return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][this.D(iso).getDay()]; }
+  mon(iso){ return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][this.D(iso).getMonth()]; }
+  monFull(iso){ return ['January','February','March','April','May','June','July','August','September','October','November','December'][this.D(iso).getMonth()]; }
+  dom(iso){ return this.D(iso).getDate(); }
+  fmtLong(iso){ return this.dowFull(iso)+', '+this.monFull(iso)+' '+this.dom(iso); }
+  fmtMed(iso){ return this.dow(iso)+', '+this.mon(iso)+' '+this.dom(iso); }
+  fmtShort(iso){ return this.mon(iso)+' '+this.dom(iso); }
+  t12(min){ let h=Math.floor(min/60); const m=min%60; const ap=h>=12?'PM':'AM'; h=h%12; if(h===0)h=12; return h+':'+this.d2(m)+' '+ap; }
+  rel(iso){ const T=this.T(); if(iso===T) return 'Today'; if(iso===this.addDays(T,1)) return 'Tomorrow'; if(iso===this.addDays(T,-1)) return 'Yesterday'; return this.fmtMed(iso); }
+  money(n){ const r=Math.round(n*100)/100; return '$'+(r%1?r.toFixed(2):r); }
+  initials(name){ return name.split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+  // ── seed ──
+  seed(){
+    const mode=(this.props&&this.props.coachState)||'established';
+    const start=(this.props&&this.props.startScreen)||'dashboard';
+    const T='2026-08-16';
+    const base={
+      stack:[{s:start==='login'?'login':'dash'}],
+      tab:'home', visited:{home:true}, skel:false,
+      sheet:null, dlg:null, toastO:null,
+      auth:{email:'jacob@peakperformance.co', pw:'demo-pass', err:'', busy:false},
+      su:{name:'',email:'',pw:'',pw2:'',errs:{},busy:false},
+      ob:{step:0,name:'Jacob Reyes',biz:'Peak Performance Tennis',rate:'70'},
+      coach:{name:'Jacob Reyes',first:'Jacob',email:'jacob@peakperformance.co',biz:'Peak Performance Tennis',rate:70,attWindow:'24 hours',theme:'Light'},
+      setDraft:null, setSaving:false,
+      plQ:'', plTab:'active', payQ:'', payTab:'pending', payPlayer:null,
+      schedView:'week', schedDate:T, schedMonth:'2026-08', showCanc:{},
+      ns:null, att:null, pf:null, es:null, cr:null, mc:null,
+      players:[], sessions:[], pays:[],
+    };
+    if(mode==='brand-new'){ base.coach={...base.coach,name:'Jacob',first:'Jacob',biz:''}; return base; }
+    const P=(id,name,level,rate,phone,email,notes)=>({id,name,level,rate,phone,email,notes,archived:false,deleted:false});
+    base.players=[
+      P('p1','Maya Okonkwo','Intermediate',75,'(415) 555-0114','maya.o@example.com','Working on two-handed backhand consistency. Serve toss drifting right — film it next session.'),
+      P('p2','Marcus Johnson','Advanced',90,'(415) 555-0182','marcus.j@example.com','Prepping for the Labor Day open. Focus: return depth and net transitions.'),
+      P('p3','Sophia Williams','Beginner',60,'(415) 555-0139','sophia.w@example.com','New to the game — keep drills short and fun. Eastern forehand grip.'),
+      P('p4','Daniel Brown','Intermediate',75,'(415) 555-0167','daniel.b@example.com','Footwork ladder warmups. Wears a knee brace — avoid extended lateral drills.'),
+      P('p5','Ethan Davis','Advanced',90,'(415) 555-0158','ethan.d@example.com','College recruiting tape in September. Building serve +1 patterns.'),
+      P('p6','Olivia Carter','Beginner',60,'(415) 555-0121','olivia.c@example.com','Second month. Building rally tolerance — 10-ball goal.'),
+      Object.assign(P('p7','Liam Foster','Intermediate',70,'(415) 555-0175','liam.f@example.com','Moved across town in June.'),{archived:true}),
+    ];
+    const S=(id,type,name,date,startMin,dur,price,free,loc,cap,pids,extra)=>Object.assign({id,type,name,date,start:startMin,dur,price,free:!!free,loc,cap,pids,status:'ok',att:null,skipped:false},extra||{});
+    base.sessions=[
+      S('s1','private','Maya Okonkwo Private Lesson',T,960,60,75,0,'Court 2',null,['p1']),
+      S('s2','group','Sunday Evening Group',T,1080,90,35,0,'Court 1',6,['p3','p4','p6']),
+      S('s3','private','Marcus Johnson Private Lesson',T,540,60,90,0,'Court 2',null,['p2'],{att:{p2:'present'}}),
+      S('s4','group','Wednesday Drills','2026-08-13',1020,90,35,0,'Main Court',6,['p1','p2','p4','p5']),
+      S('s5','private','Sophia Williams Private Lesson','2026-08-14',600,60,60,0,'Court 3',null,['p3']),
+      S('s6','private','Ethan Davis Private Lesson','2026-08-12',1080,60,90,0,'Court 2',null,['p5'],{att:{p5:'present'}}),
+      S('s7','group','Tuesday Group','2026-08-18',1020,90,35,0,'Court 1',6,['p3','p6'],{status:'cancelled'}),
+      S('s8','private','Olivia Carter Private Lesson','2026-08-17',600,45,0,1,'Court 1',null,['p6']),
+      S('s9','group','Wednesday Drills','2026-08-19',1020,90,35,0,'Main Court',6,['p1','p2','p5']),
+      S('s10','private','Daniel Brown Private Lesson','2026-08-20',1020,60,75,0,'Court 3',null,['p4']),
+      S('s11','group','Saturday Group Session','2026-08-22',570,120,0,1,'Main Court',6,['p1','p2','p3','p4','p5','p6']),
+      S('s12','private','Maya Okonkwo Private Lesson','2026-08-24',960,60,75,0,'Court 2',null,['p1']),
+      S('s13','private','Maya Okonkwo Private Lesson','2026-08-09',960,60,75,0,'Court 2',null,['p1'],{skipped:true}),
+      S('s14','group','Saturday Group Session','2026-08-09',570,120,35,0,'Main Court',6,['p2','p3','p6'],{att:{p2:'present',p3:'absent',p6:'present'}}),
+    ];
+    const Y=(id,pid,sid,amount,credit,status,due,extra)=>Object.assign({id,playerId:pid,sessionId:sid,amount,credit,status,due,manual:false,label:'',note:'',paidDate:null,voidNote:''},extra||{});
+    base.pays=[
+      Y('y1','p1','s1',75,0,'pending',T),
+      Y('y2','p3','s2',35,0,'pending',T),
+      Y('y3','p4','s2',35,0,'pending',T),
+      Y('y4','p6','s2',35,0,'paid',T,{paidDate:'2026-08-15'}),
+      Y('y5','p2','s3',90,0,'paid',T,{paidDate:T}),
+      Y('y6','p1','s4',35,0,'paid','2026-08-13',{paidDate:'2026-08-13'}),
+      Y('y7','p2','s4',35,0,'pending','2026-08-13'),
+      Y('y8','p4','s4',35,15,'pending','2026-08-13',{note:'Left early — credited 30 min'}),
+      Y('y9','p5','s4',35,0,'paid','2026-08-13',{paidDate:'2026-08-14'}),
+      Y('y10','p3','s5',60,0,'pending','2026-08-14'),
+      Y('y11','p5','s6',90,0,'paid','2026-08-12',{paidDate:'2026-08-12'}),
+      Y('y12','p3','s7',35,0,'voided','2026-08-18',{voidNote:'Written off — session cancelled Aug 12'}),
+      Y('y13','p6','s7',35,0,'voided','2026-08-18',{voidNote:'Written off — session cancelled Aug 12'}),
+      Y('y14','p1','s9',35,0,'pending','2026-08-19'),
+      Y('y15','p2','s9',35,0,'pending','2026-08-19'),
+      Y('y16','p5','s9',35,0,'paid','2026-08-19',{paidDate:'2026-08-14'}),
+      Y('y17','p4','s10',75,0,'pending','2026-08-20'),
+      Y('y18','p1','s12',75,0,'pending','2026-08-24'),
+      Y('y19','p1','s13',75,0,'paid','2026-08-09',{paidDate:'2026-08-09'}),
+      Y('y20','p2','s14',35,0,'paid','2026-08-09',{paidDate:'2026-08-09'}),
+      Y('y21','p3','s14',35,35,'pending','2026-08-09',{note:'Missed — family emergency'}),
+      Y('y22','p6','s14',35,0,'paid','2026-08-09',{paidDate:'2026-08-10'}),
+      Y('y23','p2',null,25,0,'pending','2026-08-20',{manual:true,label:'Racquet restring',note:'Wilson Blade — 52 lbs'}),
+    ];
+    return base;
+  }
+
+  // ── lookups & derived ──
+  pl(id){ return this.state.players.find(p=>p.id===id)||{id,name:'Player',level:'',rate:null,phone:'',email:'',notes:'',archived:false,deleted:true}; }
+  ss(id){ return this.state.sessions.find(s=>s.id===id); }
+  py(id){ return this.state.pays.find(p=>p.id===id); }
+  sEnd(s){ return s.start+s.dur; }
+  sPast(s){ return s.date<this.T() || (s.date===this.T() && this.sEnd(s)<this.NOWM()); }
+  rem(p){ return Math.max(0,p.amount-p.credit); }
+  isOv(p){ return p.status==='pending' && this.rem(p)>0 && p.due<this.T(); }
+  isPend(p){ return p.status==='pending' && this.rem(p)>0; }
+  attState(s){ if(s.skipped) return 'skipped'; if(s.status==='cancelled') return 'na'; const marks=s.att||{}; const n=s.pids.length; if(!n) return 'na'; const m=s.pids.filter(id=>marks[id]).length; if(m===0) return 'unmarked'; if(m===n) return 'complete'; return 'partial'; }
+  attMissing(s){ return this.sPast(s) && s.status!=='cancelled' && !s.skipped && s.pids.length>0 && this.attState(s)!=='complete'; }
+  outOf(pid){ return this.state.pays.filter(p=>p.playerId===pid && this.isPend(p)).reduce((a,p)=>a+this.rem(p),0); }
+  sessPays(sid){ return this.state.pays.filter(p=>p.sessionId===sid); }
+  sessOut(sid){ return this.sessPays(sid).filter(p=>this.isPend(p)).reduce((a,p)=>a+this.rem(p),0); }
+  payTone(p){
+    if(p.status==='paid') return {txt:'Paid',bg:'#E4F2E9',fg:'#2E7D4F'};
+    if(p.status==='voided') return {txt:'Voided',bg:'#EDEDE8',fg:'#6B706C'};
+    if(this.rem(p)===0) return {txt:'Credited',bg:'#EDEDE8',fg:'#6B706C'};
+    if(this.isOv(p)) return {txt:'Overdue',bg:'#F7E9E6',fg:'#B3402F'};
+    return {txt:'Unpaid',bg:'#F6EEDB',fg:'#96690F'};
+  }
+  actLabel(pid){ const c=this.state.sessions.filter(s=>s.status!=='cancelled'&&s.pids.includes(pid)&&s.date>=this.addDays(this.T(),-30)&&s.date<=this.T()).length; return c>=4?'2× weekly':c>=2?'Weekly':c>=1?'Occasional':'New'; }
+  chipT(sel){ return sel?{bg:'#171918',fg:'#F7F7F3',bd:'#171918'}:{bg:'#FFFFFF',fg:'#171918',bd:'#E5E6E1'}; }
+  segT(sel){ return sel?{bg:'#FFFFFF',fg:'#171918',sh:'0 1px 3px rgba(23,25,24,.10)'}:{bg:'transparent',fg:'#6B706C',sh:'none'}; }
+
+  // ── navigation ──
+  cur(){ const st=this.state.stack; return st[st.length-1]; }
+  go(o){ this.setState({stack:[...this.state.stack,o]}); }
+  back(){ const st=this.state.stack; if(st.length>1) this.setState({stack:st.slice(0,-1)}); }
+  goTab(t,scrName){ const first=!this.state.visited[t]; this.setState({tab:t,stack:[{s:scrName}],visited:{...this.state.visited,[t]:true},skel:first}); if(first){ setTimeout(()=>this.setState({skel:false}),520); } }
+  goPayFiltered(tab,pid){ this.setState({payTab:tab,payPlayer:pid||null,payQ:''}); this.goTab('pay','pay'); }
+  toast(m){ clearTimeout(this._tt); this.setState({toastO:{m}}); this._tt=setTimeout(()=>this.setState({toastO:null}),2400); }
+  openSheet(o){ this.setState({sheet:o}); }
+  closeSheet(){ this.setState({sheet:null}); }
+  dlgOpen(o){ this.setState({dlg:o}); }
+  dlgClose(){ this.setState({dlg:null}); }
+
+  // ── auth ──
+  signIn(){ const a=this.state.auth; const email=a.email.trim();
+    if(!email||!a.pw){ this.setState({auth:{...a,err:'Enter your email and password.'}}); return; }
+    if(email.indexOf('@')<0){ this.setState({auth:{...a,err:'That doesn’t look like an email address.'}}); return; }
+    if(a.pw.length<6){ this.setState({auth:{...a,err:'Invalid email or password. Try again.'}}); return; }
+    this.setState({auth:{...a,err:'',busy:true}});
+    setTimeout(()=>{ this.setState({auth:{...a,err:'',busy:false},stack:[{s:'dash'}],tab:'home',skel:true}); setTimeout(()=>this.setState({skel:false}),620); },750);
+  }
+  signupGo(){ const s=this.state.su; const errs={};
+    if(!s.name.trim()) errs.name='Enter your name.';
+    if(s.email.indexOf('@')<0) errs.email='Enter a valid email.';
+    if(s.pw.length<6) errs.pw='Use at least 6 characters.';
+    if(s.pw2!==s.pw) errs.pw2='Passwords don’t match.';
+    if(Object.keys(errs).length){ this.setState({su:{...s,errs}}); return; }
+    this.setState({su:{...s,errs:{},busy:true}});
+    setTimeout(()=>{ this.setState({su:{...s,errs:{},busy:false},ob:{step:0,name:s.name.trim(),biz:'',rate:'70'},stack:[{s:'ob'}]}); },800);
+  }
+  obFinish(){ const o=this.state.ob; const c=this.state.coach; const nm=o.name.trim()||c.name; const first=nm.split(' ')[0];
+    this.setState({coach:{...c,name:nm,first,biz:o.biz.trim(),rate:parseFloat(o.rate)||c.rate},stack:[{s:'dash'}],tab:'home'});
+    this.toast('Welcome to CoachOS, '+first);
+  }
+
+  // ── new session ──
+  nsInit(type,ctx){ ctx=ctx||{};
+    const d={type,pids:ctx.playerId?[ctx.playerId]:[],date:ctx.date||this.T(),time:840,dur:60,priceStr:'',free:false,priceDirty:false,name:'',nameDirty:false,loc:'',cap:6,err:'',saving:false,from:ctx.from||''};
+    this.nsAuto(d); return d;
+  }
+  nsAuto(d){
+    if(!d.priceDirty && d.type==='private'){ const p=d.pids[0]?this.pl(d.pids[0]):null; const r=p&&p.rate!=null?p.rate:this.state.coach.rate; d.priceStr=String(r); }
+    if(!d.nameDirty){ d.name = d.type==='private' ? (d.pids.length?this.pl(d.pids[0]).name+' Private Lesson':'Private Lesson') : this.dowFull(d.date)+' Group Session'; }
+  }
+  nsProv(d){ if(d.free) return 'Free session — no charge will be created'; if(d.priceDirty) return 'Custom price'; if(d.type==='private'&&d.pids.length){ const p=this.pl(d.pids[0]); return p.rate!=null ? p.name.split(' ')[0]+'’s default rate' : 'Coach default'; } if(d.type==='private') return 'Coach default'; return d.priceStr?'Per player':'Set a per-player price'; }
+  nsSet(patch,reauto){ const d={...this.state.ns,...patch,err:''}; if(reauto) this.nsAuto(d); this.setState({ns:d}); }
+  nsTogglePlayer(pid){ const d=this.state.ns; let pids; if(d.type==='private'){ pids=d.pids[0]===pid?[]:[pid]; } else { pids=d.pids.includes(pid)?d.pids.filter(x=>x!==pid):[...d.pids,pid]; } this.nsSet({pids},true); }
+  conflictFor(date,start,end,exId){ return this.state.sessions.find(s=>s.id!==exId && s.status!=='cancelled' && s.date===date && !(end<=s.start || start>=this.sEnd(s))); }
+  nsSave(force){ const d=this.state.ns; if(!d||d.saving) return;
+    if(d.type==='private'&&!d.pids.length){ this.nsSet({err:'Choose a player for this lesson.'}); return; }
+    if(d.type==='group'&&!d.pids.length){ this.nsSet({err:'Add at least one player.'}); return; }
+    if(d.type==='group'&&d.pids.length>d.cap){ this.nsSet({err:'More players selected than capacity allows.'}); return; }
+    const price=parseFloat(d.priceStr);
+    if(!d.free&&!(price>0)){ this.nsSet({err:'Set a price, or mark the session free.'}); return; }
+    const cf=this.conflictFor(d.date,d.time,d.time+d.dur,null);
+    if(cf&&!force){ this.dlgOpen({kind:'conflict',sid:cf.id}); return; }
+    this.setState({ns:{...d,saving:true},dlg:null});
+    setTimeout(()=>{
+      const id='s'+Date.now();
+      const sess={id,type:d.type,name:d.name.trim()||(d.type==='private'?'Private Lesson':'Group Session'),date:d.date,start:d.time,dur:d.dur,price:d.free?0:price,free:d.free,loc:d.loc.trim(),cap:d.type==='group'?d.cap:null,pids:[...d.pids],status:'ok',att:null,skipped:false};
+      const newPays=d.free?[]:d.pids.map((pid,i)=>({id:'y'+Date.now()+'_'+i,playerId:pid,sessionId:id,amount:price,credit:0,status:'pending',due:d.date,manual:false,label:'',note:'',paidDate:null,voidNote:''}));
+      this.setState({sessions:[...this.state.sessions,sess],pays:[...this.state.pays,...newPays],ns:null,stack:[...this.state.stack.slice(0,-1),{s:'sd',id}]});
+      this.toast('Session created');
+    },650);
+  }
+  nsClose(){ this.setState({ns:null,stack:this.state.stack.slice(0,-1)}); }
+
+  // ── session mutations ──
+  updSess(id,patch){ this.setState({sessions:this.state.sessions.map(s=>s.id===id?{...s,...patch}:s)}); }
+  updPay(id,patch){ this.setState({pays:this.state.pays.map(p=>p.id===id?{...p,...patch}:p)}); }
+  markPaid(id){ const p=this.py(id); this.updPay(id,{status:'paid',paidDate:this.T()}); this.toast('Marked paid · '+this.money(this.rem(p))+' from '+this.pl(p.playerId).name.split(' ')[0]); }
+  markUnpaid(id){ this.updPay(id,{status:'pending',paidDate:null}); this.dlgClose(); this.toast('Marked unpaid'); }
+  voidSessPays(sid){ this.setState({pays:this.state.pays.map(p=>p.sessionId===sid&&this.isPend(p)?{...p,status:'voided',voidNote:'Written off — session cancelled '+this.fmtShort(this.T())}:p)}); }
+  attMark(sid,pid,v){ const s=this.ss(sid); const att={...(s.att||{})}; if(att[pid]===v) delete att[pid]; else att[pid]=v; this.updSess(sid,{att:Object.keys(att).length?att:null,skipped:false}); }
+  attAll(sid){ const s=this.ss(sid); const att={}; s.pids.forEach(p=>att[p]='present'); this.updSess(sid,{att,skipped:false}); }
+  attClear(sid){ this.updSess(sid,{att:null}); }
+  attDone(sid){ this.back(); this.toast('Attendance saved'); }
+  cancelAsk(id){ const n=this.sessPays(id).filter(p=>this.isPend(p)).length; this.dlgOpen(n?{kind:'cancelPay',sid:id}:{kind:'cancel',sid:id}); }
+  doCancel(id,voidCharges){ if(voidCharges) this.voidSessPays(id); this.updSess(id,{status:'cancelled'}); this.dlgClose(); this.toast('Session cancelled'); }
+  dupSess(id){ const s=this.ss(id); const baseDate=s.date>=this.T()?s.date:this.T();
+    const d={type:s.type,pids:s.pids.filter(pid=>{const p=this.pl(pid);return !p.archived&&!p.deleted;}),date:this.addDays(baseDate,1),time:s.start,dur:s.dur,priceStr:s.free?'':String(s.price),free:s.free,priceDirty:!s.free,name:'',nameDirty:false,loc:s.loc,cap:s.cap||6,err:'',saving:false,from:'Duplicated from '+this.fmtShort(s.date)};
+    this.nsAuto(d); this.setState({ns:d,stack:[...this.state.stack,{s:'ns'}]});
+  }
+  esOpen(id){ const s=this.ss(id); this.setState({sheet:{t:'es',sid:id},es:{name:s.name,date:s.date,time:s.start,dur:s.dur,priceStr:s.free?'':String(s.price),loc:s.loc,cap:s.cap||6,err:''}}); }
+  esSet(patch){ this.setState({es:{...this.state.es,...patch,err:''}}); }
+  esSave(){ const sh=this.state.sheet; const e=this.state.es; const s=this.ss(sh.sid);
+    if(!e.name.trim()){ this.esSet({err:'Session needs a name.'}); return; }
+    const price=s.free?0:parseFloat(e.priceStr);
+    if(!s.free&&!(price>0)){ this.esSet({err:'Enter a valid price.'}); return; }
+    const cf=this.conflictFor(e.date,e.time,e.time+e.dur,s.id);
+    if(cf){ this.esSet({err:'Conflicts with '+cf.name+' at '+this.t12(cf.start)+'.'}); return; }
+    const unpaid=this.sessPays(s.id).filter(p=>this.isPend(p));
+    const priceChanged=!s.free&&price!==s.price;
+    const apply=(updateUnpaid)=>{
+      this.updSess(s.id,{name:e.name.trim(),date:e.date,start:e.time,dur:e.dur,price:s.free?0:price,loc:e.loc.trim(),cap:s.type==='group'?e.cap:null});
+      this.setState({pays:this.state.pays.map(p=>{ if(p.sessionId!==s.id||p.status!=='pending') return p; const np={...p,due:e.date}; if(updateUnpaid&&this.isPend(p)){ np.amount=price; np.credit=Math.min(p.credit,price); } return np; }),sheet:null,es:null,dlg:null});
+      this.toast('Session updated');
+    };
+    if(priceChanged&&unpaid.length){ this._esApply=apply; this.dlgOpen({kind:'priceChange',n:unpaid.length,newPrice:price}); return; }
+    apply(false);
+  }
+  removeAsk(sid,pid){ const pay=this.sessPays(sid).find(p=>p.playerId===pid&&this.isPend(p));
+    this.setState({sheet:null,dlg:pay?{kind:'removePay',sid,pid,payId:pay.id}:{kind:'remove',sid,pid}});
+  }
+  doRemove(sid,pid,creditIt,payId){ const s=this.ss(sid);
+    if(creditIt&&payId){ const p=this.py(payId); this.updPay(payId,{credit:p.amount,note:'Removed from session'}); }
+    const att={...(s.att||{})}; delete att[pid];
+    this.updSess(sid,{pids:s.pids.filter(x=>x!==pid),att:Object.keys(att).length?att:null});
+    this.dlgClose(); this.toast(this.pl(pid).name.split(' ')[0]+' removed from session');
+  }
+  addToSess(sid,pid){ const s=this.ss(sid); this.updSess(sid,{pids:[...s.pids,pid]});
+    let m=this.pl(pid).name.split(' ')[0]+' added';
+    if(!s.free&&s.price>0){ this.setState({pays:[...this.state.pays,{id:'y'+Date.now(),playerId:pid,sessionId:sid,amount:s.price,credit:0,status:'pending',due:s.date,manual:false,label:'',note:'',paidDate:null,voidNote:''}]}); m+=' · '+this.money(s.price)+' pending'; }
+    this.setState({sheet:null}); this.toast(m);
+  }
+
+  // ── players ──
+  pfOpen(id,from){ const draft=id?(()=>{const p=this.pl(id);return {id,name:p.name,phone:p.phone||'',email:p.email||'',level:p.level||'Beginner',rateStr:p.rate!=null?String(p.rate):'',notes:p.notes||'',err:'',saving:false,from:from||''};})():{id:null,name:'',phone:'',email:'',level:'Beginner',rateStr:'',notes:'',err:'',saving:false,from:from||''};
+    this.setState({pf:draft,sheet:null,stack:[...this.state.stack,{s:'pf'}]});
+  }
+  pfSet(patch){ this.setState({pf:{...this.state.pf,...patch,err:''}}); }
+  pfSave(){ const f=this.state.pf; if(!f||f.saving) return;
+    if(!f.name.trim()){ this.pfSet({err:'Player name is required.'}); return; }
+    if(f.email.trim()&&f.email.indexOf('@')<0){ this.pfSet({err:'That email doesn’t look right.'}); return; }
+    const rate=f.rateStr.trim()===''?null:parseFloat(f.rateStr);
+    if(f.rateStr.trim()!==''&&!(rate>=0)){ this.pfSet({err:'Default rate must be a number.'}); return; }
+    this.setState({pf:{...f,saving:true}});
+    setTimeout(()=>{
+      if(f.id){ this.setState({players:this.state.players.map(p=>p.id===f.id?{...p,name:f.name.trim(),phone:f.phone.trim(),email:f.email.trim(),level:f.level,rate,notes:f.notes}:p),pf:null,stack:this.state.stack.slice(0,-1)}); this.toast('Player updated'); }
+      else { const id='p'+Date.now(); const np={id,name:f.name.trim(),phone:f.phone.trim(),email:f.email.trim(),level:f.level,rate,notes:f.notes,archived:false,deleted:false};
+        if(f.from==='ns'&&this.state.ns){ const d={...this.state.ns,pids:[id]}; this.nsAuto(d); this.setState({players:[...this.state.players,np],pf:null,ns:d,stack:this.state.stack.slice(0,-1)}); }
+        else { this.setState({players:[...this.state.players,np],pf:null,stack:[...this.state.stack.slice(0,-1),{s:'pd',id}]}); }
+        this.toast('Player added');
+      }
+    },600);
+  }
+  archAsk(id){ const p=this.pl(id); if(p.archived){ this.setState({players:this.state.players.map(x=>x.id===id?{...x,archived:false}:x)}); this.toast(p.name.split(' ')[0]+' restored to active'); } else this.dlgOpen({kind:'archive',pid:id}); }
+  doArchive(id){ this.setState({players:this.state.players.map(x=>x.id===id?{...x,archived:true}:x),dlg:null}); this.toast('Player archived'); }
+  doDelete(id){ this.setState({players:this.state.players.map(x=>x.id===id?{...x,deleted:true,archived:true}:x),dlg:null,stack:[{s:'players'}],tab:'players'}); this.toast('Player deleted'); }
+
+  // ── credit / manual charge ──
+  crOpen(payId){ this.setState({sheet:{t:'cr',payId},cr:{amt:'',note:'',err:''}}); }
+  crApply(){ const sh=this.state.sheet; const p=this.py(sh.payId); const c=this.state.cr; const amt=parseFloat(c.amt); const remv=this.rem(p);
+    if(!(amt>0)){ this.setState({cr:{...c,err:'Enter a credit amount.'}}); return; }
+    if(amt>remv){ this.setState({cr:{...c,err:'Credit amount cannot exceed the remaining '+this.money(remv)+'.'}}); return; }
+    this.updPay(p.id,{credit:p.credit+amt,note:c.note.trim()||p.note});
+    this.setState({sheet:{t:'pay',payId:p.id},cr:null}); this.toast('Credit applied · '+this.money(amt));
+  }
+  mcOpen(){ this.setState({sheet:{t:'mc'},mc:{pid:null,amt:'',due:this.T(),note:'',err:'',saving:false}}); }
+  mcSet(patch){ this.setState({mc:{...this.state.mc,...patch,err:''}}); }
+  mcSave(){ const m=this.state.mc; if(m.saving) return; const amt=parseFloat(m.amt);
+    if(!m.pid){ this.mcSet({err:'Choose a player.'}); return; }
+    if(!(amt>0)){ this.mcSet({err:'Enter an amount.'}); return; }
+    this.setState({mc:{...m,saving:true}});
+    setTimeout(()=>{ this.setState({pays:[...this.state.pays,{id:'y'+Date.now(),playerId:m.pid,sessionId:null,amount:amt,credit:0,status:'pending',due:m.due,manual:true,label:m.note.trim()||'Manual charge',note:'',paidDate:null,voidNote:''}],sheet:null,mc:null}); this.toast('Charge added · '+this.money(amt)); },500);
+  }
+
+  // ── settings ──
+  goSettings(){ const c=this.state.coach; this.setState({sheet:null,setDraft:{name:c.name,email:c.email,biz:c.biz,rateStr:String(c.rate),attWindow:c.attWindow,theme:c.theme,err:''},stack:[...this.state.stack,{s:'settings'}]}); }
+  sdSet(patch){ this.setState({setDraft:{...this.state.setDraft,...patch,err:''}}); }
+  setSave(){ const d=this.state.setDraft; if(this.state.setSaving) return; const rate=parseFloat(d.rateStr);
+    if(!d.name.trim()){ this.sdSet({err:'Name is required.'}); return; }
+    if(!(rate>=0)){ this.sdSet({err:'Default rate must be a number.'}); return; }
+    this.setState({setSaving:true});
+    setTimeout(()=>{ const nm=d.name.trim(); this.setState({coach:{name:nm,first:nm.split(' ')[0],email:d.email.trim(),biz:d.biz.trim(),rate,attWindow:d.attWindow,theme:d.theme},setSaving:false}); this.toast('Settings saved'); },550);
+  }
+
+  // ── chip strips ──
+  chipDates(selIso,tapFn){ const T=this.T(); const out=[]; const mk=(iso)=>{ const sel=iso===selIso; const tk=this.chipT(sel); return {dow:this.dow(iso).toUpperCase(),dom:String(this.dom(iso)),bg:tk.bg,fg:tk.fg,bd:(iso===T&&!sel)?'#B9BDB6':tk.bd,sub:sel?'#B9BDB6':'#6B706C',tap:()=>tapFn(iso)}; };
+    let found=false; for(let i=0;i<14;i++){ const iso=this.addDays(T,i); if(iso===selIso) found=true; out.push(mk(iso)); }
+    if(!found) out.unshift(mk(selIso));
+    return out;
+  }
+  chipTimes(selMin,tapFn){ const out=[]; for(let m=420;m<=1230;m+=30){ const sel=m===selMin; const tk=this.chipT(sel); out.push({txt:this.t12(m),bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>tapFn(m)}); } return out; }
+  chipDurs(selDur,tapFn){ return [30,45,60,90,120].map(n=>{ const sel=n===selDur; const tk=this.chipT(sel); return {txt:n+' min',bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>tapFn(n)}; }); }
+
+  // ── namespace builders ──
+  navVals(){ const c=this.cur();
+    const scr={login:c.s==='login',signup:c.s==='signup',ob:c.s==='ob',dash:c.s==='dash',sched:c.s==='sched',players:c.s==='players',pay:c.s==='pay',sd:c.s==='sd',pd:c.s==='pd',att:c.s==='att',ns:c.s==='ns',pf:c.s==='pf',settings:c.s==='settings',help:c.s==='help',demoL:c.s==='demoL',demoE:c.s==='demoE'};
+    const hide=scr.ns||scr.att||scr.pf||scr.login||scr.signup||scr.ob||scr.demoL||scr.demoE;
+    const t=this.state.tab; const col=(k)=>t===k?'#171918':'#A8ACA5';
+    return {scr,nav:{show:!hide,goHome:()=>this.goTab('home','dash'),goSched:()=>this.goTab('sched','sched'),goPlayers:()=>this.goTab('players','players'),goPay:()=>{this.setState({payPlayer:null});this.goTab('pay','pay');},plus:()=>this.openSheet({t:'create',ctx:{}}),homeC:col('home'),schedC:col('sched'),playersC:col('players'),payC:col('pay')}};
+  }
+
+  dashVals(){ const st=this.state; const T=this.T(); const c=st.coach;
+    const isNew=!st.sessions.length&&!st.players.filter(p=>!p.deleted).length;
+    const live=st.sessions.filter(s=>s.status!=='cancelled');
+    const notEnded=live.filter(s=>!this.sPast(s)).sort((a,b)=>a.date===b.date?a.start-b.start:(a.date<b.date?-1:1));
+    const up=notEnded[0]||null;
+    let upV={typeLabel:'',title:'',meta:'',price:'',unpaid:false,unpaidTxt:'',showTakeAtt:false,open:()=>{},takeAtt:()=>{}};
+    if(up){ const out=this.sessOut(up.id);
+      upV={typeLabel:up.type==='private'?'Private lesson':'Group · '+up.pids.length+' of '+(up.cap||up.pids.length),
+        title:up.type==='private'?this.pl(up.pids[0]).name:up.name,
+        meta:this.rel(up.date)+' · '+this.t12(up.start)+' · '+up.dur+' min',
+        price:up.free?'Free session':this.money(up.price)+(up.type==='group'?' per player':''),
+        unpaid:out>0, unpaidTxt:up.type==='private'?'Unpaid':this.money(out)+' unpaid',
+        showTakeAtt:up.date===T&&up.pids.length>0&&this.attState(up)!=='complete',
+        open:()=>this.go({s:'sd',id:up.id}), takeAtt:()=>this.go({s:'att',id:up.id})};
+    }
+    const alsoSess=live.filter(s=>s.date===T&&(!up||s.id!==up.id)).sort((a,b)=>a.start-b.start);
+    const also=alsoSess.map((s,i)=>{ const ended=this.sPast(s); let tag='',tagFg='#6B706C';
+      if(this.attMissing(s)){tag='Attendance missing';tagFg='#96690F';}
+      else if(ended&&this.attState(s)==='complete'){tag='Done';}
+      else if(ended&&s.skipped){tag='Skipped';}
+      return {time:this.t12(s.start),title:s.type==='private'?'Private Lesson':s.name,sub:s.type==='private'?this.pl(s.pids[0]).name:s.pids.length+' players',hasTag:!!tag,tag,tagFg,o:ended?'0.62':'1',bt:i===0?'0 solid transparent':'1px solid #F0F1EC',open:()=>this.go({s:'sd',id:s.id})};
+    });
+    const missing=live.filter(s=>this.attMissing(s)).sort((a,b)=>a.date<b.date?-1:1);
+    const attn=missing.map(s=>({main:'Attendance missing — '+(s.type==='private'?this.pl(s.pids[0]).name:s.name),sub:this.rel(s.date)+' · '+s.pids.length+' player'+(s.pids.length>1?'s':''),dot:'#C77E1F',cta:'Mark now',go:()=>this.go({s:'att',id:s.id})}));
+    const ovs=st.pays.filter(p=>this.isOv(p));
+    if(ovs.length){ const tot=ovs.reduce((a,p)=>a+this.rem(p),0); const npl=new Set(ovs.map(p=>p.playerId)).size;
+      attn.push({main:this.money(tot)+' overdue',sub:ovs.length+' charge'+(ovs.length>1?'s':'')+' · '+npl+' player'+(npl>1?'s':''),dot:'#B3402F',cta:'Review',go:()=>this.goPayFiltered('overdue',null)});
+    }
+    attn.forEach((r,i)=>{r.bt=i===0?'0 solid transparent':'1px solid #F0F1EC';});
+    const mSess=live.filter(s=>s.date.slice(0,7)===T.slice(0,7)&&s.date<=T);
+    let pres=0,abs=0;
+    st.sessions.forEach(s=>{ if(s.date.slice(0,7)===T.slice(0,7)&&s.att){ s.pids.forEach(pid=>{ if(s.att[pid]==='present')pres++; if(s.att[pid]==='absent')abs++; }); } });
+    const pend=st.pays.filter(p=>this.isPend(p));
+    const tot=pend.reduce((a,p)=>a+this.rem(p),0);
+    const npl=new Set(pend.map(p=>p.playerId)).size;
+    const hour=Math.floor(this.NOWM()/60);
+    return {dateLine:this.fmtLong(T),greeting:(hour<12?'Good morning':hour<17?'Good afternoon':'Good evening')+', '+c.first,avatarTxt:this.initials(c.name),openMore:()=>this.openSheet({t:'more'}),
+      skel:st.skel&&this.cur().s==='dash', ready:!(st.skel&&this.cur().s==='dash'),
+      isNew, notNew:!isNew, addFirstPlayer:()=>this.pfOpen(null,''), schedFirst:()=>this.openSheet({t:'create',ctx:{}}),
+      hasUpNext:!!up, up:upV, upEmpty:!up&&!isNew,
+      hasAlso:also.length>0, also,
+      hasAttn:attn.length>0, caughtUp:attn.length===0, attn,
+      month:{sessions:String(mSess.length),att:(pres+abs)?Math.round(pres/(pres+abs)*100)+'%':'—'},
+      out:{show:tot>0,zero:tot===0,amt:this.money(tot),sub:npl+' player'+(npl===1?'':'s')+' · '+pend.length+' charge'+(pend.length===1?'':'s'),go:()=>this.goPayFiltered('pending',null)}};
+  }
+
+  schedVals(){ const st=this.state; const T=this.T(); const sel=st.schedDate;
+    const onDate=(d)=>st.sessions.filter(s=>s.date===d);
+    const days=[]; for(let i=-2;i<12;i++){ const iso=this.addDays(T,i); const n=onDate(iso).filter(s=>s.status!=='cancelled').length; const selQ=iso===sel;
+      days.push({dow:this.dow(iso).toUpperCase(),dom:String(this.dom(iso)),bg:selQ?'#171918':'#FFFFFF',fg:selQ?'#F7F7F3':'#171918',bd:selQ?'#171918':(iso===T?'#B9BDB6':'#E5E6E1'),sub:selQ?'#B9BDB6':'#8A8E89',dots:Array.from({length:Math.min(n,3)},()=>({c:selQ?'#7BC79A':'#3FA66B'})),pick:()=>this.setState({schedDate:iso})});
+    }
+    const all=onDate(sel).sort((a,b)=>a.start-b.start);
+    const act=all.filter(s=>s.status!=='cancelled');
+    const canc=all.filter(s=>s.status==='cancelled');
+    const showC=!!st.showCanc[sel];
+    const mk=(s)=>{ const ended=this.sPast(s); const cn=s.status==='cancelled';
+      let badge=null;
+      if(cn) badge={txt:'Cancelled',bg:'#EDEDE8',fg:'#6B706C'};
+      else if(this.attMissing(s)) badge={txt:'Attendance missing',bg:'#F6EEDB',fg:'#96690F'};
+      else if(ended&&this.attState(s)==='complete') badge={txt:'Done',bg:'#EDEDE8',fg:'#6B706C'};
+      else if(s.cap&&s.pids.length>=s.cap) badge={txt:'Full',bg:'#E4F2E9',fg:'#2E7D4F'};
+      return {time:this.t12(s.start),dur:s.dur+' min',title:s.type==='private'?'Private Lesson':s.name,sub:s.type==='private'?this.pl(s.pids[0]).name:(s.pids.length+(s.cap?' of '+s.cap:'')+' players'),hasB:!!badge,bTxt:badge?badge.txt:'',bBg:badge?badge.bg:'',bFg:badge?badge.fg:'',o:cn?'0.55':(ended?'0.72':'1'),deco:cn?'line-through':'none',open:()=>this.go({s:'sd',id:s.id})};
+    };
+    const rows=[...act.map(mk),...(showC?canc.map(mk):[])];
+    rows.forEach((r,i)=>{r.bt=i===0?'0 solid transparent':'1px solid #F0F1EC';});
+    // month grid
+    const ym=st.schedMonth; const first=ym+'-01'; const startDow=this.D(first).getDay(); const dim=new Date(parseInt(ym.slice(0,4),10),parseInt(ym.slice(5,7),10),0).getDate();
+    const cells=[]; for(let i=0;i<startDow;i++) cells.push({blank:true,dom:'',bg:'transparent',fg:'transparent',bd:'transparent',dots:[],pick:()=>{}});
+    for(let d=1;d<=dim;d++){ const iso=ym+'-'+this.d2(d); const n=onDate(iso).filter(s=>s.status!=='cancelled').length; const selQ=iso===sel;
+      cells.push({blank:false,dom:String(d),bg:selQ?'#171918':'transparent',fg:selQ?'#F7F7F3':'#171918',bd:(iso===T&&!selQ)?'#B9BDB6':'transparent',dots:Array.from({length:Math.min(n,3)},()=>({c:selQ?'#7BC79A':'#3FA66B'})),pick:()=>this.setState({schedDate:iso})});
+    }
+    const mLabel=this.monFull(first)+' '+ym.slice(0,4);
+    const shiftMonth=(k)=>{ let y=parseInt(ym.slice(0,4),10),m=parseInt(ym.slice(5,7),10)+k; if(m<1){m=12;y--;} if(m>12){m=1;y++;} this.setState({schedMonth:y+'-'+this.d2(m)}); };
+    return {isWeek:st.schedView==='week',isMonth:st.schedView==='month',
+      wSeg:this.segT(st.schedView==='week'),mSeg:this.segT(st.schedView==='month'),
+      setWeek:()=>this.setState({schedView:'week'}),setMonth:()=>this.setState({schedView:'month',schedMonth:sel.slice(0,7)}),
+      showToday:sel!==T,goToday:()=>this.setState({schedDate:T,schedMonth:T.slice(0,7)}),
+      days, dayL1:sel===T?'Today':(sel===this.addDays(T,1)?'Tomorrow':(sel===this.addDays(T,-1)?'Yesterday':this.dowFull(sel))), dayL2:this.monFull(sel)+' '+this.dom(sel),
+      rows, hasRows:rows.length>0, emptyDay:act.length===0&&(!showC||canc.length===0),
+      addHere:()=>this.openSheet({t:'create',ctx:{date:sel}}),
+      cancBtnShow:canc.length>0, cancBtnTxt:showC?'Hide cancelled':'Show cancelled ('+canc.length+')', toggleCanc:()=>this.setState({showCanc:{...st.showCanc,[sel]:!showC}}),
+      mLabel, mPrev:()=>shiftMonth(-1), mNext:()=>shiftMonth(1), cells};
+  }
+
+  sdVals(){ const c=this.cur(); const empty={ok:false,rows:[],title:'',typeChip:'',statusLine:'',dateLine:'',timeLine:'',locLine:'',priceLine:'',capLine:'',isCanc:false,isGroup:false,showTakeAtt:false,showActions:false,canAdd:false,emptyRoster:false,freeTag:false,back:()=>this.back(),takeAtt:()=>{},edit:()=>{},dup:()=>{},cancel:()=>{},addPlayer:()=>{}};
+    if(c.s!=='sd'||!this.ss(c.id)) return empty;
+    const s=this.ss(c.id); const T=this.T(); const cn=s.status==='cancelled'; const past=this.sPast(s); const stt=this.attState(s); const out=this.sessOut(s.id);
+    let status;
+    if(cn) status='Cancelled';
+    else if(past){ const d=Math.round((this.D(T)-this.D(s.date))/86400000); const ago=d===0?'today':(d===1?'yesterday':d+' days ago'); const marks=s.pids.filter(id=>(s.att||{})[id]).length;
+      status='Ended '+ago+(s.skipped?' · attendance skipped':' · '+marks+' of '+s.pids.length+' marked')+(out>0?' · '+this.money(out)+' outstanding':''); }
+    else if(s.date===T) status='Today · '+this.t12(s.start)+' · '+(stt==='complete'?'attendance taken':'attendance not taken');
+    else status=this.rel(s.date)+' · '+this.t12(s.start)+(out>0?' · '+this.money(out)+' unpaid':'');
+    const rows=s.pids.map((pid,i)=>{ const p=this.pl(pid); const mark=(s.att||{})[pid];
+      const attTxt=s.skipped?'Skipped':(mark==='present'?'Present':(mark==='absent'?'Absent':'Unmarked'));
+      const attFg=mark==='present'?'#2E7D4F':(mark==='absent'?'#B3402F':'#8A8E89');
+      const pay=this.sessPays(s.id).find(x=>x.playerId===pid); const tone=pay?this.payTone(pay):null;
+      return {init:this.initials(p.name),name:p.name,attTxt,attFg,hasPay:!!pay,payTxt:pay?this.money(pay.amount)+' · '+tone.txt:'',payBg:tone?tone.bg:'',payFg:tone?tone.fg:'',freeTag:!pay&&s.free,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',openPay:pay?()=>this.openSheet({t:'pay',payId:pay.id}):()=>{},menu:()=>this.openSheet({t:'menu',sid:s.id,pid})};
+    });
+    return {ok:true,back:()=>this.back(),title:s.name,typeChip:s.type==='private'?'Private Lesson':'Group Session',statusLine:status,isCanc:cn,isGroup:s.type==='group',
+      dateLine:this.fmtLong(s.date),timeLine:this.t12(s.start)+' – '+this.t12(this.sEnd(s))+' · '+s.dur+' min',locLine:s.loc||'No location set',
+      priceLine:s.free?'Free session':this.money(s.price)+(s.type==='group'?' per player':''),capLine:s.type==='group'?s.pids.length+' of '+s.cap+' enrolled':'',
+      rows,hasRoster:s.pids.length>0,emptyRoster:s.pids.length===0,
+      showTakeAtt:!cn&&!s.skipped&&s.pids.length>0&&stt!=='complete'&&(past||s.date===T),
+      takeAtt:()=>this.go({s:'att',id:s.id}),
+      showActions:!cn, edit:()=>this.esOpen(s.id), dup:()=>this.dupSess(s.id), cancel:()=>this.cancelAsk(s.id),
+      canAdd:s.type==='group'&&!cn&&s.pids.length<(s.cap||99), addPlayer:()=>this.openSheet({t:'add',sid:s.id})};
+  }
+
+  attVals(){ const c=this.cur(); const empty={rows:[],typeLabel:'',title:'',when:'',progress:'',pct:'0%',empty:false,back:()=>this.back(),allP:()=>{},clear:()=>{},done:()=>{},skip:()=>{}};
+    if(c.s!=='att'||!this.ss(c.id)) return empty;
+    const s=this.ss(c.id); const marks=s.att||{};
+    const rows=s.pids.map((pid,i)=>{ const p=this.pl(pid); const m=marks[pid];
+      const pT=m==='present'?{bg:'#3FA66B',fg:'#FFFFFF',bd:'#3FA66B'}:{bg:'#FFFFFF',fg:'#171918',bd:'#E5E6E1'};
+      const aT=m==='absent'?{bg:'#171918',fg:'#FFFFFF',bd:'#171918'}:{bg:'#FFFFFF',fg:'#171918',bd:'#E5E6E1'};
+      return {init:this.initials(p.name),name:p.name,sub:p.level,pBg:pT.bg,pFg:pT.fg,pBd:pT.bd,aBg:aT.bg,aFg:aT.fg,aBd:aT.bd,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',setP:()=>this.attMark(s.id,pid,'present'),setA:()=>this.attMark(s.id,pid,'absent')};
+    });
+    const n=s.pids.length; const m=s.pids.filter(id=>marks[id]).length;
+    return {back:()=>this.back(),typeLabel:s.type==='private'?'Private lesson':'Group session',title:s.type==='private'?this.pl(s.pids[0]).name:s.name,when:this.rel(s.date)+' · '+this.t12(s.start),rows,progress:m+' / '+n+' marked',pct:(n?Math.round(m/n*100):0)+'%',empty:n===0,allP:()=>this.attAll(s.id),clear:()=>this.attClear(s.id),done:()=>this.attDone(s.id),skip:()=>this.dlgOpen({kind:'skipAtt',sid:s.id})};
+  }
+
+  plVals(){ const st=this.state; const q=st.plQ.trim().toLowerCase();
+    const all=st.players.filter(p=>!p.deleted);
+    const act=all.filter(p=>!p.archived); const arch=all.filter(p=>p.archived);
+    const pool=st.plTab==='active'?act:arch;
+    const nextOf=(pid)=>st.sessions.filter(s=>s.status!=='cancelled'&&s.pids.includes(pid)&&!this.sPast(s)).sort((a,b)=>a.date===b.date?a.start-b.start:(a.date<b.date?-1:1))[0];
+    const list=pool.filter(p=>!q||p.name.toLowerCase().includes(q))
+      .map(p=>({p,up:nextOf(p.id),out:this.outOf(p.id)}))
+      .sort((a,b)=>{ const ak=a.up?a.up.date:'9999',bk=b.up?b.up.date:'9999'; if(ak!==bk) return ak<bk?-1:1; if(a.out!==b.out) return b.out-a.out; return a.p.name<b.p.name?-1:1; });
+    const rows=list.map((x,i)=>({init:this.initials(x.p.name),name:x.p.name,sub:x.p.level+' · '+this.actLabel(x.p.id),next:x.up?('Next: '+this.rel(x.up.date)):(st.plTab==='archived'?'Archived':'No upcoming'),out:x.out>0?this.money(x.out):'',showOut:x.out>0,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',open:()=>this.go({s:'pd',id:x.p.id})}));
+    return {q:st.plQ,setQ:(e)=>this.setState({plQ:e.target.value}),
+      aSeg:this.segT(st.plTab==='active'),rSeg:this.segT(st.plTab==='archived'),
+      setActive:()=>this.setState({plTab:'active'}),setArch:()=>this.setState({plTab:'archived'}),
+      rows,hasRows:rows.length>0,
+      emptySearch:!!q&&rows.length===0,qEcho:st.plQ,
+      emptyNone:!q&&st.plTab==='active'&&act.length===0,
+      emptyArch:!q&&st.plTab==='archived'&&arch.length===0,
+      skel:st.skel&&this.cur().s==='players', ready:!(st.skel&&this.cur().s==='players'),
+      add:()=>this.pfOpen(null,'')};
+  }
+
+  pdVals(){ const c=this.cur(); const empty={ok:false,name:'',init:'',level:'',isArch:false,tiles:[],notes:'',hasNotes:false,up:[],hasUp:false,hist:[],hasHist:false,isNewPl:false,paySum:'',phone:'',email:'',hasPhone:false,hasEmail:false,archLabel:'Archive',back:()=>this.back(),schedule:()=>{},edit:()=>{},archive:()=>{},del:()=>{},payGo:()=>{},firstCTA:()=>{}};
+    if(c.s!=='pd') return empty;
+    const p=this.state.players.find(x=>x.id===c.id); if(!p) return empty;
+    const T=this.T();
+    const mine=this.state.sessions.filter(s=>s.pids.includes(p.id));
+    const upc=mine.filter(s=>s.status!=='cancelled'&&!this.sPast(s)).sort((a,b)=>a.date===b.date?a.start-b.start:(a.date<b.date?-1:1));
+    const past=mine.filter(s=>this.sPast(s)||s.status==='cancelled').sort((a,b)=>a.date===b.date?b.start-a.start:(a.date<b.date?1:-1));
+    const out=this.outOf(p.id);
+    let pres=0,abs=0; mine.forEach(s=>{const m=(s.att||{})[p.id]; if(m==='present')pres++; if(m==='absent')abs++;});
+    const tiles=[
+      {k:'Next',v:upc[0]?this.rel(upc[0].date):'—',hasTap:false,tap:null,cur:'default',fg:'#171918'},
+      {k:'Activity',v:this.actLabel(p.id),hasTap:false,tap:null,cur:'default',fg:'#171918'},
+      {k:'Attendance',v:(pres+abs)?Math.round(pres/(pres+abs)*100)+'%':'—',hasTap:false,tap:null,cur:'default',fg:'#171918'},
+      {k:'Outstanding',v:out>0?this.money(out):'$0',hasTap:out>0,tap:out>0?()=>this.goPayFiltered('pending',p.id):null,cur:out>0?'pointer':'default',fg:out>0?'#96690F':'#171918'},
+    ];
+    const up=upc.slice(0,4).map((s,i)=>({l1:this.rel(s.date)+' · '+this.t12(s.start),l2:s.type==='private'?'Private Lesson':s.name,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',open:()=>this.go({s:'sd',id:s.id})}));
+    const hist=past.slice(0,6).map((s,i)=>{ const m=(s.att||{})[p.id]; const cn=s.status==='cancelled';
+      const r=cn?'Cancelled':(s.skipped?'Skipped':(m==='present'?'Present':(m==='absent'?'Absent':'Unmarked')));
+      const rFg=cn?'#8A8E89':(m==='present'?'#2E7D4F':(m==='absent'?'#B3402F':'#8A8E89'));
+      return {l1:this.fmtMed(s.date),l2:s.type==='private'?'Private Lesson':s.name,r,rFg,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',open:()=>this.go({s:'sd',id:s.id})};
+    });
+    const npend=this.state.pays.filter(x=>x.playerId===p.id&&this.isPend(x)).length;
+    return {ok:true,back:()=>this.back(),name:p.name,init:this.initials(p.name),level:p.level,isArch:p.archived,notArch:!p.archived,archLabel:p.archived?'Restore to Active':'Archive',
+      tiles,notes:p.notes||'',hasNotes:!!(p.notes&&p.notes.trim()),
+      up,hasUp:up.length>0,hist,hasHist:hist.length>0,isNewPl:mine.length===0,
+      paySum:out>0?this.money(out)+' outstanding · '+npend+' unpaid charge'+(npend>1?'s':''):'All settled — nothing outstanding',
+      payGo:()=>this.goPayFiltered('pending',p.id),
+      phone:p.phone||'',email:p.email||'',hasPhone:!!p.phone,hasEmail:!!p.email,hasContact:!!(p.phone||p.email),
+      schedule:()=>this.openSheet({t:'create',ctx:{playerId:p.id}}),
+      edit:()=>this.pfOpen(p.id,''),archive:()=>this.archAsk(p.id),del:()=>this.dlgOpen({kind:'delete',pid:p.id,inVal:''}),
+      firstCTA:()=>this.openSheet({t:'create',ctx:{playerId:p.id}})};
+  }
+
+  pfVals(){ const f=this.state.pf; const empty={title:'',name:'',phone:'',email:'',rateStr:'',notes:'',levels:[],err:'',hasErr:false,saving:false,saveLabel:'Save',rateHint:'',isEdit:false,close:()=>this.back(),setName:()=>{},setPhone:()=>{},setEmail:()=>{},setRate:()=>{},setNotes:()=>{},save:()=>{}};
+    if(!f) return empty;
+    const levels=['Beginner','Intermediate','Advanced'].map(l=>{ const tk=this.chipT(f.level===l); return {txt:l,bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>this.pfSet({level:l})}; });
+    return {title:f.id?'Edit Player':'New Player',isEdit:!!f.id,close:()=>{this.setState({pf:null,stack:this.state.stack.slice(0,-1)});},
+      name:f.name,setName:(e)=>this.pfSet({name:e.target.value}),
+      phone:f.phone,setPhone:(e)=>this.pfSet({phone:e.target.value}),
+      email:f.email,setEmail:(e)=>this.pfSet({email:e.target.value}),
+      rateStr:f.rateStr,setRate:(e)=>this.pfSet({rateStr:e.target.value.replace(/[^0-9.]/g,'')}),
+      rateHint:'Leave empty to use your default rate ('+this.money(this.state.coach.rate)+')',
+      notes:f.notes,setNotes:(e)=>this.pfSet({notes:e.target.value}),
+      levels,err:f.err,hasErr:!!f.err,saving:f.saving,saveLabel:f.saving?'Saving…':(f.id?'Save Changes':'Add Player'),save:()=>this.pfSave()};
+  }
+
+  nsVals(){ const d=this.state.ns; const empty={title:'',fromTxt:'',hasFrom:false,isGroup:false,chips:[],noPlayers:false,selSub:'',dates:[],times:[],durs:[],conflict:false,conflictTxt:'',isFree:false,chSeg:{bg:'',fg:'',sh:''},frSeg:{bg:'',fg:'',sh:''},priceStr:'',prov:'',showPrice:true,showTotal:false,totalLine:'',name:'',loc:'',cap:'6',err:'',hasErr:false,saving:false,saveLabel:'Create Session',close:()=>{},setCharge:()=>{},setFree:()=>{},setPrice:()=>{},setName:()=>{},setLoc:()=>{},capInc:()=>{},capDec:()=>{},save:()=>{},addFirst:()=>{}};
+    if(!d) return empty;
+    const actP=this.state.players.filter(p=>!p.archived&&!p.deleted);
+    const chips=actP.map(p=>{ const tk=this.chipT(d.pids.includes(p.id)); return {txt:p.name,bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>this.nsTogglePlayer(p.id)}; });
+    const price=parseFloat(d.priceStr);
+    const cf=this.conflictFor(d.date,d.time,d.time+d.dur,null);
+    return {title:d.type==='private'?'New Private Lesson':'New Group Session',fromTxt:d.from,hasFrom:!!d.from,isGroup:d.type==='group',
+      close:()=>this.nsClose(),
+      chips,noPlayers:actP.length===0,addFirst:()=>this.pfOpen(null,'ns'),
+      selSub:d.type==='group'?(d.pids.length+' selected · capacity '+d.cap):(d.pids.length?'':'Choose one player'),hasSelSub:d.type==='group'||!d.pids.length,
+      dates:this.chipDates(d.date,(iso)=>this.nsSet({date:iso},true)),
+      times:this.chipTimes(d.time,(m)=>this.nsSet({time:m})),
+      durs:this.chipDurs(d.dur,(n)=>this.nsSet({dur:n})),
+      conflict:!!cf,conflictTxt:cf?('Overlaps '+cf.name+' · '+this.t12(cf.start)+'–'+this.t12(this.sEnd(cf))):'',
+      isFree:d.free,chSeg:this.segT(!d.free),frSeg:this.segT(d.free),
+      setCharge:()=>this.nsSet({free:false}),setFree:()=>this.nsSet({free:true}),
+      priceStr:d.priceStr,setPrice:(e)=>this.nsSet({priceStr:e.target.value.replace(/[^0-9.]/g,''),priceDirty:true}),
+      prov:this.nsProv(d),showPrice:!d.free,
+      showTotal:d.type==='group'&&!d.free&&d.pids.length>0&&price>0,
+      totalLine:d.pids.length+' players × '+(price>0?this.money(price):'$0')+' = '+this.money((price>0?price:0)*d.pids.length),
+      name:d.name,setName:(e)=>this.nsSet({name:e.target.value,nameDirty:true}),
+      loc:d.loc,setLoc:(e)=>this.nsSet({loc:e.target.value}),
+      cap:String(d.cap),capInc:()=>this.nsSet({cap:Math.min(12,d.cap+1)}),capDec:()=>this.nsSet({cap:Math.max(Math.max(2,d.pids.length),d.cap-1)}),
+      err:d.err,hasErr:!!d.err,saving:d.saving,saveOp:d.saving?'0.65':'1',saveLabel:d.saving?'Saving…':'Create Session',save:()=>this.nsSave(false)};
+  }
+
+  payVals(){ const st=this.state; const q=st.payQ.trim().toLowerCase(); const tab=st.payTab;
+    const base=st.pays.filter(p=>{
+      if(st.payPlayer&&p.playerId!==st.payPlayer) return false;
+      if(tab==='pending') return this.isPend(p);
+      if(tab==='paid') return p.status==='paid';
+      return this.isOv(p);
+    }).filter(p=>{ if(!q) return true; const nm=this.pl(p.playerId).name.toLowerCase(); const s=p.sessionId?this.ss(p.sessionId):null; return nm.includes(q)||(s&&s.name.toLowerCase().includes(q))||(p.label&&p.label.toLowerCase().includes(q)); });
+    const sorted=[...base].sort((a,b)=>{ if(tab==='paid') return (a.paidDate||'')<(b.paidDate||'')?1:-1; const ao=this.isOv(a)?0:1,bo=this.isOv(b)?0:1; if(ao!==bo) return ao-bo; return a.due<b.due?-1:1; });
+    const rows=sorted.map((p,i)=>{ const pn=this.pl(p.playerId); const s=p.sessionId?this.ss(p.sessionId):null; const tone=this.payTone(p);
+      return {init:this.initials(pn.name),name:pn.name,sub:p.manual?(p.label+' · Manual'):(s?((s.type==='private'?'Private Lesson':s.name)+' · '+this.fmtShort(s.date)):''),amt:tab==='paid'?this.money(p.amount-p.credit):this.money(this.rem(p)),st:tone.txt,stBg:tone.bg,stFg:tone.fg,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',open:()=>this.openSheet({t:'pay',payId:p.id})};
+    });
+    const tot=sorted.reduce((a,p)=>a+(tab==='paid'?(p.amount-p.credit):this.rem(p)),0);
+    const npl=new Set(sorted.map(p=>p.playerId)).size;
+    const fPl=st.payPlayer?this.pl(st.payPlayer):null;
+    const emptyTxt=q?('No payments match “'+st.payQ+'”'):(tab==='pending'?'No outstanding payments':(tab==='paid'?'No collected payments yet':'Nothing overdue'));
+    const emptySub=q?'Try a different name or session.':(tab==='pending'?'Everything is settled.':(tab==='paid'?'Payments you mark paid will appear here.':'No pending charges are past due.'));
+    return {q:st.payQ,setQ:(e)=>this.setState({payQ:e.target.value}),
+      pSeg:this.segT(tab==='pending'),dSeg:this.segT(tab==='paid'),oSeg:this.segT(tab==='overdue'),
+      setPend:()=>this.setState({payTab:'pending'}),setPaid:()=>this.setState({payTab:'paid'}),setOver:()=>this.setState({payTab:'overdue'}),
+      hasFilter:!!fPl,filterName:fPl?fPl.name:'',clearFilter:()=>this.setState({payPlayer:null}),
+      totShow:rows.length>0,totLabel:tab==='pending'?'Pending total':(tab==='paid'?'Collected':'Overdue total'),totAmt:this.money(tot),totSub:rows.length+' charge'+(rows.length===1?'':'s')+' · '+npl+' player'+(npl===1?'':'s'),
+      rows,hasRows:rows.length>0,showEmpty:rows.length===0&&!(st.skel&&this.cur().s==='pay'),emptyTxt,emptySub,
+      skel:st.skel&&this.cur().s==='pay', ready:!(st.skel&&this.cur().s==='pay'),
+      addCharge:()=>this.mcOpen()};
+  }
+
+  psVals(){ const sh=this.state.sheet; const empty={open:false,name:'',init:'',ctx:'',badge:{txt:'',bg:'',fg:''},lines:[],hasNote:false,note:'',acts:[],hasSess:false,goSess:()=>{},close:()=>{}};
+    if(!sh||sh.t!=='pay'||!this.py(sh.payId)) return empty;
+    const p=this.py(sh.payId); const pn=this.pl(p.playerId); const s=p.sessionId?this.ss(p.sessionId):null; const tone=this.payTone(p);
+    const lines=[{k:'Due',v:this.money(p.amount),w:'500',c:'#171918'},{k:'Credit',v:p.credit>0?'−'+this.money(p.credit).slice(0):'$0',w:'500',c:p.credit>0?'#171918':'#8A8E89'}];
+    if(p.status==='paid') lines.push({k:'Collected',v:this.money(p.amount-p.credit),w:'700',c:'#2E7D4F'});
+    else if(p.status==='pending'&&this.rem(p)===0) lines.push({k:'Collected',v:'$0',w:'700',c:'#171918'});
+    else if(p.status==='pending') lines.push({k:'Remaining',v:this.money(this.rem(p)),w:'700',c:'#171918'});
+    const acts=[];
+    if(this.isPend(p)){
+      acts.push({label:'Mark Paid',bg:'#3FA66B',fg:'#FFFFFF',bd:'#3FA66B',tap:()=>this.markPaid(p.id)});
+      acts.push({label:'Credit',bg:'#FFFFFF',fg:'#171918',bd:'#E5E6E1',tap:()=>this.crOpen(p.id)});
+      acts.push({label:'Send Reminder',bg:'#FFFFFF',fg:'#171918',bd:'#E5E6E1',tap:()=>this.toast('Reminder draft opened in Messages')});
+    } else if(p.status==='paid'){
+      acts.push({label:'Mark Unpaid',bg:'#FFFFFF',fg:'#B3402F',bd:'#EBD4D0',tap:()=>this.dlgOpen({kind:'unpaidAsk',payId:p.id})});
+    }
+    let note=''; if(p.status==='voided') note=p.voidNote||'This charge was written off.';
+    else if(p.status==='pending'&&this.rem(p)===0&&p.credit>0) note='Fully credited — nothing owed.'+(p.note?' '+p.note:'');
+    else if(p.status==='paid'&&p.paidDate) note='Marked paid · '+this.fmtMed(p.paidDate);
+    else if(p.note) note=p.note;
+    return {open:true,name:pn.name,init:this.initials(pn.name),
+      ctx:p.manual?(p.label+' · Manual charge · due '+this.fmtShort(p.due)):(s?((s.type==='private'?'Private Lesson':s.name)+' · '+this.fmtMed(s.date)):''),
+      badge:tone,lines,hasNote:!!note,note,acts,
+      hasSess:!!s,goSess:s?()=>{this.setState({sheet:null,stack:[...this.state.stack,{s:'sd',id:s.id}]});}:()=>{},
+      close:()=>this.closeSheet()};
+  }
+
+  shCVals(){ const sh=this.state.sheet; const open=!!sh&&sh.t==='create'; const ctx=open?(sh.ctx||{}):{};
+    let ctxTxt=''; if(ctx.date&&ctx.date!==this.T()) ctxTxt='For '+this.fmtMed(ctx.date); if(ctx.playerId) ctxTxt='For '+this.pl(ctx.playerId).name;
+    return {open,ctxTxt,hasCtx:!!ctxTxt,close:()=>this.closeSheet(),
+      priv:()=>this.setState({sheet:null,ns:this.nsInit('private',ctx),stack:[...this.state.stack,{s:'ns'}]}),
+      grp:()=>this.setState({sheet:null,ns:this.nsInit('group',ctx),stack:[...this.state.stack,{s:'ns'}]})};
+  }
+  shMoreVals(){ const sh=this.state.sheet; return {open:!!sh&&sh.t==='more',close:()=>this.closeSheet(),biz:this.state.coach.biz||'Independent coach',name:this.state.coach.name,init:this.initials(this.state.coach.name),
+    settings:()=>this.goSettings(),help:()=>this.setState({sheet:null,stack:[...this.state.stack,{s:'help'}]}),signout:()=>this.setState({sheet:null,dlg:{kind:'signout'}})}; }
+  shMenuVals(){ const sh=this.state.sheet; const empty={open:false,name:'',showRemove:false,msg:()=>{},view:()=>{},remove:()=>{},close:()=>{}};
+    if(!sh||sh.t!=='menu') return empty;
+    const s=this.ss(sh.sid); const p=this.pl(sh.pid);
+    return {open:true,name:p.name,close:()=>this.closeSheet(),
+      msg:()=>{this.setState({sheet:null});this.toast('Would open Messages · '+(p.phone||p.name));},
+      view:()=>this.setState({sheet:null,stack:[...this.state.stack,{s:'pd',id:p.id}]}),
+      showRemove:s&&s.type==='group'&&s.status!=='cancelled',remove:()=>this.removeAsk(sh.sid,sh.pid)};
+  }
+  shAddVals(){ const sh=this.state.sheet; const empty={open:false,rows:[],none:false,note:'',close:()=>{}};
+    if(!sh||sh.t!=='add'||!this.ss(sh.sid)) return empty;
+    const s=this.ss(sh.sid);
+    const cand=this.state.players.filter(p=>!p.archived&&!p.deleted&&!s.pids.includes(p.id));
+    return {open:true,close:()=>this.closeSheet(),
+      rows:cand.map((p,i)=>({init:this.initials(p.name),name:p.name,sub:p.level,bt:i===0?'0 solid transparent':'1px solid #F0F1EC',tap:()=>this.addToSess(s.id,p.id)})),
+      none:cand.length===0,note:(!s.free&&s.price>0)?('Adding a player creates a '+this.money(s.price)+' pending charge.'):'This is a free session — no charge is created.'};
+  }
+  crVals(){ const sh=this.state.sheet; const empty={open:false,name:'',lines:[],amt:'',note:'',err:'',hasErr:false,setAmt:()=>{},setNote:()=>{},apply:()=>{},close:()=>{}};
+    if(!sh||sh.t!=='cr'||!this.py(sh.payId)||!this.state.cr) return empty;
+    const p=this.py(sh.payId); const c=this.state.cr;
+    return {open:true,name:this.pl(p.playerId).name,close:()=>this.setState({sheet:{t:'pay',payId:p.id},cr:null}),
+      lines:[{k:'Original amount',v:this.money(p.amount)},{k:'Existing credit',v:this.money(p.credit)},{k:'Remaining',v:this.money(this.rem(p))}],
+      amt:c.amt,setAmt:(e)=>this.setState({cr:{...c,amt:e.target.value.replace(/[^0-9.]/g,''),err:''}}),
+      note:c.note,setNote:(e)=>this.setState({cr:{...c,note:e.target.value}}),
+      err:c.err,hasErr:!!c.err,apply:()=>this.crApply()};
+  }
+  mcVals(){ const sh=this.state.sheet; const empty={open:false,chips:[],amt:'',dues:[],note:'',err:'',hasErr:false,saving:false,saveLabel:'Add Charge',setAmt:()=>{},setNote:()=>{},save:()=>{},close:()=>{}};
+    if(!sh||sh.t!=='mc'||!this.state.mc) return empty;
+    const m=this.state.mc; const T=this.T();
+    const chips=this.state.players.filter(p=>!p.archived&&!p.deleted).map(p=>{ const tk=this.chipT(m.pid===p.id); return {txt:p.name,bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>this.mcSet({pid:p.id})}; });
+    const dues=[{txt:'Due today',iso:T},{txt:'Tomorrow',iso:this.addDays(T,1)},{txt:'In a week',iso:this.addDays(T,7)},{txt:'In two weeks',iso:this.addDays(T,14)}].map(o=>{ const tk=this.chipT(m.due===o.iso); return {txt:o.txt,bg:tk.bg,fg:tk.fg,bd:tk.bd,tap:()=>this.mcSet({due:o.iso})}; });
+    return {open:true,close:()=>this.closeSheet(),chips,dues,
+      amt:m.amt,setAmt:(e)=>this.mcSet({amt:e.target.value.replace(/[^0-9.]/g,'')}),
+      note:m.note,setNote:(e)=>this.mcSet({note:e.target.value}),
+      err:m.err,hasErr:!!m.err,saving:m.saving,saveLabel:m.saving?'Saving…':'Add Charge',save:()=>this.mcSave()};
+  }
+  esVals(){ const sh=this.state.sheet; const empty={open:false,name:'',dates:[],times:[],durs:[],priceStr:'',loc:'',isGroup:false,isFree:false,cap:'6',err:'',hasErr:false,setName:()=>{},setPrice:()=>{},setLoc:()=>{},capInc:()=>{},capDec:()=>{},save:()=>{},close:()=>{}};
+    if(!sh||sh.t!=='es'||!this.state.es||!this.ss(sh.sid)) return empty;
+    const e=this.state.es; const s=this.ss(sh.sid);
+    return {open:true,close:()=>this.setState({sheet:null,es:null}),
+      name:e.name,setName:(ev)=>this.esSet({name:ev.target.value}),
+      dates:this.chipDates(e.date,(iso)=>this.esSet({date:iso})),
+      times:this.chipTimes(e.time,(m)=>this.esSet({time:m})),
+      durs:this.chipDurs(e.dur,(n)=>this.esSet({dur:n})),
+      priceStr:e.priceStr,setPrice:(ev)=>this.esSet({priceStr:ev.target.value.replace(/[^0-9.]/g,'')}),
+      loc:e.loc,setLoc:(ev)=>this.esSet({loc:ev.target.value}),
+      isGroup:s.type==='group',isFree:s.free,notFree:!s.free,cap:String(e.cap),
+      capInc:()=>this.esSet({cap:Math.min(12,e.cap+1)}),capDec:()=>this.esSet({cap:Math.max(Math.max(2,s.pids.length),e.cap-1)}),
+      err:e.err,hasErr:!!e.err,save:()=>this.esSave()};
+  }
+  awVals(){ const sh=this.state.sheet; const d=this.state.setDraft;
+    const opts=['Same day','24 hours','48 hours','72 hours'].map(o=>({txt:o,on:!!d&&d.attWindow===o,tap:()=>this.setState({setDraft:{...d,attWindow:o},sheet:null})}));
+    return {open:!!sh&&sh.t==='aw',opts,close:()=>this.closeSheet()};
+  }
+
+  dlgVals(){ const g=this.state.dlg; const empty={open:false,title:'',body:'',hasInput:false,inVal:'',inPh:'',setIn:()=>{},btns:[]};
+    if(!g) return empty;
+    const B=(label,tone,tap,dis)=>({label,tap:dis?()=>{}:tap,dis:!!dis,op:dis?'0.4':'1',
+      bg:tone==='primary'?'#3FA66B':tone==='danger'?'#B3402F':tone==='ink'?'#171918':'#FFFFFF',
+      fg:tone==='plain'?'#171918':'#FFFFFF',
+      bd:tone==='primary'?'#3FA66B':tone==='danger'?'#B3402F':tone==='ink'?'#171918':'#E5E6E1',
+      op:dis?'0.4':'1'});
+    const close=()=>this.dlgClose();
+    let v={...empty,open:true};
+    if(g.kind==='signout'){ v.title='Sign out?'; v.body='Your demo data stays on this device.'; v.btns=[B('Cancel','plain',close),B('Sign Out','danger',()=>this.setState({dlg:null,sheet:null,stack:[{s:'login'}],tab:'home'}))]; }
+    else if(g.kind==='conflict'){ const cf=this.ss(g.sid); v.title='Schedule conflict'; v.body='You already have '+(cf?cf.name:'a session')+' from '+(cf?this.t12(cf.start)+'–'+this.t12(this.sEnd(cf)):'')+' that day.'; v.btns=[B('Choose another time','plain',close),B('Create anyway','ink',()=>{this.dlgClose();this.nsSave(true);})]; }
+    else if(g.kind==='skipAtt'){ v.title='Skip attendance?'; v.body='This session won’t count as missing attendance and will be excluded from attendance metrics.'; v.btns=[B('Cancel','plain',close),B('Skip Attendance','ink',()=>{this.updSess(g.sid,{skipped:true,att:null});this.setState({dlg:null,stack:this.state.stack.slice(0,-1)});this.toast('Attendance skipped');})]; }
+    else if(g.kind==='cancel'){ v.title='Cancel this session?'; v.body='The session stays on your schedule, marked as cancelled. No charges are attached.'; v.btns=[B('Keep Session','plain',close),B('Cancel Session','danger',()=>this.doCancel(g.sid,false))]; }
+    else if(g.kind==='cancelPay'){ const n=this.sessPays(g.sid).filter(p=>this.isPend(p)); const tot=n.reduce((a,p)=>a+this.rem(p),0);
+      v.title='Cancel session?'; v.body='This session has '+this.money(tot)+' in unpaid charges. Paid charges are never changed. What should happen to the unpaid ones?';
+      v.btns=[B('Void unpaid charges','danger',()=>this.doCancel(g.sid,true)),B('Keep unpaid charges','ink',()=>this.doCancel(g.sid,false)),B('Don’t cancel','plain',close)]; }
+    else if(g.kind==='removePay'){ const p=this.py(g.payId); const pn=this.pl(g.pid).name.split(' ')[0];
+      v.title='Remove '+pn+'?'; v.body=pn+' has an unpaid charge of '+this.money(this.rem(p))+' for this session. Removing a player doesn’t erase their financial record. What should happen?';
+      v.btns=[B('Keep the charge','ink',()=>this.doRemove(g.sid,g.pid,false,null)),B('Credit the charge','plain',()=>this.doRemove(g.sid,g.pid,true,g.payId)),B('Cancel','plain',close)]; }
+    else if(g.kind==='remove'){ const pn=this.pl(g.pid).name.split(' ')[0]; v.title='Remove '+pn+' from this session?'; v.body='No charges are attached to this player for this session.'; v.btns=[B('Cancel','plain',close),B('Remove','danger',()=>this.doRemove(g.sid,g.pid,false,null))]; }
+    else if(g.kind==='archive'){ const pn=this.pl(g.pid).name; v.title='Archive '+pn+'?'; v.body='Archived players keep their history and balances but disappear from active lists and pickers. You can restore them anytime.'; v.btns=[B('Cancel','plain',close),B('Archive','ink',()=>this.doArchive(g.pid))]; }
+    else if(g.kind==='delete'){ const pn=this.pl(g.pid).name; v.title='Delete '+pn+'?'; v.body='This removes the player from active use while preserving historical financial records. Type '+pn+' to continue.';
+      v.hasInput=true; v.inVal=g.inVal||''; v.inPh=pn; v.setIn=(e)=>this.setState({dlg:{...g,inVal:e.target.value}});
+      v.btns=[B('Cancel','plain',close),B('Delete Player','danger',()=>this.doDelete(g.pid),(g.inVal||'').trim()!==pn)]; }
+    else if(g.kind==='unpaidAsk'){ const p=this.py(g.payId); v.title='Mark unpaid?'; v.body=this.money(p.amount-p.credit)+' will be removed from collected revenue and return to pending.'; v.btns=[B('Cancel','plain',close),B('Mark Unpaid','danger',()=>this.markUnpaid(g.payId))]; }
+    else if(g.kind==='priceChange'){ v.title='Session price changed'; v.body='There '+(g.n===1?'is 1 unpaid charge':'are '+g.n+' unpaid charges')+' for this session. Paid charges are never changed.';
+      v.btns=[B('Update unpaid to '+this.money(g.newPrice),'ink',()=>{this._esApply&&this._esApply(true);}),B('Keep existing payments','plain',()=>{this._esApply&&this._esApply(false);}),B('Cancel','plain',close)]; }
+    return v;
+  }
+
+  authVals(){ const a=this.state.auth;
+    return {email:a.email,setEmail:(e)=>this.setState({auth:{...a,email:e.target.value,err:''}}),
+      pw:a.pw,setPw:(e)=>this.setState({auth:{...a,pw:e.target.value,err:''}}),
+      err:a.err,hasErr:!!a.err,busy:a.busy,notBusy:!a.busy,signIn:()=>this.signIn(),
+      goSignup:()=>this.setState({stack:[{s:'signup'}]})};
+  }
+  suVals(){ const s=this.state.su;
+    return {name:s.name,setName:(e)=>this.setState({su:{...s,name:e.target.value}}),
+      email:s.email,setEmail:(e)=>this.setState({su:{...s,email:e.target.value}}),
+      pw:s.pw,setPw:(e)=>this.setState({su:{...s,pw:e.target.value}}),
+      pw2:s.pw2,setPw2:(e)=>this.setState({su:{...s,pw2:e.target.value}}),
+      eName:s.errs.name||'',eEmail:s.errs.email||'',ePw:s.errs.pw||'',ePw2:s.errs.pw2||'',
+      hasEName:!!s.errs.name,hasEEmail:!!s.errs.email,hasEPw:!!s.errs.pw,hasEPw2:!!s.errs.pw2,
+      busy:s.busy,notBusy:!s.busy,submit:()=>this.signupGo(),
+      goLogin:()=>this.setState({stack:[{s:'login'}]})};
+  }
+  obVals(){ const o=this.state.ob;
+    const dots=[0,1,2,3,4].map(i=>({bg:i<=o.step?'#3FA66B':'#DADBD4'}));
+    return {isS0:o.step===0,isS1:o.step===1,isS2:o.step===2,isS3:o.step===3,isS4:o.step===4,dots,
+      name:o.name,setName:(e)=>this.setState({ob:{...o,name:e.target.value}}),
+      biz:o.biz,setBiz:(e)=>this.setState({ob:{...o,biz:e.target.value}}),
+      rate:o.rate,setRate:(e)=>this.setState({ob:{...o,rate:e.target.value.replace(/[^0-9.]/g,'')}}),
+      firstName:(o.name.trim()||'Coach').split(' ')[0],
+      next:()=>this.setState({ob:{...o,step:Math.min(4,o.step+1)}}),
+      prev:()=>this.setState({ob:{...o,step:Math.max(0,o.step-1)}}),
+      showPrev:o.step>0&&o.step<4,
+      skip:()=>this.setState({stack:[{s:'dash'}],tab:'home'}),
+      finish:()=>this.obFinish()};
+  }
+  setVals(){ const d=this.state.setDraft; const c=this.state.coach;
+    const empty={name:'',email:'',biz:'',rateStr:'',awVal:'',lSeg:{bg:'',fg:'',sh:''},dSeg:{bg:'',fg:'',sh:''},isDark:false,dirty:false,err:'',hasErr:false,saving:false,saveLabel:'Save Changes',back:()=>this.back(),setName:()=>{},setEmail:()=>{},setBiz:()=>{},setRate:()=>{},openAw:()=>{},setLight:()=>{},setDark:()=>{},save:()=>{},signOut:()=>{}};
+    if(!d) return empty;
+    const dirty=d.name!==c.name||d.email!==c.email||d.biz!==c.biz||d.rateStr!==String(c.rate)||d.attWindow!==c.attWindow||d.theme!==c.theme;
+    return {name:d.name,setName:(e)=>this.sdSet({name:e.target.value}),
+      email:d.email,setEmail:(e)=>this.sdSet({email:e.target.value}),
+      biz:d.biz,setBiz:(e)=>this.sdSet({biz:e.target.value}),
+      rateStr:d.rateStr,setRate:(e)=>this.sdSet({rateStr:e.target.value.replace(/[^0-9.]/g,'')}),
+      awVal:d.attWindow,openAw:()=>this.openSheet({t:'aw'}),
+      lSeg:this.segT(d.theme==='Light'),dSeg:this.segT(d.theme==='Dark'),isDark:d.theme==='Dark',
+      setLight:()=>this.sdSet({theme:'Light'}),setDark:()=>this.sdSet({theme:'Dark'}),
+      dirty,err:d.err,hasErr:!!d.err,saving:this.state.setSaving,saveLabel:this.state.setSaving?'Saving…':'Save Changes',
+      back:()=>this.back(),save:()=>this.setSave(),signOut:()=>this.dlgOpen({kind:'signout'})};
+  }
+  hlpVals(){ return {back:()=>this.back(),
+    mail:()=>this.toast('Email draft to support@coachos.app'),
+    demoLoad:()=>{this.go({s:'demoL'});},demoErr:()=>{this.go({s:'demoE'});},
+    demoBack:()=>this.back(),retry:()=>{this.back();this.toast('Sessions reloaded');}};
+  }
+  tstVals(){ const t=this.state.toastO; return {show:!!t,msg:t?t.m:''}; }
+
+  renderVals(){
+    const {scr,nav}=this.navVals();
+    return {scr,nav,ui:{time:'1:30'},
+      dash:this.dashVals(),sched:this.schedVals(),sd:this.sdVals(),att:this.attVals(),
+      pl:this.plVals(),pd:this.pdVals(),pf:this.pfVals(),ns:this.nsVals(),
+      pay:this.payVals(),ps:this.psVals(),
+      shC:this.shCVals(),shMore:this.shMoreVals(),shMenu:this.shMenuVals(),shAdd:this.shAddVals(),shCr:this.crVals(),shMc:this.mcVals(),shEs:this.esVals(),shAw:this.awVals(),
+      dlg:this.dlgVals(),tst:this.tstVals(),
+      auth:this.authVals(),su:this.suVals(),ob:this.obVals(),set:this.setVals(),hlp:this.hlpVals()};
+  }
+}
+</script>
+</body>
+</html>
