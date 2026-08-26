@@ -4,6 +4,8 @@
 -- Without this, the first request after signup has an authenticated user but
 -- no coach row, and current_coach_id() returns NULL (which RLS reads as "no
 -- access to anything").
+--
+-- Safe to re-run: every statement is guarded.
 -- ============================================================================
 
 create or replace function handle_new_auth_user()
@@ -24,6 +26,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_auth_user();

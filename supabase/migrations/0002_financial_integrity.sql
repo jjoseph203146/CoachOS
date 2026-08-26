@@ -4,6 +4,8 @@
 -- These constraints are the last line of defence for money. They hold even if
 -- the application has a bug, a request is replayed, or two devices submit the
 -- same "Mark Paid" at the same moment.
+--
+-- Safe to re-run: every statement is guarded.
 -- ============================================================================
 
 -- Total applied (payments + credits) against one charge, computed inside the
@@ -67,10 +69,12 @@ begin
 end;
 $$;
 
+drop trigger if exists payments_guard on payments;
 create trigger payments_guard
   before insert or update on payments
   for each row execute function guard_charge_application();
 
+drop trigger if exists credits_guard on credits;
 create trigger credits_guard
   before insert or update on credits
   for each row execute function guard_charge_application();
@@ -96,6 +100,7 @@ begin
 end;
 $$;
 
+drop trigger if exists charges_void_guard on charges;
 create trigger charges_void_guard
   before update on charges
   for each row execute function guard_charge_void();
@@ -121,6 +126,7 @@ begin
 end;
 $$;
 
+drop trigger if exists charges_amount_guard on charges;
 create trigger charges_amount_guard
   before update on charges
   for each row execute function guard_charge_amount();
@@ -166,10 +172,12 @@ begin
 end;
 $$;
 
+drop trigger if exists enrollments_same_coach on enrollments;
 create trigger enrollments_same_coach
   before insert or update on enrollments
   for each row execute function guard_same_coach();
 
+drop trigger if exists charges_same_coach on charges;
 create trigger charges_same_coach
   before insert or update on charges
   for each row execute function guard_same_coach();

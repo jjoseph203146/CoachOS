@@ -52,13 +52,23 @@ To run against a real database, follow **Database setup** below.
 
 ### 2. Create the schema
 
-Two equivalent options:
+All migrations are **idempotent** — re-running one is safe and does nothing the
+second time. If you are unsure what state your database is in, just run them
+again, or run `supabase/verify.sql` (read-only) to see exactly what is present.
 
-**Option A — SQL editor (simplest).** Open the Supabase **SQL Editor**, paste
-the whole of [`supabase/schema.sql`](supabase/schema.sql), and run it. That file
-is the concatenation of every migration, in order.
+**Fresh project** — open the Supabase **SQL Editor**, paste the whole of
+[`supabase/schema.sql`](supabase/schema.sql), and run it. That file is every
+migration concatenated in order, so it already includes the latest one.
 
-**Option B — Supabase CLI.**
+**Existing project** — run only the migration files you have not applied yet,
+from [`supabase/migrations/`](supabase/migrations), lowest number first.
+
+> `schema.sql` already contains every migration. Don't run it *and* then run an
+> individual migration expecting the migration to be new — it won't be. (Older
+> versions of these files were not re-runnable, which made that mistake produce
+> a confusing `column already exists` error. They now succeed quietly.)
+
+**Or use the Supabase CLI:**
 
 ```bash
 npm i -g supabase
@@ -76,8 +86,13 @@ The migrations are:
 | `0004_new_coach_bootstrap.sql` | Creates a `coaches` row automatically when an auth user signs up |
 | `0005_coach_timezone.sql` | Per-coach IANA timezone — every calendar decision is made in it |
 
-> Upgrading an existing database? Apply `0005_coach_timezone.sql`. Rows default
-> to `UTC`; each coach sets their real zone at onboarding or in Settings.
+### 2b. Verify it worked
+
+Run [`supabase/verify.sql`](supabase/verify.sql) in the SQL editor. It is
+read-only and reports one row per check, with any problem sorted to the top.
+Every row should read `OK`. Pay particular attention to the `0003` rows: if RLS
+is not enabled **and forced** on every table, coaches are not isolated from each
+other.
 
 ### 3. Configure auth
 
