@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { ScreenBody } from '@/components/shell/AppShell'
@@ -29,6 +30,8 @@ interface SessionData {
   capacity: number | null
   cancelled: boolean
   attendanceSkipped: boolean
+  /** A program's occurrence: no session price, roster managed via the program. */
+  isProgram: boolean
 }
 
 interface RosterRow {
@@ -60,8 +63,11 @@ export function SessionDetailView({
   unpaid,
   today,
   canManageMoney,
+  program,
 }: {
   session: SessionData
+  /** The program this session belongs to, if any. */
+  program: { id: string; name: string } | null
   typeChip: string
   statusLine: string
   dateLine: string
@@ -130,12 +136,17 @@ export function SessionDetailView({
 
       <div className="text-t23 font-bold tracking-tight15 mt-4">{session.name}</div>
       <div className="text-t13 text-muted mt-[5px] font-medium">{statusLine}</div>
+      {program ? (
+        <Link href={`/programs/${program.id}`} className="inline-block text-t13 font-semibold text-accent mt-[6px]">
+          Part of {program.name} ›
+        </Link>
+      ) : null}
 
       <div className="bg-card border border-line rounded-r16 shadow-card mt-4 px-4 py-[2px]">
         <DetailRow label="Date" value={dateLine} first />
         <DetailRow label="Time" value={timeLine} numeric />
         <DetailRow label="Location" value={locationLine} />
-        <DetailRow label="Price" value={priceLine} numeric />
+        {session.isProgram ? null : <DetailRow label="Price" value={priceLine} numeric />}
         {session.type === 'group' ? (
           <DetailRow label="Capacity" value={capacityLine} />
         ) : null}
@@ -638,7 +649,7 @@ function EditSessionSheet({
           ))}
         </div>
 
-        {!session.isFree ? (
+        {!session.isFree && !session.isProgram ? (
           <>
             <SheetFieldLabel>Price</SheetFieldLabel>
             <div className="mt-[9px]">
@@ -664,7 +675,7 @@ function EditSessionSheet({
           />
         </div>
 
-        {session.type === 'group' ? (
+        {session.type === 'group' && !session.isProgram ? (
           <div className="mt-[14px] flex items-center justify-between">
             <div className="text-t125 font-semibold text-muted">Capacity</div>
             <Stepper

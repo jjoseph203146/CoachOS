@@ -29,6 +29,15 @@ export function isPast(session: Session, clock: Clock): boolean {
 }
 
 /**
+ * Does this enrollment belong in the attendance record? A player who was not
+ * expected and never turned up (still unmarked) is not a gap in it; anyone
+ * who WAS marked counts regardless of what was planned.
+ */
+export function countsForAttendance(enrollment: Enrollment): boolean {
+  return enrollment.expected || enrollment.attendance !== 'unmarked'
+}
+
+/**
  * Roll up per-player attendance into a session-level state.
  *
  * `skipped` is distinct from `unmarked`: the coach deliberately opted out,
@@ -40,12 +49,13 @@ export function attendanceState(
 ): SessionAttendanceState {
   if (session.attendanceSkipped) return 'skipped'
   if (session.status === 'cancelled') return 'na'
-  if (enrollments.length === 0) return 'na'
-  const marked = enrollments.filter(
+  const relevant = enrollments.filter(countsForAttendance)
+  if (relevant.length === 0) return 'na'
+  const marked = relevant.filter(
     (e) => e.attendance === 'present' || e.attendance === 'absent',
   ).length
   if (marked === 0) return 'unmarked'
-  if (marked === enrollments.length) return 'complete'
+  if (marked === relevant.length) return 'complete'
   return 'partial'
 }
 
@@ -84,7 +94,7 @@ export function attendanceMissing(
 ): boolean {
   if (session.status === 'cancelled') return false
   if (session.attendanceSkipped) return false
-  if (enrollments.length === 0) return false
+  if (enrollments.filter(countsForAttendance).length === 0) return false
   if (!isPast(session, clock)) return false
 
   const sinceEnd = minutesBetween(
@@ -223,8 +233,8 @@ export function attendanceLabel(
   status: AttendanceStatus,
   sessionSkipped: boolean,
 ): { text: string; color: string } {
-  if (sessionSkipped || status === 'skipped') return { text: 'Skipped', color: '#8A8E89' }
-  if (status === 'present') return { text: 'Present', color: '#2E7D4F' }
-  if (status === 'absent') return { text: 'Absent', color: '#B3402F' }
-  return { text: 'Unmarked', color: '#8A8E89' }
+  if (sessionSkipped || status === 'skipped') return { text: 'Skipped', color: '#8A94A3' }
+  if (status === 'present') return { text: 'Present', color: '#159A55' }
+  if (status === 'absent') return { text: 'Absent', color: '#A72A38' }
+  return { text: 'Unmarked', color: '#8A94A3' }
 }

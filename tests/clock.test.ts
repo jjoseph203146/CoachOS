@@ -96,6 +96,7 @@ describe('attendance window', () => {
     location: '',
     capacity: 6,
     status: 'scheduled',
+    programId: null,
     attendanceSkipped: false,
     cancelledAt: null,
     createdAt: '2026-08-01T00:00:00Z',
@@ -108,6 +109,7 @@ describe('attendance window', () => {
       sessionId: 's1',
       playerId: 'p1',
       attendance: 'unmarked',
+      expected: true,
       createdAt: '2026-08-01T00:00:00Z',
     },
   ]

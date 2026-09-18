@@ -75,7 +75,7 @@ const TABS: Tab[] = [
   { href: '/dashboard', label: 'Today', Icon: TodayIcon },
   { href: '/schedule', label: 'Calendar', Icon: CalendarIcon },
   { href: '/players', label: 'People', Icon: PeopleIcon },
-  { href: '/settings', label: 'More', Icon: MoreIcon, alsoActiveFor: ['/payments', '/help'] },
+  { href: '/settings', label: 'More', Icon: MoreIcon, alsoActiveFor: ['/payments', '/help', '/programs'] },
 ]
 
 const matches = (pathname: string, prefix: string) =>
@@ -167,11 +167,10 @@ export function TabBar({ role }: { role: MembershipRole }) {
           </svg>
         </QuickAddRow>
 
-        {/* Becomes "Program" when recurring programs ship. */}
         <QuickAddRow
-          title="Group Session"
-          subtitle="Multiple players, per-player price"
-          onClick={() => go('/schedule/new?type=group')}
+          title="Program"
+          subtitle="Recurring clinics and camps"
+          onClick={() => go('/programs')}
         >
           <svg
             width="20"

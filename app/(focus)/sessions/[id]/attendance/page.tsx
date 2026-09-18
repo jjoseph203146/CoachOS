@@ -26,7 +26,14 @@ export default async function AttendancePage({ params }: { params: { id: string 
   return (
     <AttendanceView
       sessionId={session.id}
-      typeLabel={session.type === 'private' ? 'Private lesson' : 'Group session'}
+      typeLabel={
+        session.type === 'private'
+          ? 'Private lesson'
+          : session.programId
+            ? 'Program'
+            : 'Group session'
+      }
+      planned={session.programId !== null}
       title={
         session.type === 'private'
           ? (players.get(enrollments[0]?.playerId ?? '')?.name ?? session.name)
@@ -38,6 +45,7 @@ export default async function AttendancePage({ params }: { params: { id: string 
         name: players.get(enrollment.playerId)?.name ?? 'Player',
         level: players.get(enrollment.playerId)?.level ?? '',
         attendance: enrollment.attendance,
+        expected: enrollment.expected,
       }))}
     />
   )

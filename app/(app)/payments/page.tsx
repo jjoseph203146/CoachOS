@@ -3,6 +3,7 @@ import { requireCoachPage } from '@/lib/auth'
 import { coachClock } from '@/lib/services/clock'
 import { formatMedium, formatShort } from '@/lib/domain/dates'
 import { CHARGE_TONE } from '@/lib/domain/finance'
+import { formatMoney } from '@/lib/domain/money'
 import { loadFinance } from '@/lib/services/finance'
 import { listSelectablePlayers } from '@/lib/services/players'
 import { PaymentsView, type ChargeRow } from './PaymentsView'
@@ -37,18 +38,39 @@ export default async function PaymentsPage({
     const tone = CHARGE_TONE[view.status]
     const player = playersById.get(charge.playerId)
 
+    // Program charges have no session of their own: describe the agreement and
+    // the period (or the session) they cover.
+    const programText = charge.programId
+      ? [
+          charge.label,
+          charge.periodStart && charge.periodEnd
+            ? `${formatShort(charge.periodStart)}–${formatShort(charge.periodEnd)}`
+            : session
+              ? formatShort(session.date)
+              : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : ''
+    const departsFromStandard =
+      charge.standardAmountCents !== null && charge.standardAmountCents !== charge.amountCents
+
     return {
       id: charge.id,
       playerId: charge.playerId,
       playerName: player?.name ?? 'Player',
       subtitle: charge.isManual
         ? `${charge.label} · Manual`
-        : session
+        : charge.programId
+          ? programText
+          : session
           ? `${session.type === 'private' ? 'Private Lesson' : session.name} · ${formatShort(session.date)}`
           : '',
       sheetContext: charge.isManual
         ? `${charge.label} · Manual charge · due ${formatShort(charge.dueDate)}`
-        : session
+        : charge.programId
+          ? `${programText}${departsFromStandard ? ` · agreed price (standard ${formatMoney(charge.standardAmountCents!)})` : ''}`
+          : session
           ? `${session.type === 'private' ? 'Private Lesson' : session.name} · ${formatMedium(session.date)}`
           : '',
       sessionId: charge.sessionId,

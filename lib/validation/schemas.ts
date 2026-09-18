@@ -266,3 +266,117 @@ export const signupSchema = z
     path: ['confirm'],
     message: 'Passwords don’t match.',
   })
+
+// ---- programs ----
+
+const priceBasis = z.enum(['per_session', 'drop_in', 'weekly', 'monthly', 'full_program', 'custom'])
+
+/** A price option as typed: a label, what it is per, and an amount ($0 allowed). */
+const priceOptionInput = z
+  .object({
+    label: z.string().trim().min(1, 'Name each price option.').max(60),
+    basis: priceBasis,
+    amount: z.string(),
+  })
+  .transform((value, ctx) => {
+    const cents = parseMoneyToCents(value.amount)
+    if (cents === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['amount'],
+        message: 'Enter a valid amount.',
+      })
+      return z.NEVER
+    }
+    return { label: value.label, basis: value.basis, amountCents: cents }
+  })
+
+export const createProgramSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Give the program a name.').max(140),
+    audience: z.enum(['youth', 'adult']),
+    weekdays: z.array(z.number().int().min(0).max(6)).min(1, 'Choose at least one day.').max(7),
+    startMin,
+    durationMin,
+    location: z.string().trim().max(140),
+    capacity: z.coerce.number().int().min(2).max(500).nullable().optional(),
+    ageRange: z.string().trim().max(40),
+    startsOn: isoDate,
+    endsOn: isoDate.nullable().optional(),
+    options: z.array(priceOptionInput).min(1, 'Add at least one price option.').max(12),
+  })
+  .refine((value) => !value.endsOn || value.endsOn >= value.startsOn, {
+    path: ['endsOn'],
+    message: 'The end date is before the start date.',
+  })
+
+export const addPriceOptionSchema = z.object({ programId: id, option: priceOptionInput })
+
+export const updatePriceOptionSchema = z
+  .object({
+    optionId: id,
+    label: z.string().trim().min(1, 'Name the price option.').max(60).optional(),
+    amount: z.string().optional(),
+  })
+  .transform((value, ctx) => {
+    let amountCents: number | undefined
+    if (value.amount !== undefined) {
+      const parsed = parseMoneyToCents(value.amount)
+      if (parsed === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['amount'],
+          message: 'Enter a valid amount.',
+        })
+        return z.NEVER
+      }
+      amountCents = parsed
+    }
+    return { optionId: value.optionId, label: value.label, amountCents }
+  })
+
+export const archivePriceOptionSchema = z.object({ optionId: id })
+
+export const enrollParticipantSchema = z
+  .object({
+    programId: id,
+    playerId: id,
+    priceOptionId: id.nullable(),
+    /** Only meaningful for the owner; the service refuses it for a coach. */
+    customAmount: z.string().optional(),
+    customLabel: z.string().trim().max(60).optional(),
+    customBasis: priceBasis.optional(),
+    note: z.string().trim().max(400),
+  })
+  .transform((value, ctx) => {
+    let customAmountCents: number | null = null
+    if (value.customAmount !== undefined && value.customAmount.trim() !== '') {
+      const parsed = parseMoneyToCents(value.customAmount)
+      if (parsed === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['customAmount'],
+          message: 'Enter a valid amount.',
+        })
+        return z.NEVER
+      }
+      customAmountCents = parsed
+    }
+    return {
+      programId: value.programId,
+      playerId: value.playerId,
+      priceOptionId: value.priceOptionId,
+      customAmountCents,
+      customLabel: value.customLabel,
+      customBasis: value.customBasis,
+      note: value.note,
+    }
+  })
+
+export const rosterPlaceSchema = z.object({ enrollmentId: id })
+export const programIdSchema = z.object({ programId: id })
+
+export const setExpectedSchema = z.object({
+  sessionId: id,
+  marks: z.array(z.object({ playerId: id, expected: z.coerce.boolean() })).max(500),
+})

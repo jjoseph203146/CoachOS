@@ -110,7 +110,7 @@ export function Chip({
   return (
     <button
       onClick={onClick}
-      className={`rounded-full font-semibold border ${sizing} ${
+      className={`rounded-full font-semibold border whitespace-nowrap shrink-0 ${sizing} ${
         selected ? 'bg-accent text-white border-accent' : 'bg-card text-ink border-field'
       }`}
     >

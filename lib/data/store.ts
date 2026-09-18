@@ -27,6 +27,11 @@ import type {
   Player,
   PriceBasis,
   PriceSource,
+  Program,
+  ProgramAudience,
+  ProgramEnrollment,
+  ProgramPriceOption,
+  AgreementSource,
   Session,
   Theme,
 } from '@/lib/domain/types'
@@ -55,6 +60,8 @@ export interface NewSessionInput {
   isFree: boolean
   location: string
   capacity: number | null
+  /** Set for a program's generated occurrences. */
+  programId?: string | null
 }
 
 export interface UpdateSessionInput extends Partial<NewSessionInput> {
@@ -75,6 +82,66 @@ export interface NewChargeInput {
   isManual: boolean
   label: string
   note: string
+  /** Program charges: the roster place whose agreement priced this charge. */
+  programId?: string | null
+  programEnrollmentId?: string | null
+  periodStart?: ISODate | null
+  periodEnd?: ISODate | null
+}
+
+export interface NewProgramInput {
+  name: string
+  audience: ProgramAudience
+  weekdays: number[]
+  startMin: number
+  durationMin: number
+  location: string
+  capacity: number | null
+  ageRange: string
+  startsOn: ISODate
+  endsOn: ISODate | null
+}
+
+export interface UpdateProgramInput {
+  name?: string
+  location?: string
+  capacity?: number | null
+  ageRange?: string
+  status?: Program['status']
+  endsOn?: ISODate | null
+}
+
+export interface NewPriceOptionInput {
+  programId: string
+  label: string
+  basis: PriceBasis
+  amountCents: number
+  position: number
+}
+
+export interface UpdatePriceOptionInput {
+  label?: string
+  amountCents?: number
+  position?: number
+  archivedAt?: string | null
+}
+
+export interface NewProgramEnrollmentInput {
+  programId: string
+  playerId: string
+  joinedOn: ISODate
+  priceOptionId: string | null
+  agreedLabel: string
+  agreedBasis: PriceBasis
+  agreedAmountCents: number
+  standardAmountCents: number | null
+  agreementSource: AgreementSource
+  agreementNote: string
+}
+
+export interface UpdateProgramEnrollmentInput {
+  status?: ProgramEnrollment['status']
+  endedOn?: ISODate | null
 }
 
 export interface NewPaymentInput {
@@ -142,13 +209,54 @@ export interface DataStore {
   // ---- enrollments / attendance ----
   listEnrollments(coachId: string): Promise<Enrollment[]>
   listEnrollmentsForSession(coachId: string, sessionId: string): Promise<Enrollment[]>
-  addEnrollment(coachId: string, sessionId: string, playerId: string): Promise<Enrollment>
+  addEnrollment(
+    coachId: string,
+    sessionId: string,
+    playerId: string,
+    opts?: { expected?: boolean },
+  ): Promise<Enrollment>
+  /** Enroll many players in one session with a single write. */
+  addEnrollments(
+    coachId: string,
+    sessionId: string,
+    playerIds: string[],
+    opts?: { expected?: boolean },
+  ): Promise<void>
+  /** The planning list for an occurrence — see `Enrollment.expected`. */
+  setExpected(
+    coachId: string,
+    sessionId: string,
+    marks: Array<{ playerId: string; expected: boolean }>,
+  ): Promise<void>
   removeEnrollment(coachId: string, sessionId: string, playerId: string): Promise<void>
   setAttendance(
     coachId: string,
     sessionId: string,
     marks: Array<{ playerId: string; attendance: AttendanceStatus }>,
   ): Promise<void>
+
+  // ---- programs ----
+  listPrograms(coachId: string): Promise<Program[]>
+  getProgram(coachId: string, programId: string): Promise<Program | null>
+  createProgram(coachId: string, input: NewProgramInput): Promise<Program>
+  updateProgram(coachId: string, programId: string, patch: UpdateProgramInput): Promise<Program>
+  listPriceOptions(coachId: string): Promise<ProgramPriceOption[]>
+  createPriceOption(coachId: string, input: NewPriceOptionInput): Promise<ProgramPriceOption>
+  updatePriceOption(
+    coachId: string,
+    optionId: string,
+    patch: UpdatePriceOptionInput,
+  ): Promise<ProgramPriceOption>
+  listProgramEnrollments(coachId: string): Promise<ProgramEnrollment[]>
+  createProgramEnrollment(
+    coachId: string,
+    input: NewProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment>
+  updateProgramEnrollment(
+    coachId: string,
+    enrollmentId: string,
+    patch: UpdateProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment>
 
   // ---- financial records ----
   listCharges(coachId: string): Promise<Charge[]>

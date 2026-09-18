@@ -34,6 +34,7 @@ export default async function SessionDetailPage({
   const chargeViews = finance.forSession(session.id)
   const selectable = await listSelectablePlayers(store, coachId)
 
+  const program = session.programId ? await store.getProgram(coachId, session.programId) : null
   const enrolledIds = new Set(enrollments.map((e) => e.playerId))
   const cancelled = session.status === 'cancelled'
   const marked = enrollments.filter(
@@ -87,8 +88,12 @@ export default async function SessionDetailPage({
         capacity: session.capacity,
         cancelled,
         attendanceSkipped: session.attendanceSkipped,
+        isProgram: session.programId !== null,
       }}
-      typeChip={session.type === 'private' ? 'Private Lesson' : 'Group Session'}
+      program={program ? { id: program.id, name: program.name } : null}
+      typeChip={
+        session.type === 'private' ? 'Private Lesson' : program ? 'Program' : 'Group Session'
+      }
       statusLine={statusLine}
       dateLine={formatLong(session.date)}
       timeLine={`${formatTime(session.startMin)} – ${formatTime(sessionEndMin(session))} · ${session.durationMin} min`}
@@ -99,9 +104,11 @@ export default async function SessionDetailPage({
           : `${formatMoney(session.priceCents)}${session.type === 'group' ? ' per player' : ''}`
       }
       capacityLine={
-        session.type === 'group'
-          ? `${enrollments.length} of ${session.capacity} enrolled`
-          : ''
+        program
+          ? `${enrollments.filter((e) => e.expected).length} expected · ${enrollments.length} enrolled`
+          : session.type === 'group'
+            ? `${enrollments.length} of ${session.capacity} enrolled`
+            : ''
       }
       showTakeAttendance={
         !cancelled &&
@@ -110,8 +117,11 @@ export default async function SessionDetailPage({
         attendance !== 'complete' &&
         (past || session.date === clock.today)
       }
+      // A program's roster is managed on the program, so each participant keeps
+      // the price they agreed to.
       canAddPlayer={
         session.type === 'group' &&
+        !program &&
         !cancelled &&
         enrollments.length < (session.capacity ?? 99)
       }

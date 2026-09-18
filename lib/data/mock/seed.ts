@@ -184,6 +184,7 @@ export function buildSeed(
     location,
     capacity,
     status: 'scheduled',
+    programId: null,
     attendanceSkipped: false,
     cancelledAt: null,
     createdAt: NOW,
@@ -223,6 +224,7 @@ export function buildSeed(
     sessionId,
     playerId,
     attendance,
+    expected: true,
     createdAt: NOW,
   })
 
@@ -279,6 +281,10 @@ export function buildSeed(
       priceSource: isManual ? 'manual' : 'session_price',
       priceBasis: isManual ? null : 'per_session',
       standardAmountCents: null,
+      programId: null,
+      programEnrollmentId: null,
+      periodStart: null,
+      periodEnd: null,
       dueDate,
       isManual,
       label: '',

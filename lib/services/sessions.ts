@@ -40,6 +40,7 @@ import type {
 } from '@/lib/domain/types'
 import { DomainError } from './errors'
 import { loadFinance } from './finance'
+import { chargeAttendedParticipants } from './programs'
 
 export interface SessionDetail {
   session: Session
@@ -230,7 +231,10 @@ export async function updateSession(
   }
   const session = await getSession(store, coachId, sessionId)
   if (!args.name.trim()) throw new DomainError('INVALID', 'Session needs a name.')
-  if (!session.isFree && args.priceCents <= 0) {
+  // A program occurrence has no price of its own: participants are charged
+  // from their agreements, so there is no session price to validate or edit.
+  const isProgram = session.programId !== null
+  if (!isProgram && !session.isFree && args.priceCents <= 0) {
     throw new DomainError('INVALID', 'Enter a valid price.')
   }
 
@@ -248,7 +252,7 @@ export async function updateSession(
 
   const finance = await loadFinance(store, coachId, today)
   const unpaid = finance.forSession(sessionId).filter((v) => v.isPending)
-  const priceChanged = !session.isFree && args.priceCents !== session.priceCents
+  const priceChanged = !isProgram && !session.isFree && args.priceCents !== session.priceCents
 
   // Ask the coach before touching money they've already committed to.
   if (priceChanged && unpaid.length > 0 && !args.priceChangeDecision) {
@@ -261,9 +265,9 @@ export async function updateSession(
       date: args.date,
       startMin: args.startMin,
       durationMin: args.durationMin,
-      priceCents: session.isFree ? 0 : args.priceCents,
+      priceCents: session.isFree || isProgram ? session.priceCents : args.priceCents,
       location: args.location.trim(),
-      capacity: session.type === 'group' ? args.capacity : null,
+      capacity: isProgram ? session.capacity : session.type === 'group' ? args.capacity : null,
     })
 
     for (const view of unpaid) {
@@ -514,6 +518,9 @@ export async function saveAttendance(
     if (session.attendanceSkipped) {
       await tx.updateSession(coachId, sessionId, { attendanceSkipped: false })
     }
+    // Per-session program participants pay for what they attend. Charges are
+    // the last write, as the Supabase adapter requires.
+    await chargeAttendedParticipants(tx, coachId, sessionId)
   })
 }
 

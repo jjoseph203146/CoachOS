@@ -57,6 +57,8 @@ export interface DashboardModel {
   outstandingPlayers: number
   outstandingCharges: number
   players: Map<string, Player>
+  /** Audience of each program, so occurrences can be coloured (youth green, adult purple). */
+  programAudiences: Map<string, 'youth' | 'adult'>
 }
 
 export async function loadDashboard(
@@ -65,13 +67,14 @@ export async function loadDashboard(
   clock: Clock,
   graceMinutes = 0,
 ): Promise<DashboardModel> {
-  const [sessions, enrollments, players, finance, needsAttendance, payments] = await Promise.all([
+  const [sessions, enrollments, players, finance, needsAttendance, payments, programs] = await Promise.all([
     store.listSessions(coachId),
     store.listEnrollments(coachId),
     store.listPlayers(coachId, { includeDeleted: true }),
     loadFinance(store, coachId, clock.today),
     sessionsNeedingAttendance(store, coachId, clock, graceMinutes),
     store.listPayments(coachId),
+    store.listPrograms(coachId),
   ])
 
   const playerMap = new Map(players.map((p) => [p.id, p]))
@@ -140,7 +143,7 @@ export async function loadDashboard(
       main: `${formatMoney(total)} overdue`,
       sub: `${overdue.length} charge${overdue.length > 1 ? 's' : ''} · ${uniquePlayers} player${uniquePlayers > 1 ? 's' : ''}`,
       href: '/payments?tab=overdue',
-      dot: '#B3402F',
+      dot: '#A72A38',
       cta: 'Review',
     })
   }
@@ -174,6 +177,7 @@ export async function loadDashboard(
     outstandingPlayers: new Set(pending.map((v) => v.charge.playerId)).size,
     outstandingCharges: pending.length,
     players: playerMap,
+    programAudiences: new Map(programs.map((p) => [p.id, p.audience])),
   }
 }
 

@@ -132,6 +132,8 @@ export interface Session {
   /** Group sessions only; `null` for private lessons. */
   capacity: number | null
   status: SessionStatus
+  /** The program this session is an occurrence of; `null` for one-off sessions. */
+  programId: string | null
   /** Coach explicitly chose to skip attendance for this session. */
   attendanceSkipped: boolean
   cancelledAt: string | null
@@ -144,6 +146,11 @@ export interface Enrollment {
   sessionId: string
   playerId: string
   attendance: AttendanceStatus
+  /**
+   * Planning, not attendance: is this player expected at the occurrence?
+   * A non-expected player who is still unmarked never counts as missing.
+   */
+  expected: boolean
   createdAt: string
 }
 
@@ -190,6 +197,12 @@ export interface Charge {
   priceBasis: PriceBasis | null
   /** `null` when there was no standard price to compare against. */
   standardAmountCents: number | null
+  /** Program charges: the program and the roster place whose agreement priced them. */
+  programId: string | null
+  programEnrollmentId: string | null
+  /** Weekly/monthly program charges cover a period. */
+  periodStart: ISODate | null
+  periodEnd: ISODate | null
   dueDate: ISODate
   isManual: boolean
   /** Manual charges carry a label, e.g. "Racquet restring". */
@@ -219,6 +232,76 @@ export interface Credit {
   chargeId: string
   amountCents: number
   reason: string
+  createdAt: string
+}
+
+export type ProgramAudience = 'youth' | 'adult'
+export type ProgramStatus = 'active' | 'ended'
+export type RosterStatus = 'active' | 'ended'
+export type AgreementSource = 'program_option' | 'custom'
+
+/**
+ * A recurring group offering (a clinic, a camp). It has NO price of its own:
+ * see `ProgramPriceOption`. Its occurrences are ordinary `Session`s that carry
+ * `programId`.
+ */
+export interface Program {
+  id: string
+  coachId: string
+  name: string
+  audience: ProgramAudience
+  /** 0 = Sunday … 6 = Saturday. */
+  weekdays: number[]
+  startMin: number
+  durationMin: number
+  location: string
+  /** `null` means no cap. */
+  capacity: number | null
+  ageRange: string
+  startsOn: ISODate
+  endsOn: ISODate | null
+  status: ProgramStatus
+  createdAt: string
+}
+
+/**
+ * One way to pay for a program ("Weekly $150", "Drop-in $35"). Live
+ * configuration: editing or archiving one never touches an existing
+ * agreement or charge.
+ */
+export interface ProgramPriceOption {
+  id: string
+  coachId: string
+  programId: string
+  label: string
+  basis: PriceBasis
+  amountCents: number
+  position: number
+  archivedAt: string | null
+}
+
+/**
+ * A participant's place in a program AND their agreed price. The agreed_*
+ * fields are a snapshot taken when the agreement was made; `priceOptionId` is
+ * context only. The agreed price may deliberately differ from the standard
+ * (`agreementSource === 'custom'`, owner only).
+ */
+export interface ProgramEnrollment {
+  id: string
+  coachId: string
+  programId: string
+  playerId: string
+  status: RosterStatus
+  joinedOn: ISODate
+  endedOn: ISODate | null
+  priceOptionId: string | null
+  agreedLabel: string
+  agreedBasis: PriceBasis
+  agreedAmountCents: number
+  /** The option's price when the agreement was made. */
+  standardAmountCents: number | null
+  agreementSource: AgreementSource
+  agreementNote: string
   createdAt: string
 }
 

@@ -155,10 +155,10 @@ export function paymentFits(view: ChargeView, paymentCents: number): boolean {
 
 /** Badge colours, taken verbatim from the prototype's `payTone()`. */
 export const CHARGE_TONE: Record<ChargeStatus, { label: string; bg: string; fg: string }> = {
-  paid: { label: 'Paid', bg: '#E4F2E9', fg: '#2E7D4F' },
-  voided: { label: 'Voided', bg: '#EDEDE8', fg: '#6B706C' },
-  credited: { label: 'Credited', bg: '#EDEDE8', fg: '#6B706C' },
-  overdue: { label: 'Overdue', bg: '#F7E9E6', fg: '#B3402F' },
-  partial: { label: 'Partial', bg: '#F6EEDB', fg: '#96690F' },
-  unpaid: { label: 'Unpaid', bg: '#F6EEDB', fg: '#96690F' },
+  paid: { label: 'Paid', bg: '#EAF8EF', fg: '#159A55' },
+  voided: { label: 'Voided', bg: '#EEF3F8', fg: '#6D7A8C' },
+  credited: { label: 'Credited', bg: '#EEF3F8', fg: '#6D7A8C' },
+  overdue: { label: 'Overdue', bg: '#FFF0F1', fg: '#A72A38' },
+  partial: { label: 'Partial', bg: '#FBF3E4', fg: '#96690F' },
+  unpaid: { label: 'Unpaid', bg: '#FBF3E4', fg: '#96690F' },
 }

@@ -23,7 +23,7 @@ export interface ScheduleRow {
   date: string
   startMin: number
   durationMin: number
-  kind: 'private' | 'group'
+  kind: 'private' | 'group' | 'adult'
   title: string
   subtitle: string
   cancelled: boolean
@@ -314,14 +314,17 @@ function DayTimeline({ rows }: { rows: ScheduleRow[] }) {
         </div>
       ))}
       {placed.map(({ row, column }) => {
-        const isPrivate = row.kind === 'private'
+        const tone =
+          row.kind === 'private'
+            ? 'bg-accent_soft border-l-accent'
+            : row.kind === 'adult'
+              ? 'bg-purple_bg border-l-purple'
+              : 'bg-success_bg border-l-success'
         return (
           <Link
             key={row.id}
             href={`/sessions/${row.id}`}
-            className={`absolute rounded-r10 border-l-[3px] px-[9px] py-[6px] overflow-hidden ${
-              isPrivate ? 'bg-accent_soft border-l-accent' : 'bg-success_bg border-l-success'
-            }`}
+            className={`absolute rounded-r10 border-l-[3px] px-[9px] py-[6px] overflow-hidden ${tone}`}
             style={{
               top: ((row.startMin - from) / 60) * HOUR_PX + 1,
               height: Math.max((row.durationMin / 60) * HOUR_PX - 2, 30),

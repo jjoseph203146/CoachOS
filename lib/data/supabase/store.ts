@@ -30,6 +30,9 @@ import type {
   Enrollment,
   Payment,
   Player,
+  Program,
+  ProgramEnrollment,
+  ProgramPriceOption,
   Session,
 } from '@/lib/domain/types'
 import type {
@@ -38,8 +41,14 @@ import type {
   NewCreditInput,
   NewPaymentInput,
   NewPlayerInput,
+  NewPriceOptionInput,
+  NewProgramEnrollmentInput,
+  NewProgramInput,
   NewSessionInput,
   UpdatePlayerInput,
+  UpdatePriceOptionInput,
+  UpdateProgramEnrollmentInput,
+  UpdateProgramInput,
   UpdateSessionInput,
 } from '../store'
 
@@ -102,6 +111,7 @@ function mapSession(row: Row): Session {
     location: row.location ?? '',
     capacity: row.capacity ?? null,
     status: row.status,
+    programId: row.program_id ?? null,
     attendanceSkipped: !!row.attendance_skipped,
     cancelledAt: row.cancelled_at ?? null,
     createdAt: row.created_at,
@@ -115,6 +125,7 @@ function mapEnrollment(row: Row): Enrollment {
     sessionId: row.session_id,
     playerId: row.player_id,
     attendance: row.attendance,
+    expected: row.expected !== false,
     createdAt: row.created_at,
   }
 }
@@ -129,12 +140,68 @@ function mapCharge(row: Row): Charge {
     priceSource: row.price_source,
     priceBasis: row.price_basis ?? null,
     standardAmountCents: row.standard_amount_cents ?? null,
+    programId: row.program_id ?? null,
+    programEnrollmentId: row.program_enrollment_id ?? null,
+    periodStart: row.period_start ?? null,
+    periodEnd: row.period_end ?? null,
     dueDate: row.due_date,
     isManual: !!row.is_manual,
     label: row.label ?? '',
     note: row.note ?? '',
     voidedAt: row.voided_at ?? null,
     voidNote: row.void_note ?? '',
+    createdAt: row.created_at,
+  }
+}
+
+function mapProgram(row: Row): Program {
+  return {
+    id: row.id,
+    coachId: row.academy_id,
+    name: row.name ?? '',
+    audience: row.audience,
+    weekdays: (row.weekdays ?? []).map(Number),
+    startMin: row.start_min,
+    durationMin: row.duration_min,
+    location: row.location ?? '',
+    capacity: row.capacity ?? null,
+    ageRange: row.age_range ?? '',
+    startsOn: row.starts_on,
+    endsOn: row.ends_on ?? null,
+    status: row.status,
+    createdAt: row.created_at,
+  }
+}
+
+function mapPriceOption(row: Row): ProgramPriceOption {
+  return {
+    id: row.id,
+    coachId: row.academy_id,
+    programId: row.program_id,
+    label: row.label ?? '',
+    basis: row.basis,
+    amountCents: row.amount_cents,
+    position: row.position ?? 0,
+    archivedAt: row.archived_at ?? null,
+  }
+}
+
+function mapProgramEnrollment(row: Row): ProgramEnrollment {
+  return {
+    id: row.id,
+    coachId: row.academy_id,
+    programId: row.program_id,
+    playerId: row.player_id,
+    status: row.status,
+    joinedOn: row.joined_on,
+    endedOn: row.ended_on ?? null,
+    priceOptionId: row.price_option_id ?? null,
+    agreedLabel: row.agreed_label ?? '',
+    agreedBasis: row.agreed_basis,
+    agreedAmountCents: row.agreed_amount_cents,
+    standardAmountCents: row.standard_amount_cents ?? null,
+    agreementSource: row.agreement_source,
+    agreementNote: row.agreement_note ?? '',
     createdAt: row.created_at,
   }
 }
@@ -422,6 +489,7 @@ export class SupabaseDataStore implements DataStore {
           is_free: input.isFree,
           location: input.location,
           capacity: input.capacity,
+          program_id: input.programId ?? null,
         })
         .select('*')
         .single(),
@@ -514,12 +582,19 @@ export class SupabaseDataStore implements DataStore {
     coachId: string,
     sessionId: string,
     playerId: string,
+    opts?: { expected?: boolean },
   ): Promise<Enrollment> {
     const row = await this.unwrap(
       this.client
         .from('enrollments')
         .upsert(
-          { academy_id: coachId, session_id: sessionId, player_id: playerId },
+          {
+            academy_id: coachId,
+            session_id: sessionId,
+            player_id: playerId,
+            // Only sent when asked for, so re-adding never resets an existing choice.
+            ...(opts?.expected !== undefined ? { expected: opts.expected } : {}),
+          },
           { onConflict: 'session_id,player_id' },
         )
         .select('*')
@@ -581,6 +656,207 @@ export class SupabaseDataStore implements DataStore {
     }
   }
 
+  async addEnrollments(
+    coachId: string,
+    sessionId: string,
+    playerIds: string[],
+    opts?: { expected?: boolean },
+  ): Promise<void> {
+    if (playerIds.length === 0) return
+    const { error } = await this.client.from('enrollments').upsert(
+      playerIds.map((playerId) => ({
+        academy_id: coachId,
+        session_id: sessionId,
+        player_id: playerId,
+        ...(opts?.expected !== undefined ? { expected: opts.expected } : {}),
+      })),
+      { onConflict: 'session_id,player_id' },
+    )
+    if (error) throw new Error(error.message)
+    // Enrollments are removed with their session; a session that is rolled
+    // back takes them with it, so no separate compensation is needed here.
+  }
+
+  async setExpected(
+    coachId: string,
+    sessionId: string,
+    marks: Array<{ playerId: string; expected: boolean }>,
+  ): Promise<void> {
+    for (const mark of marks) {
+      const { error } = await this.client
+        .from('enrollments')
+        .update({ expected: mark.expected })
+        .eq('academy_id', coachId)
+        .eq('session_id', sessionId)
+        .eq('player_id', mark.playerId)
+      if (error) throw new Error(error.message)
+    }
+  }
+
+  // ---- programs ----
+
+  async listPrograms(coachId: string): Promise<Program[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('programs').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapProgram)
+  }
+
+  async getProgram(coachId: string, programId: string): Promise<Program | null> {
+    const { data, error } = await this.client
+      .from('programs')
+      .select('*')
+      .eq('academy_id', coachId)
+      .eq('id', programId)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? mapProgram(data) : null
+  }
+
+  async createProgram(coachId: string, input: NewProgramInput): Promise<Program> {
+    const row = await this.unwrap(
+      this.from('programs')
+        .insert({
+          academy_id: coachId,
+          name: input.name,
+          audience: input.audience,
+          weekdays: input.weekdays,
+          start_min: input.startMin,
+          duration_min: input.durationMin,
+          location: input.location,
+          capacity: input.capacity,
+          age_range: input.ageRange,
+          starts_on: input.startsOn,
+          ends_on: input.endsOn,
+        })
+        .select('*')
+        .single(),
+    )
+    return mapProgram(row)
+  }
+
+  async updateProgram(
+    coachId: string,
+    programId: string,
+    patch: UpdateProgramInput,
+  ): Promise<Program> {
+    const payload: Row = {}
+    if (patch.name !== undefined) payload.name = patch.name
+    if (patch.location !== undefined) payload.location = patch.location
+    if (patch.capacity !== undefined) payload.capacity = patch.capacity
+    if (patch.ageRange !== undefined) payload.age_range = patch.ageRange
+    if (patch.status !== undefined) payload.status = patch.status
+    if (patch.endsOn !== undefined) payload.ends_on = patch.endsOn
+    const row = await this.unwrap(
+      this.from('programs')
+        .update(payload)
+        .eq('academy_id', coachId)
+        .eq('id', programId)
+        .select('*')
+        .single(),
+    )
+    return mapProgram(row)
+  }
+
+  async listPriceOptions(coachId: string): Promise<ProgramPriceOption[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('program_price_options').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapPriceOption)
+  }
+
+  async createPriceOption(
+    coachId: string,
+    input: NewPriceOptionInput,
+  ): Promise<ProgramPriceOption> {
+    const row = await this.unwrap(
+      this.from('program_price_options')
+        .insert({
+          academy_id: coachId,
+          program_id: input.programId,
+          label: input.label,
+          basis: input.basis,
+          amount_cents: input.amountCents,
+          position: input.position,
+        })
+        .select('*')
+        .single(),
+    )
+    return mapPriceOption(row)
+  }
+
+  async updatePriceOption(
+    coachId: string,
+    optionId: string,
+    patch: UpdatePriceOptionInput,
+  ): Promise<ProgramPriceOption> {
+    const payload: Row = {}
+    if (patch.label !== undefined) payload.label = patch.label
+    if (patch.amountCents !== undefined) payload.amount_cents = patch.amountCents
+    if (patch.position !== undefined) payload.position = patch.position
+    if (patch.archivedAt !== undefined) payload.archived_at = patch.archivedAt
+    const row = await this.unwrap(
+      this.from('program_price_options')
+        .update(payload)
+        .eq('academy_id', coachId)
+        .eq('id', optionId)
+        .select('*')
+        .single(),
+    )
+    return mapPriceOption(row)
+  }
+
+  async listProgramEnrollments(coachId: string): Promise<ProgramEnrollment[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('program_enrollments').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapProgramEnrollment)
+  }
+
+  async createProgramEnrollment(
+    coachId: string,
+    input: NewProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment> {
+    const row = await this.unwrap(
+      this.from('program_enrollments')
+        .insert({
+          academy_id: coachId,
+          program_id: input.programId,
+          player_id: input.playerId,
+          joined_on: input.joinedOn,
+          price_option_id: input.priceOptionId,
+          agreed_label: input.agreedLabel,
+          agreed_basis: input.agreedBasis,
+          agreed_amount_cents: input.agreedAmountCents,
+          standard_amount_cents: input.standardAmountCents,
+          agreement_source: input.agreementSource,
+          agreement_note: input.agreementNote,
+        })
+        .select('*')
+        .single(),
+    )
+    return mapProgramEnrollment(row)
+  }
+
+  async updateProgramEnrollment(
+    coachId: string,
+    enrollmentId: string,
+    patch: UpdateProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment> {
+    const payload: Row = {}
+    if (patch.status !== undefined) payload.status = patch.status
+    if (patch.endedOn !== undefined) payload.ended_on = patch.endedOn
+    const row = await this.unwrap(
+      this.from('program_enrollments')
+        .update(payload)
+        .eq('academy_id', coachId)
+        .eq('id', enrollmentId)
+        .select('*')
+        .single(),
+    )
+    return mapProgramEnrollment(row)
+  }
+
   // ---- financial ----
 
   async listCharges(coachId: string): Promise<Charge[]> {
@@ -634,6 +910,10 @@ export class SupabaseDataStore implements DataStore {
             price_source: input.priceSource,
             price_basis: input.priceBasis,
             standard_amount_cents: input.standardAmountCents,
+            program_id: input.programId ?? null,
+            program_enrollment_id: input.programEnrollmentId ?? null,
+            period_start: input.periodStart ?? null,
+            period_end: input.periodEnd ?? null,
             due_date: input.dueDate,
             is_manual: input.isManual,
             label: input.label,

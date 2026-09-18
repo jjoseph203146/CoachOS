@@ -20,6 +20,9 @@ import type {
   Enrollment,
   Payment,
   Player,
+  Program,
+  ProgramEnrollment,
+  ProgramPriceOption,
   Session,
 } from '@/lib/domain/types'
 import type {
@@ -28,8 +31,14 @@ import type {
   NewCreditInput,
   NewPaymentInput,
   NewPlayerInput,
+  NewPriceOptionInput,
+  NewProgramEnrollmentInput,
+  NewProgramInput,
   NewSessionInput,
   UpdatePlayerInput,
+  UpdatePriceOptionInput,
+  UpdateProgramEnrollmentInput,
+  UpdateProgramInput,
   UpdateSessionInput,
 } from '../store'
 import { buildSeed, type SeedProfile } from './seed'
@@ -44,6 +53,9 @@ interface Tables {
   charges: Charge[]
   payments: Payment[]
   credits: Credit[]
+  programs: Program[]
+  priceOptions: ProgramPriceOption[]
+  programEnrollments: ProgramEnrollment[]
 }
 
 function emptyTables(): Tables {
@@ -56,6 +68,9 @@ function emptyTables(): Tables {
     charges: [],
     payments: [],
     credits: [],
+    programs: [],
+    priceOptions: [],
+    programEnrollments: [],
   }
 }
 
@@ -259,6 +274,7 @@ export class MockDataStore implements DataStore {
       location: input.location,
       capacity: input.capacity,
       status: 'scheduled',
+      programId: input.programId ?? null,
       attendanceSkipped: false,
       cancelledAt: null,
       createdAt: nowISO(),
@@ -294,6 +310,7 @@ export class MockDataStore implements DataStore {
     coachId: string,
     sessionId: string,
     playerId: string,
+    opts?: { expected?: boolean },
   ): Promise<Enrollment> {
     const existing = this.db.enrollments.find(
       (e) => e.coachId === coachId && e.sessionId === sessionId && e.playerId === playerId,
@@ -305,10 +322,34 @@ export class MockDataStore implements DataStore {
       sessionId,
       playerId,
       attendance: 'unmarked',
+      expected: opts?.expected ?? true,
       createdAt: nowISO(),
     }
     this.db.enrollments.push(enrollment)
     return clone(enrollment)
+  }
+
+  async addEnrollments(
+    coachId: string,
+    sessionId: string,
+    playerIds: string[],
+    opts?: { expected?: boolean },
+  ): Promise<void> {
+    for (const playerId of playerIds) await this.addEnrollment(coachId, sessionId, playerId, opts)
+  }
+
+  async setExpected(
+    coachId: string,
+    sessionId: string,
+    marks: Array<{ playerId: string; expected: boolean }>,
+  ): Promise<void> {
+    for (const mark of marks) {
+      const enrollment = this.db.enrollments.find(
+        (e) =>
+          e.coachId === coachId && e.sessionId === sessionId && e.playerId === mark.playerId,
+      )
+      if (enrollment) enrollment.expected = mark.expected
+    }
   }
 
   async removeEnrollment(
@@ -358,6 +399,112 @@ export class MockDataStore implements DataStore {
     )
   }
 
+  // ---- programs ----
+
+  async listPrograms(coachId: string): Promise<Program[]> {
+    return clone(this.db.programs.filter((p) => p.coachId === coachId))
+  }
+
+  async getProgram(coachId: string, programId: string): Promise<Program | null> {
+    return clone(
+      this.db.programs.find((p) => p.id === programId && p.coachId === coachId) ?? null,
+    )
+  }
+
+  async createProgram(coachId: string, input: NewProgramInput): Promise<Program> {
+    const program: Program = {
+      id: nextId('prog'),
+      coachId,
+      ...input,
+      weekdays: [...input.weekdays],
+      status: 'active',
+      createdAt: nowISO(),
+    }
+    this.db.programs.push(program)
+    return clone(program)
+  }
+
+  async updateProgram(
+    coachId: string,
+    programId: string,
+    patch: UpdateProgramInput,
+  ): Promise<Program> {
+    const program = this.db.programs.find((p) => p.id === programId && p.coachId === coachId)
+    if (!program) throw new Error('Program not found')
+    Object.assign(program, patch)
+    return clone(program)
+  }
+
+  async listPriceOptions(coachId: string): Promise<ProgramPriceOption[]> {
+    return clone(this.db.priceOptions.filter((o) => o.coachId === coachId))
+  }
+
+  async createPriceOption(
+    coachId: string,
+    input: NewPriceOptionInput,
+  ): Promise<ProgramPriceOption> {
+    const option: ProgramPriceOption = {
+      id: nextId('opt'),
+      coachId,
+      ...input,
+      archivedAt: null,
+    }
+    this.db.priceOptions.push(option)
+    return clone(option)
+  }
+
+  async updatePriceOption(
+    coachId: string,
+    optionId: string,
+    patch: UpdatePriceOptionInput,
+  ): Promise<ProgramPriceOption> {
+    const option = this.db.priceOptions.find((o) => o.id === optionId && o.coachId === coachId)
+    if (!option) throw new Error('Price option not found')
+    Object.assign(option, patch)
+    return clone(option)
+  }
+
+  async listProgramEnrollments(coachId: string): Promise<ProgramEnrollment[]> {
+    return clone(this.db.programEnrollments.filter((e) => e.coachId === coachId))
+  }
+
+  async createProgramEnrollment(
+    coachId: string,
+    input: NewProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment> {
+    const active = this.db.programEnrollments.find(
+      (e) =>
+        e.coachId === coachId &&
+        e.programId === input.programId &&
+        e.playerId === input.playerId &&
+        e.status === 'active',
+    )
+    if (active) throw new Error('That player is already in this program')
+    const enrollment: ProgramEnrollment = {
+      id: nextId('pe'),
+      coachId,
+      ...input,
+      status: 'active',
+      endedOn: null,
+      createdAt: nowISO(),
+    }
+    this.db.programEnrollments.push(enrollment)
+    return clone(enrollment)
+  }
+
+  async updateProgramEnrollment(
+    coachId: string,
+    enrollmentId: string,
+    patch: UpdateProgramEnrollmentInput,
+  ): Promise<ProgramEnrollment> {
+    const enrollment = this.db.programEnrollments.find(
+      (e) => e.id === enrollmentId && e.coachId === coachId,
+    )
+    if (!enrollment) throw new Error('Roster place not found')
+    Object.assign(enrollment, patch)
+    return clone(enrollment)
+  }
+
   async createCharge(coachId: string, input: NewChargeInput): Promise<Charge> {
     const charge: Charge = {
       id: nextId('c'),
@@ -368,6 +515,10 @@ export class MockDataStore implements DataStore {
       priceSource: input.priceSource,
       priceBasis: input.priceBasis,
       standardAmountCents: input.standardAmountCents,
+      programId: input.programId ?? null,
+      programEnrollmentId: input.programEnrollmentId ?? null,
+      periodStart: input.periodStart ?? null,
+      periodEnd: input.periodEnd ?? null,
       dueDate: input.dueDate,
       isManual: input.isManual,
       label: input.label,

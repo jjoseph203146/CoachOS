@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { Segmented } from '@/components/ui/controls'
 import { Avatar, Card, DetailHeader } from '@/components/ui/primitives'
 import { Dialog, useToast } from '@/components/ui/overlays'
 import { saveAttendanceAction, skipAttendanceAction } from '@/lib/actions/sessions'
@@ -12,6 +13,8 @@ interface Row {
   name: string
   level: string
   attendance: AttendanceStatus
+  /** The planning list: who was expected. Only meaningful when `planned`. */
+  expected: boolean
 }
 
 /**
@@ -27,12 +30,15 @@ export function AttendanceView({
   title,
   when,
   rows,
+  planned,
 }: {
   sessionId: string
   typeLabel: string
   title: string
   when: string
   rows: Row[]
+  /** Program occurrences have an expected list; show Expected / All Enrolled. */
+  planned: boolean
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -40,7 +46,18 @@ export function AttendanceView({
     Object.fromEntries(rows.map((row) => [row.playerId, row.attendance])),
   )
   const [skipOpen, setSkipOpen] = useState(false)
+  const [tab, setTab] = useState<'expected' | 'all'>('expected')
   const [pending, startTransition] = useTransition()
+
+  // On the Expected tab, someone who wasn't expected and is still unmarked is
+  // out of the way; anyone already marked stays visible so nothing hides a mark.
+  const visibleRows =
+    planned && tab === 'expected'
+      ? rows.filter((row) => row.expected || marks[row.playerId] !== 'unmarked')
+      : rows
+  const expectedCount = rows.filter(
+    (row) => row.expected || marks[row.playerId] !== 'unmarked',
+  ).length
 
   const set = (playerId: string, value: 'present' | 'absent') =>
     setMarks((current) => ({
@@ -50,15 +67,21 @@ export function AttendanceView({
     }))
 
   const allPresent = () =>
-    setMarks(Object.fromEntries(rows.map((row) => [row.playerId, 'present' as const])))
+    setMarks((current) => ({
+      ...current,
+      ...Object.fromEntries(visibleRows.map((row) => [row.playerId, 'present' as const])),
+    }))
 
   const clearAll = () =>
-    setMarks(Object.fromEntries(rows.map((row) => [row.playerId, 'unmarked' as const])))
+    setMarks((current) => ({
+      ...current,
+      ...Object.fromEntries(visibleRows.map((row) => [row.playerId, 'unmarked' as const])),
+    }))
 
-  const markedCount = rows.filter(
+  const markedCount = visibleRows.filter(
     (row) => marks[row.playerId] === 'present' || marks[row.playerId] === 'absent',
   ).length
-  const percent = rows.length ? Math.round((markedCount / rows.length) * 100) : 0
+  const percent = visibleRows.length ? Math.round((markedCount / visibleRows.length) * 100) : 0
 
   const save = () =>
     startTransition(async () => {
@@ -105,7 +128,7 @@ export function AttendanceView({
 
       <div className="mt-[18px]">
         <div className="text-t12 font-semibold text-muted tnum">
-          {markedCount} / {rows.length} marked
+          {markedCount} / {visibleRows.length} marked
         </div>
         <div className="h-[5px] bg-line rounded-r3 mt-[7px] overflow-hidden">
           <div
@@ -114,6 +137,19 @@ export function AttendanceView({
           />
         </div>
       </div>
+
+      {planned ? (
+        <div className="mt-4">
+          <Segmented
+            options={[
+              { value: 'expected', label: `Expected (${expectedCount})` },
+              { value: 'all', label: `All Enrolled (${rows.length})` },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+        </div>
+      ) : null}
 
       <div className="flex gap-[10px] mt-4">
         <button
@@ -130,9 +166,9 @@ export function AttendanceView({
         </button>
       </div>
 
-      {rows.length > 0 ? (
+      {visibleRows.length > 0 ? (
         <Card className="mt-[14px]">
-          {rows.map((row, index) => {
+          {visibleRows.map((row, index) => {
             const mark = marks[row.playerId]
             return (
               <div

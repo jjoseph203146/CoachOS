@@ -77,9 +77,10 @@ The migrations are:
 | `0005_coach_timezone.sql` | Per-coach IANA timezone — every calendar decision is made in it |
 | `0006_academy_memberships.sql` | Splits business from person: `academies` (the tenant) and `academy_memberships` (people + role). Re-points every data table from `coach_id` to `academy_id` and rewrites the RLS policies and guard triggers |
 | `0007_charge_price_snapshots.sql` | Every charge records where its price came from and the standard at that moment; snapshots are immutable |
+| `0008_programs.sql` | Programs, their price options, and each participant's price agreement (a snapshot). Program charges must equal the agreement; only the owner defines programs/prices or agrees a custom price |
 
 > Upgrading an existing database? Apply `0005_coach_timezone.sql`, then
-> `0006_academy_memberships.sql` and `0007_charge_price_snapshots.sql`. Rows default to `UTC`; each coach sets their
+> `0006_academy_memberships.sql`, `0007_charge_price_snapshots.sql` and `0008_programs.sql`. Rows default to `UTC`; each coach sets their
 > real zone at onboarding or in Settings. `0006` preserves all existing data:
 > every existing coach becomes the **owner** of an academy that reuses their
 > id, so no data row is rewritten. Apply it as one file — it must not be

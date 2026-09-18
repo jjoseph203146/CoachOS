@@ -100,7 +100,8 @@ export function SettingsView({
 
       <Card className="mt-3">
         {isOwner ? <MenuRow href="/payments" label="Revenue" first /> : null}
-        <MenuRow href="/help" label="Help" first={!isOwner} />
+        <MenuRow href="/programs" label="Programs" first={!isOwner} />
+        <MenuRow href="/help" label="Help" />
       </Card>
 
       <div className="mt-5">

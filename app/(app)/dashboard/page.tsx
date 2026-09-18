@@ -68,8 +68,17 @@ export default async function DashboardPage() {
   const card = (item: TodayItem) => {
     const { session } = item
     const isPrivate = session.type === 'private'
+    const kind = isPrivate
+      ? 'private'
+      : session.programId && model.programAudiences.get(session.programId) === 'adult'
+        ? 'adult'
+        : 'group'
     const detail = [
-      isPrivate ? playerName(item) : `${item.enrollments.length} players`,
+      isPrivate
+        ? playerName(item)
+        : session.programId
+          ? `${item.enrollments.filter((e) => e.expected).length} expected`
+          : `${item.enrollments.length} players`,
       `${session.durationMin} min`,
       session.location,
     ].filter(Boolean)
@@ -89,7 +98,7 @@ export default async function DashboardPage() {
         time={formatTime(session.startMin)}
         title={isPrivate ? 'Private Lesson' : session.name}
         sub={detail.join(' · ')}
-        kind={isPrivate ? 'private' : 'group'}
+        kind={kind}
         tag={tag}
         dim={item.ended}
         action={

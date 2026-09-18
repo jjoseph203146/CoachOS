@@ -11,11 +11,13 @@ export default async function SchedulePage() {
   const clock = coachClock(coach)
   const grace = coachGraceMinutes(coach)
 
-  const [sessions, enrollments, players] = await Promise.all([
+  const [sessions, enrollments, players, programs] = await Promise.all([
     store.listSessions(coachId),
     store.listEnrollments(coachId),
     store.listPlayers(coachId, { includeDeleted: true }),
+    store.listPrograms(coachId),
   ])
+  const audienceByProgram = new Map(programs.map((p) => [p.id, p.audience]))
 
   const playerNames = new Map(players.map((p) => [p.id, p.name]))
   const bySession = new Map<string, typeof enrollments>()
@@ -47,12 +49,19 @@ export default async function SchedulePage() {
       date: session.date,
       startMin: session.startMin,
       durationMin: session.durationMin,
-      kind: session.type === 'private' ? 'private' : 'group',
+      kind:
+        session.type === 'private'
+          ? 'private'
+          : session.programId && audienceByProgram.get(session.programId) === 'adult'
+            ? 'adult'
+            : 'group',
       title: session.type === 'private' ? 'Private Lesson' : session.name,
       subtitle:
         session.type === 'private'
           ? (playerNames.get(roster[0]?.playerId ?? '') ?? '')
-          : `${roster.length}${session.capacity ? ` of ${session.capacity}` : ''} players`,
+          : session.programId
+            ? `${roster.filter((e) => e.expected).length} expected`
+            : `${roster.length}${session.capacity ? ` of ${session.capacity}` : ''} players`,
       cancelled,
       ended,
       badge,
