@@ -14,7 +14,12 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
   },
   icons: {
-    icon: [{ url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' }],
+    // Derived from the master art in /icons/favicon.png (1254px, too heavy to
+    // serve as a tab icon); regenerate these if that file changes.
+    icon: [
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-48.png', sizes: '48x48', type: 'image/png' },
+    ],
     apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
   },
   formatDetection: { telephone: false },
