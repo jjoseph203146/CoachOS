@@ -35,6 +35,7 @@ To run against a real database, follow **Database setup** below.
 | `npm start` | Serve the production build |
 | `npm test` | Run the offline test suite once |
 | `npm run test:watch` | Run tests in watch mode |
+| `bash scripts/test-sql.sh` | Apply every migration to a throwaway Postgres (Docker) and run `supabase/tests/*.test.sql` — proves the database-side guarantees, including that a failed workflow leaves no partial rows |
 | `npm run test:integration` | Run the live-database suite (skips unless configured — see `tests/integration/README.md`) |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` | ESLint |
@@ -80,9 +81,10 @@ The migrations are:
 | `0008_programs.sql` | Programs, their price options, and each participant's price agreement (a snapshot). Program charges must equal the agreement; only the owner defines programs/prices or agrees a custom price |
 | `0009_availability.sql` | Each coach's weekly private-lesson hours (`availability_windows`, editable only by their owner) and `sessions.coach_membership_id` (who runs a session) |
 | `0010_team.sql` | Owner-only invitations, invite-aware signup (an invited address joins the inviter's academy as a coach), owner-only removal of coaches, and `session_coaches` (who worked a session) |
+| `0011_atomic_program_workflows.sql` | `create_program` and `enroll_participant`: each multi-write workflow (program + options + occurrences; roster place + agreement + occurrences + first charge) runs as one database transaction, so a failure leaves nothing behind. They run as the caller, so RLS and every guard still apply |
 
 > Upgrading an existing database? Apply `0005_coach_timezone.sql`, then
-> `0006_academy_memberships.sql`, `0007_charge_price_snapshots.sql`, `0008_programs.sql`, `0009_availability.sql` and `0010_team.sql`. Rows default to `UTC`; each coach sets their
+> `0006_academy_memberships.sql`, `0007_charge_price_snapshots.sql`, `0008_programs.sql`, `0009_availability.sql`, `0010_team.sql` and `0011_atomic_program_workflows.sql`. Rows default to `UTC`; each coach sets their
 > real zone at onboarding or in Settings. `0006` preserves all existing data:
 > every existing coach becomes the **owner** of an academy that reuses their
 > id, so no data row is rewritten. Apply it as one file — it must not be
@@ -314,7 +316,7 @@ covers the application-layer half of this.
 npm test
 ```
 
-59 tests across four suites:
+Besides the suites below, `tests/programs.test.ts`, `tests/revenue.test.ts`, `tests/team.test.ts`, `tests/availability.test.ts`, `tests/pricing.test.ts` and `tests/academy.test.ts` cover the V1 features.
 
 | Suite | Covers |
 | --- | --- |
@@ -322,6 +324,9 @@ npm test
 | `tests/finance.test.ts` | Outstanding maths, every charge status, credit/payment guards, revenue |
 | `tests/services.test.ts` | Session creation and charges, free sessions, conflicts, the four attendance states, cancel (void vs keep), duplication, roster add/remove, repricing, archive and soft delete, partial payments, double-submit rejection, cross-screen total consistency |
 | `tests/authorization.test.ts` | Coach A cannot read or mutate Coach B's players, sessions, attendance or money, including by guessing ids |
+| `tests/atomic-programs.test.ts` | Creating a program and enrolling a participant are all-or-nothing (mock store, service and Supabase adapter): every intentional failure leaves no partial rows, and each workflow is a single RPC |
+| `tests/quick-add.test.ts` | Quick Add Person: minimum fields, form defaults, validation shared with the full player form |
+| `supabase/tests/atomic_program_workflows.test.sql` | The same guarantees in real Postgres, with raw row counts checked after each failure (`bash scripts/test-sql.sh`) |
 
 ---
 
@@ -331,9 +336,12 @@ npm test
   implemented, and Settings says so rather than pretending otherwise. The
   design prototype only ever specified the light palette.
 - **Transactions on Supabase.** PostgREST has no client-side `BEGIN`/`COMMIT`.
-  Multi-step writes use a compensating-rollback unit of work, with the database
-  triggers in `0002_financial_integrity.sql` as the real guarantee. Moving the
-  compound operations into Postgres functions is the natural next step.
+  Simple multi-step writes use a compensating-rollback unit of work, with the
+  database triggers in `0002_financial_integrity.sql` as the real guarantee.
+  The two workflows that cannot be compensated (nothing there can be deleted) —
+  creating a program and enrolling a participant — are Postgres functions
+  (`0011`), so they are genuinely atomic. Other compound operations still use
+  the compensating unit of work.
 - **Rate limiting is per-instance.** `lib/security/rate-limit.ts` is a speed
   bump, not a distributed limiter. Supabase Auth's own limits and a platform
   WAF are the real defence.

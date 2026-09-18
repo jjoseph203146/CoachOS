@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { QuickAddPersonSheet } from '@/components/players/QuickAddPersonSheet'
 import { Sheet, SheetTitle } from '@/components/ui/overlays'
 import type { MembershipRole } from '@/lib/domain/types'
 
@@ -85,6 +86,7 @@ export function TabBar({ role }: { role: MembershipRole }) {
   const pathname = usePathname()
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
+  const [personOpen, setPersonOpen] = useState(false)
 
   const isActive = (tab: Tab) =>
     matches(pathname, tab.href) || (tab.alsoActiveFor ?? []).some((p) => matches(pathname, p))
@@ -150,7 +152,11 @@ export function TabBar({ role }: { role: MembershipRole }) {
         <QuickAddRow
           title="Person"
           subtitle="Add a player to your roster"
-          onClick={() => go('/players/new')}
+          onClick={() => {
+            // A lightweight sheet, not the full form: the user stays where they are.
+            setCreateOpen(false)
+            setPersonOpen(true)
+          }}
         >
           <svg
             width="20"
@@ -218,6 +224,8 @@ export function TabBar({ role }: { role: MembershipRole }) {
           Close
         </button>
       </Sheet>
+
+      <QuickAddPersonSheet open={personOpen} onClose={() => setPersonOpen(false)} />
     </>
   )
 }

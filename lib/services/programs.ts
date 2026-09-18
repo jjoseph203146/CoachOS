@@ -14,10 +14,11 @@
  *    a charge that exists — it only affects who enrols from then on.
  */
 
-import type { DataStore } from '@/lib/data/store'
+import type { DataStore, NewChargeInput, NewProgramEnrollmentInput } from '@/lib/data/store'
 import { addDays } from '@/lib/domain/dates'
 import { billingPeriod, isRecurringBasis, occurrenceDates } from '@/lib/domain/programs'
 import type {
+  Charge,
   ISODate,
   MembershipRole,
   PriceBasis,
@@ -183,7 +184,7 @@ export async function createProgram(
     throw new DomainError('INVALID', 'The end date is before the start date.')
   }
 
-  const program = await store.createProgram(coachId, {
+  const input = {
     name: args.name.trim(),
     audience: args.audience,
     weekdays: [...new Set(args.weekdays)].sort((a, b) => a - b),
@@ -194,18 +195,19 @@ export async function createProgram(
     ageRange: args.ageRange.trim(),
     startsOn: args.startsOn,
     endsOn: args.endsOn,
-  })
-  for (const [position, option] of args.options.entries()) {
-    await store.createPriceOption(coachId, {
-      programId: program.id,
-      label: option.label.trim(),
-      basis: option.basis,
-      amountCents: option.amountCents,
-      position,
-    })
   }
-  await generateOccurrences(store, coachId, program.id, today, addDays(today, HORIZON_DAYS))
-  return program
+  // The program, its options and its first occurrences are ONE atomic write: a
+  // program can never be deleted, so a half-made one must not be able to exist.
+  return store.createProgramWithOptions(
+    coachId,
+    input,
+    args.options.map((o) => ({
+      label: o.label.trim(),
+      basis: o.basis,
+      amountCents: o.amountCents,
+    })),
+    occurrenceDates(input, today, addDays(today, HORIZON_DAYS)),
+  )
 }
 
 export async function addPriceOption(
@@ -447,7 +449,7 @@ export async function enrollParticipant(
   const agreement = resolveAgreement(args, options, role)
   if (agreement.amountCents < 0) throw new DomainError('INVALID', 'Enter a valid amount.')
 
-  const enrollment = await store.createProgramEnrollment(coachId, {
+  const agreed: NewProgramEnrollmentInput = {
     programId: program.id,
     playerId: player.id,
     joinedOn: today,
@@ -458,42 +460,44 @@ export async function enrollParticipant(
     standardAmountCents: agreement.standardCents,
     agreementSource: agreement.source,
     agreementNote: args.note.trim(),
-  })
-
-  // Put them on the occurrences still to come, expected.
-  const sessions = await store.listSessions(coachId)
-  for (const session of sessions) {
-    if (session.programId === program.id && session.status === 'scheduled' && session.date >= today) {
-      await store.addEnrollment(coachId, session.id, player.id, { expected: true })
-    }
   }
 
-  const charged = await chargeForPlace(store, coachId, enrollment, program, today, {
-    onlyIfUnbilled: true,
+  // The occurrences still to come, which they join as expected.
+  const sessionIds = (await store.listSessions(coachId))
+    .filter((s) => s.programId === program.id && s.status === 'scheduled' && s.date >= today)
+    .map((s) => s.id)
+
+  // The roster place, the agreement snapshot, the occurrences and the first
+  // charge are ONE atomic write: places and charges can never be deleted, so a
+  // failure part-way must not be able to leave some of them behind.
+  const { enrollment, charge } = await store.enrollInProgram(coachId, {
+    enrollment: agreed,
+    sessionIds,
+    charge: buildCharge(agreed, program, [], today, { onlyIfUnbilled: true }),
   })
-  return { enrollment, charged }
+  return { enrollment, charged: charge !== null }
 }
 
 /**
- * Create the charge a place currently owes, copying its AGREEMENT (never the
- * option's live price). Recurring bases bill the next period; a drop-in or
- * full-program place is billed once; per-session places are billed as they
- * attend (see `chargeAttendedParticipants`).
+ * The charge a place currently owes, copying its AGREEMENT (never the option's
+ * live price), or null when nothing is owed. Recurring bases bill the next
+ * period; a drop-in or full-program place is billed once; per-session places
+ * are billed as they attend (see `chargeAttendedParticipants`).
+ *
+ * Pure: it reads the place's existing (unvoided) charges but writes nothing, so
+ * the same decision serves both a new enrollment and a later "bill next period".
  */
-async function chargeForPlace(
-  store: DataStore,
-  coachId: string,
-  place: ProgramEnrollment,
+function buildCharge(
+  place: NewProgramEnrollmentInput,
   program: Program,
+  existing: Charge[],
   today: ISODate,
   opts: { onlyIfUnbilled: boolean },
-): Promise<boolean> {
-  if (place.agreedBasis === 'per_session') return false
-  if (place.agreedAmountCents <= 0) return false // nothing is owed (e.g. a scholarship)
+): Omit<NewChargeInput, 'programEnrollmentId'> | null {
+  if (place.agreedBasis === 'per_session') return null
+  if (place.agreedAmountCents <= 0) return null // nothing is owed (e.g. a scholarship)
 
-  const charges = (await store.listCharges(coachId)).filter(
-    (c) => c.programEnrollmentId === place.id && !c.voidedAt,
-  )
+  const charges = existing.filter((c) => !c.voidedAt)
   const recurring = isRecurringBasis(place.agreedBasis)
 
   let period: { start: ISODate; end: ISODate } | null = null
@@ -509,11 +513,11 @@ async function chargeForPlace(
     }
     period = billingPeriod(place.agreedBasis, start)
   } else if (charges.length > 0) {
-    if (opts.onlyIfUnbilled) return false
+    if (opts.onlyIfUnbilled) return null
     throw new DomainError('CONFLICT', 'This place has already been billed.')
   }
 
-  await store.createCharge(coachId, {
+  return {
     playerId: place.playerId,
     sessionId: null,
     amountCents: place.agreedAmountCents,
@@ -521,15 +525,13 @@ async function chargeForPlace(
     priceBasis: place.agreedBasis,
     standardAmountCents: place.standardAmountCents,
     programId: program.id,
-    programEnrollmentId: place.id,
     periodStart: period?.start ?? null,
     periodEnd: period?.end ?? null,
     dueDate: period?.start ?? today,
     isManual: false,
     label: `${program.name} — ${place.agreedLabel}`,
     note: '',
-  })
-  return true
+  }
 }
 
 /** Bill a participant's next week/month, or a place whose first charge is missing. */
@@ -546,7 +548,9 @@ export async function billPlace(
     throw new DomainError('INVALID', 'Per-session places are billed as they attend.')
   }
   const program = await loadProgram(store, coachId, place.programId)
-  await chargeForPlace(store, coachId, place, program, today, { onlyIfUnbilled: false })
+  const existing = (await store.listCharges(coachId)).filter((c) => c.programEnrollmentId === place.id)
+  const charge = buildCharge(place, program, existing, today, { onlyIfUnbilled: false })
+  if (charge) await store.createCharge(coachId, { ...charge, programEnrollmentId: place.id })
 }
 
 /** End a participant's place. History and charges stay; they leave future sessions. */

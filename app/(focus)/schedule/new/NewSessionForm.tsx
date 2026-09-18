@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import {
   Button,
   Chip,
@@ -10,6 +10,7 @@ import {
   Stepper,
   TextInput,
 } from '@/components/ui/controls'
+import { QuickAddPersonSheet } from '@/components/players/QuickAddPersonSheet'
 import { Dialog, useToast } from '@/components/ui/overlays'
 import { ErrorBanner } from '@/components/ui/primitives'
 import { createSessionAction } from '@/lib/actions/sessions'
@@ -58,6 +59,9 @@ export function NewSessionForm({
   const [priceDirty, setPriceDirty] = useState(!!draft.price)
   const [nameDirty, setNameDirty] = useState(false)
   const [name, setName] = useState('')
+  const [addingPerson, setAddingPerson] = useState(false)
+  /** Someone just added from this form, to select once the refreshed list has them. */
+  const [justAdded, setJustAdded] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [conflictOpen, setConflictOpen] = useState(false)
   const [outsideOpen, setOutsideOpen] = useState(false)
@@ -125,6 +129,16 @@ export function NewSessionForm({
     })
     setError('')
   }
+
+  // Quick Add saves the person and refreshes this page's data; when they appear
+  // in the list, pick them so the booking carries on where it left off.
+  useEffect(() => {
+    if (justAdded && players.some((p) => p.id === justAdded)) {
+      togglePlayer(justAdded)
+      setJustAdded(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, justAdded])
 
   const priceCents = parseMoneyToCents(state.price) ?? 0
 
@@ -223,7 +237,7 @@ export function NewSessionForm({
               Add a player to schedule this session.
             </div>
             <button
-              onClick={() => router.push('/players/new')}
+              onClick={() => setAddingPerson(true)}
               className="w-full h-[42px] rounded-r11 bg-accent text-white text-t135 font-semibold flex items-center justify-center mt-3"
             >
               Add Player
@@ -513,6 +527,12 @@ export function NewSessionForm({
             },
           },
         ]}
+      />
+
+      <QuickAddPersonSheet
+        open={addingPerson}
+        onClose={() => setAddingPerson(false)}
+        onSaved={(person) => setJustAdded(person.id)}
       />
     </div>
   )

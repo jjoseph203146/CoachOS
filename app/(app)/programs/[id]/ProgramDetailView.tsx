@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
+import { QuickAddPersonSheet } from '@/components/players/QuickAddPersonSheet'
 import { ScreenBody } from '@/components/shell/AppShell'
 import { Button, Chip, MoneyInput, SearchInput, TextInput } from '@/components/ui/controls'
 import { Dialog, Sheet, SheetTitle, useToast } from '@/components/ui/overlays'
@@ -468,6 +469,7 @@ function EnrollSheet({
   const [customAmount, setCustomAmount] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [addingPerson, setAddingPerson] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const chosenOption = options.find((o) => o.id === (optionId ?? options[0]?.id))
@@ -501,119 +503,131 @@ function EnrollSheet({
   }
 
   return (
-    <Sheet open={open} onClose={onClose} maxHeight="88%">
-      <SheetTitle>Enroll a Player</SheetTitle>
+    <>
+      <Sheet open={open} onClose={onClose} maxHeight="88%">
+        <SheetTitle>Enroll a Player</SheetTitle>
 
-      {addable.length === 0 ? (
-        <div className="text-t13 text-muted text-center mt-4">
-          Everyone on your roster is already in this program.{' '}
-          <Link href="/players/new" className="text-accent font-semibold">
-            Add a person
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="mt-4">
-            <SearchInput value={query} onChange={setQuery} placeholder="Search players" />
+        {addable.length === 0 ? (
+          <div className="text-t13 text-muted text-center mt-4">
+            Everyone on your roster is already in this program.{' '}
+            <button
+              onClick={() => setAddingPerson(true)}
+              className="text-accent font-semibold"
+            >
+              Add a person
+            </button>
           </div>
-          <div className="mt-3 max-h-[190px] overflow-y-auto bg-card border border-line rounded-r14">
-            {filtered.map((player, index) => (
-              <button
-                key={player.id}
-                onClick={() => setPlayerId(player.id)}
-                className={`w-full flex items-center gap-3 px-3 py-[10px] ${
-                  index === 0 ? '' : 'border-t border-divider'
-                }`}
-              >
-                <Avatar name={player.name} size={32} />
-                <div className="flex-1 text-left text-t14 font-semibold">{player.name}</div>
-                {playerId === player.id ? (
-                  <span className="text-accent font-bold">✓</span>
-                ) : null}
-              </button>
-            ))}
-            {filtered.length === 0 ? (
-              <div className="text-t13 text-muted text-center py-4">No one matches.</div>
-            ) : null}
-          </div>
-
-          <div className="text-t12 font-bold mt-4">Price</div>
-          <div className="flex flex-col gap-2 mt-2">
-            {options.map((option) => {
-              const selected = chosenOption?.id === option.id
-              return (
+        ) : (
+          <>
+            <div className="mt-4">
+              <SearchInput value={query} onChange={setQuery} placeholder="Search players" />
+            </div>
+            <div className="mt-3 max-h-[190px] overflow-y-auto bg-card border border-line rounded-r14">
+              {filtered.map((player, index) => (
                 <button
-                  key={option.id}
-                  onClick={() => setOptionId(option.id)}
-                  className="w-full flex items-center px-4 py-3 rounded-r13 border"
-                  style={{
-                    background: selected ? '#EDF4FF' : '#FFFFFF',
-                    borderColor: selected ? '#1677EE' : '#DCE5EF',
-                  }}
+                  key={player.id}
+                  onClick={() => setPlayerId(player.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-[10px] ${
+                    index === 0 ? '' : 'border-t border-divider'
+                  }`}
                 >
-                  <div className="flex-1 text-left">
-                    <div className="text-t14 font-bold">{option.label}</div>
-                    <div className="text-t12 text-muted">{option.basisLabel}</div>
-                  </div>
-                  <div className="text-t15 font-bold tnum">{formatMoney(option.amountCents)}</div>
+                  <Avatar name={player.name} size={32} />
+                  <div className="flex-1 text-left text-t14 font-semibold">{player.name}</div>
+                  {playerId === player.id ? (
+                    <span className="text-accent font-bold">✓</span>
+                  ) : null}
                 </button>
-              )
-            })}
-          </div>
-
-          {isOwner ? (
-            <div className="mt-3">
-              <button
-                onClick={() => setCustom((c) => !c)}
-                className="text-t13 font-semibold text-accent"
-              >
-                {custom ? '− Use the standard price' : '+ Agree a different price'}
-              </button>
-              {custom ? (
-                <div className="mt-2">
-                  <MoneyInput
-                    value={customAmount}
-                    onChange={setCustomAmount}
-                    suffix={chosenOption ? `standard ${formatMoney(chosenOption.amountCents)}` : ''}
-                    height={46}
-                    symbolSize={15}
-                    valueSize={16}
-                  />
-                  <div className="mt-2">
-                    <TextInput
-                      value={note}
-                      onChange={setNote}
-                      placeholder="Reason (e.g. sibling discount)"
-                      ariaLabel="Reason"
-                      height={42}
-                    />
-                  </div>
-                </div>
+              ))}
+              {filtered.length === 0 ? (
+                <div className="text-t13 text-muted text-center py-4">No one matches.</div>
               ) : null}
             </div>
-          ) : (
-            <div className="text-t115 text-subtle mt-2">
-              A different price for one participant is set by the academy owner.
-            </div>
-          )}
 
-          {error ? (
-            <div className="mt-3">
-              <ErrorBanner message={error} />
+            <div className="text-t12 font-bold mt-4">Price</div>
+            <div className="flex flex-col gap-2 mt-2">
+              {options.map((option) => {
+                const selected = chosenOption?.id === option.id
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => setOptionId(option.id)}
+                    className="w-full flex items-center px-4 py-3 rounded-r13 border"
+                    style={{
+                      background: selected ? '#EDF4FF' : '#FFFFFF',
+                      borderColor: selected ? '#1677EE' : '#DCE5EF',
+                    }}
+                  >
+                    <div className="flex-1 text-left">
+                      <div className="text-t14 font-bold">{option.label}</div>
+                      <div className="text-t12 text-muted">{option.basisLabel}</div>
+                    </div>
+                    <div className="text-t15 font-bold tnum">{formatMoney(option.amountCents)}</div>
+                  </button>
+                )
+              })}
             </div>
-          ) : null}
 
-          <div className="mt-4">
-            <Button
-              disabled={pending || !playerId || !chosenOption || (custom && !customAmount)}
-              onClick={submit}
-            >
-              {pending ? 'Enrolling…' : 'Enroll'}
-            </Button>
-          </div>
-        </>
-      )}
-    </Sheet>
+            {isOwner ? (
+              <div className="mt-3">
+                <button
+                  onClick={() => setCustom((c) => !c)}
+                  className="text-t13 font-semibold text-accent"
+                >
+                  {custom ? '− Use the standard price' : '+ Agree a different price'}
+                </button>
+                {custom ? (
+                  <div className="mt-2">
+                    <MoneyInput
+                      value={customAmount}
+                      onChange={setCustomAmount}
+                      suffix={chosenOption ? `standard ${formatMoney(chosenOption.amountCents)}` : ''}
+                      height={46}
+                      symbolSize={15}
+                      valueSize={16}
+                    />
+                    <div className="mt-2">
+                      <TextInput
+                        value={note}
+                        onChange={setNote}
+                        placeholder="Reason (e.g. sibling discount)"
+                        ariaLabel="Reason"
+                        height={42}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="text-t115 text-subtle mt-2">
+                A different price for one participant is set by the academy owner.
+              </div>
+            )}
+
+            {error ? (
+              <div className="mt-3">
+                <ErrorBanner message={error} />
+              </div>
+            ) : null}
+
+            <div className="mt-4">
+              <Button
+                disabled={pending || !playerId || !chosenOption || (custom && !customAmount)}
+                onClick={submit}
+              >
+                {pending ? 'Enrolling…' : 'Enroll'}
+              </Button>
+            </div>
+          </>
+        )}
+      </Sheet>
+
+      <QuickAddPersonSheet
+        open={addingPerson}
+        onClose={() => setAddingPerson(false)}
+        onSaved={(person) => setPlayerId(person.id)}
+        zIndex={51}
+      />
+    </>
   )
 }
 

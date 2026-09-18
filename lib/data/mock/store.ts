@@ -21,6 +21,7 @@ import type {
   Enrollment,
   Invite,
   InvitePreview,
+  ISODate,
   Membership,
   Payment,
   Player,
@@ -31,13 +32,14 @@ import type {
 } from '@/lib/domain/types'
 import type {
   DataStore,
+  EnrollInProgramInput,
   NewChargeInput,
   NewCreditInput,
   NewPaymentInput,
   NewPlayerInput,
   NewPriceOptionInput,
-  NewProgramEnrollmentInput,
   NewProgramInput,
+  NewProgramOptionInput,
   NewSessionInput,
   UpdatePlayerInput,
   UpdatePriceOptionInput,
@@ -580,17 +582,73 @@ export class MockDataStore implements DataStore {
     )
   }
 
-  async createProgram(coachId: string, input: NewProgramInput): Promise<Program> {
-    const program: Program = {
-      id: nextId('prog'),
-      coachId,
-      ...input,
-      weekdays: [...input.weekdays],
-      status: 'active',
-      createdAt: nowISO(),
-    }
-    this.db.programs.push(program)
-    return clone(program)
+  /**
+   * Atomic, like the database function it stands in for: the program, its
+   * options and its occurrences are all created, or (if any part is invalid)
+   * none is. Validation mirrors the table constraints.
+   */
+  async createProgramWithOptions(
+    coachId: string,
+    input: NewProgramInput,
+    options: NewProgramOptionInput[],
+    occurrenceDates: ISODate[],
+  ): Promise<Program> {
+    return this.transaction(async () => {
+      const bad = (what: string): never => {
+        throw new Error(`violates check constraint: ${what}`)
+      }
+      if (!input.name.trim()) bad('name')
+      if (input.weekdays.length === 0 || input.weekdays.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) {
+        bad('weekdays')
+      }
+      if (input.startMin < 0 || input.startMin > 1439) bad('start_min')
+      if (input.durationMin < 5 || input.durationMin > 480) bad('duration_min')
+      if (input.capacity !== null && input.capacity < 2) bad('capacity')
+      if (input.endsOn && input.endsOn < input.startsOn) bad('programs_dates_ordered')
+      if (options.length === 0) bad('a program needs at least one price option')
+
+      const program: Program = {
+        id: nextId('prog'),
+        coachId,
+        ...input,
+        weekdays: [...input.weekdays],
+        status: 'active',
+        createdAt: nowISO(),
+      }
+      this.db.programs.push(program)
+
+      for (const [position, option] of options.entries()) {
+        if (!option.label.trim()) bad('option label')
+        if (!Number.isInteger(option.amountCents) || option.amountCents < 0) bad('amount_cents')
+        this.db.priceOptions.push({
+          id: nextId('opt'),
+          coachId,
+          programId: program.id,
+          label: option.label,
+          basis: option.basis,
+          amountCents: option.amountCents,
+          position,
+          archivedAt: null,
+        })
+      }
+
+      for (const date of occurrenceDates) {
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) bad('occurrence date')
+        await this.createSession(coachId, {
+          type: 'group',
+          name: input.name,
+          date,
+          startMin: input.startMin,
+          durationMin: input.durationMin,
+          priceCents: 0,
+          isFree: false,
+          location: input.location,
+          capacity: input.capacity,
+          programId: program.id,
+        })
+      }
+      return clone(program)
+    })
   }
 
   async updateProgram(
@@ -637,28 +695,90 @@ export class MockDataStore implements DataStore {
     return clone(this.db.programEnrollments.filter((e) => e.coachId === coachId))
   }
 
-  async createProgramEnrollment(
+  /**
+   * Atomic, like the database function it stands in for: the roster place, the
+   * occurrences and the first charge are all written, or none is. It enforces
+   * the same rules as the database guards, in the same order, so a failure at
+   * any step (including the last) discards everything.
+   */
+  async enrollInProgram(
     coachId: string,
-    input: NewProgramEnrollmentInput,
-  ): Promise<ProgramEnrollment> {
-    const active = this.db.programEnrollments.find(
-      (e) =>
-        e.coachId === coachId &&
-        e.programId === input.programId &&
-        e.playerId === input.playerId &&
-        e.status === 'active',
-    )
-    if (active) throw new Error('That player is already in this program')
-    const enrollment: ProgramEnrollment = {
-      id: nextId('pe'),
-      coachId,
-      ...input,
-      status: 'active',
-      endedOn: null,
-      createdAt: nowISO(),
-    }
-    this.db.programEnrollments.push(enrollment)
-    return clone(enrollment)
+    input: EnrollInProgramInput,
+  ): Promise<{ enrollment: ProgramEnrollment; charge: Charge | null }> {
+    return this.transaction(async () => {
+      const { enrollment: e, sessionIds, charge } = input
+      const program = this.db.programs.find((p) => p.id === e.programId && p.coachId === coachId)
+      if (!program) throw new Error('Program belongs to a different academy')
+      if (!this.db.players.some((p) => p.id === e.playerId && p.coachId === coachId)) {
+        throw new Error('Player belongs to a different academy')
+      }
+
+      // guard_program_enrollment_insert: an agreement from an option must match it.
+      if (e.agreementSource === 'program_option') {
+        const option = this.db.priceOptions.find((o) => o.id === e.priceOptionId)
+        if (!option || option.programId !== e.programId || option.archivedAt) {
+          throw new Error('Choose one of the program’s current price options')
+        }
+        if (
+          e.agreedAmountCents !== option.amountCents ||
+          e.agreedBasis !== option.basis ||
+          e.agreedLabel !== option.label ||
+          e.standardAmountCents !== option.amountCents
+        ) {
+          throw new Error('The agreement must match the price option it was made from')
+        }
+      }
+
+      // program_enrollments_one_active
+      if (
+        this.db.programEnrollments.some(
+          (p) =>
+            p.coachId === coachId &&
+            p.programId === e.programId &&
+            p.playerId === e.playerId &&
+            p.status === 'active',
+        )
+      ) {
+        throw new Error('duplicate key value violates unique constraint "program_enrollments_one_active"')
+      }
+      const place: ProgramEnrollment = {
+        id: nextId('pe'),
+        coachId,
+        ...e,
+        status: 'active',
+        endedOn: null,
+        createdAt: nowISO(),
+      }
+      this.db.programEnrollments.push(place)
+
+      for (const sessionId of sessionIds) {
+        const session = this.db.sessions.find((s) => s.id === sessionId && s.coachId === coachId)
+        if (!session || session.programId !== e.programId) {
+          throw new Error(`Session ${sessionId} is not part of this program`)
+        }
+        await this.addEnrollment(coachId, sessionId, e.playerId, { expected: true })
+      }
+
+      let created: Charge | null = null
+      if (charge) {
+        // guard_charge_insert: a program charge must equal the agreement.
+        const source = place.agreementSource === 'program_option' ? 'program_option' : 'custom'
+        if (
+          charge.amountCents !== place.agreedAmountCents ||
+          charge.priceBasis !== place.agreedBasis ||
+          charge.standardAmountCents !== place.standardAmountCents ||
+          charge.priceSource !== source
+        ) {
+          throw new Error('A program charge must equal the participant’s agreed price')
+        }
+        created = await this.createCharge(coachId, {
+          ...charge,
+          programId: program.id,
+          programEnrollmentId: place.id,
+        })
+      }
+      return { enrollment: clone(place), charge: created }
+    })
   }
 
   async updateProgramEnrollment(

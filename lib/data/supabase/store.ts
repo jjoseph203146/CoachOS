@@ -31,6 +31,7 @@ import type {
   Enrollment,
   Invite,
   InvitePreview,
+  ISODate,
   Membership,
   Payment,
   Player,
@@ -43,11 +44,12 @@ import type {
   DataStore,
   NewChargeInput,
   NewCreditInput,
+  EnrollInProgramInput,
   NewPaymentInput,
   NewPlayerInput,
   NewPriceOptionInput,
-  NewProgramEnrollmentInput,
   NewProgramInput,
+  NewProgramOptionInput,
   NewSessionInput,
   UpdatePlayerInput,
   UpdatePriceOptionInput,
@@ -902,26 +904,44 @@ export class SupabaseDataStore implements DataStore {
     return data ? mapProgram(data) : null
   }
 
-  async createProgram(coachId: string, input: NewProgramInput): Promise<Program> {
-    const row = await this.unwrap(
-      this.from('programs')
-        .insert({
-          academy_id: coachId,
-          name: input.name,
-          audience: input.audience,
-          weekdays: input.weekdays,
-          start_min: input.startMin,
-          duration_min: input.durationMin,
-          location: input.location,
-          capacity: input.capacity,
-          age_range: input.ageRange,
-          starts_on: input.startsOn,
-          ends_on: input.endsOn,
-        })
-        .select('*')
-        .single(),
-    )
-    return mapProgram(row)
+  /**
+   * One RPC = one Postgres transaction. The `create_program` function (migration
+   * 0011) writes the program, its price options and its occurrences together, so
+   * a failure anywhere leaves NOTHING behind — which matters because programs
+   * can never be deleted to clean up a half-made one. It runs as the caller, so
+   * RLS still makes this owner-only, and it takes the academy from the session
+   * (like `createCoach`); `coachId` only scopes the read-back.
+   */
+  async createProgramWithOptions(
+    coachId: string,
+    input: NewProgramInput,
+    options: NewProgramOptionInput[],
+    occurrenceDates: ISODate[],
+  ): Promise<Program> {
+    const { data, error } = await this.client.rpc('create_program', {
+      p_program: {
+        name: input.name,
+        audience: input.audience,
+        weekdays: input.weekdays,
+        start_min: input.startMin,
+        duration_min: input.durationMin,
+        location: input.location,
+        capacity: input.capacity,
+        age_range: input.ageRange,
+        starts_on: input.startsOn,
+        ends_on: input.endsOn,
+      },
+      p_options: options.map((o) => ({
+        label: o.label,
+        basis: o.basis,
+        amount_cents: o.amountCents,
+      })),
+      p_dates: occurrenceDates,
+    })
+    if (error) throw new Error(error.message)
+    const program = await this.getProgram(coachId, data as string)
+    if (!program) throw new Error('The program was created but could not be read back')
+    return program
   }
 
   async updateProgram(
@@ -1002,29 +1022,62 @@ export class SupabaseDataStore implements DataStore {
     return (rows ?? []).map(mapProgramEnrollment)
   }
 
-  async createProgramEnrollment(
+  /**
+   * One RPC = one Postgres transaction. `enroll_participant` (migration 0011)
+   * writes the roster place with its agreement snapshot, puts the participant on
+   * the given occurrences and creates the first charge together; the database's
+   * own guards (agreement must match its option, custom price is owner-only, a
+   * program charge must equal the agreement) still apply, and any failure
+   * discards all of it. Roster places and charges can't be deleted, so this is
+   * the only way to make the workflow all-or-nothing.
+   */
+  async enrollInProgram(
     coachId: string,
-    input: NewProgramEnrollmentInput,
-  ): Promise<ProgramEnrollment> {
+    input: EnrollInProgramInput,
+  ): Promise<{ enrollment: ProgramEnrollment; charge: Charge | null }> {
+    const { enrollment: e, sessionIds, charge } = input
+    const { data, error } = await this.client.rpc('enroll_participant', {
+      p_enrollment: {
+        program_id: e.programId,
+        player_id: e.playerId,
+        joined_on: e.joinedOn,
+        price_option_id: e.priceOptionId,
+        agreed_label: e.agreedLabel,
+        agreed_basis: e.agreedBasis,
+        agreed_amount_cents: e.agreedAmountCents,
+        standard_amount_cents: e.standardAmountCents,
+        agreement_source: e.agreementSource,
+        agreement_note: e.agreementNote,
+      },
+      p_session_ids: sessionIds,
+      p_charge: charge
+        ? {
+            amount_cents: charge.amountCents,
+            price_source: charge.priceSource,
+            price_basis: charge.priceBasis,
+            standard_amount_cents: charge.standardAmountCents,
+            period_start: charge.periodStart ?? null,
+            period_end: charge.periodEnd ?? null,
+            due_date: charge.dueDate,
+            label: charge.label,
+            note: charge.note,
+          }
+        : null,
+    })
+    if (error) throw new Error(error.message)
+
+    const result = data as { enrollment_id: string; charge_id: string | null }
     const row = await this.unwrap(
       this.from('program_enrollments')
-        .insert({
-          academy_id: coachId,
-          program_id: input.programId,
-          player_id: input.playerId,
-          joined_on: input.joinedOn,
-          price_option_id: input.priceOptionId,
-          agreed_label: input.agreedLabel,
-          agreed_basis: input.agreedBasis,
-          agreed_amount_cents: input.agreedAmountCents,
-          standard_amount_cents: input.standardAmountCents,
-          agreement_source: input.agreementSource,
-          agreement_note: input.agreementNote,
-        })
         .select('*')
+        .eq('academy_id', coachId)
+        .eq('id', result.enrollment_id)
         .single(),
     )
-    return mapProgramEnrollment(row)
+    return {
+      enrollment: mapProgramEnrollment(row),
+      charge: result.charge_id ? await this.getCharge(coachId, result.charge_id) : null,
+    }
   }
 
   async updateProgramEnrollment(

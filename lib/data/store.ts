@@ -132,6 +132,25 @@ export interface UpdatePriceOptionInput {
   archivedAt?: string | null
 }
 
+/** A price option as supplied when a program is created (its position is its order). */
+export interface NewProgramOptionInput {
+  label: string
+  basis: PriceBasis
+  amountCents: number
+}
+
+/**
+ * Everything needed to enroll a participant in one go: their roster place (with
+ * the agreement snapshot), the upcoming occurrences to put them on, and the
+ * first charge (null when nothing is owed yet). The charge's roster place is
+ * the one being created, so it is not part of the charge input.
+ */
+export interface EnrollInProgramInput {
+  enrollment: NewProgramEnrollmentInput
+  sessionIds: string[]
+  charge: Omit<NewChargeInput, 'programEnrollmentId'> | null
+}
+
 export interface NewProgramEnrollmentInput {
   programId: string
   playerId: string
@@ -272,7 +291,18 @@ export interface DataStore {
   // ---- programs ----
   listPrograms(coachId: string): Promise<Program[]>
   getProgram(coachId: string, programId: string): Promise<Program | null>
-  createProgram(coachId: string, input: NewProgramInput): Promise<Program>
+  /**
+   * Create a program, its price options and its first occurrences as ONE atomic
+   * unit: if any part fails, none of it exists. (There is no separate
+   * "create program" write: a half-made program can't be undone, since programs
+   * are never deleted.)
+   */
+  createProgramWithOptions(
+    coachId: string,
+    input: NewProgramInput,
+    options: NewProgramOptionInput[],
+    occurrenceDates: ISODate[],
+  ): Promise<Program>
   updateProgram(coachId: string, programId: string, patch: UpdateProgramInput): Promise<Program>
   listPriceOptions(coachId: string): Promise<ProgramPriceOption[]>
   createPriceOption(coachId: string, input: NewPriceOptionInput): Promise<ProgramPriceOption>
@@ -282,10 +312,14 @@ export interface DataStore {
     patch: UpdatePriceOptionInput,
   ): Promise<ProgramPriceOption>
   listProgramEnrollments(coachId: string): Promise<ProgramEnrollment[]>
-  createProgramEnrollment(
+  /**
+   * Enroll a participant — roster place, agreement snapshot, occurrences and
+   * first charge — as ONE atomic unit: if any part fails, none of it exists.
+   */
+  enrollInProgram(
     coachId: string,
-    input: NewProgramEnrollmentInput,
-  ): Promise<ProgramEnrollment>
+    input: EnrollInProgramInput,
+  ): Promise<{ enrollment: ProgramEnrollment; charge: Charge | null }>
   updateProgramEnrollment(
     coachId: string,
     enrollmentId: string,
