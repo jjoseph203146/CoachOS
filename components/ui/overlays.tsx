@@ -93,7 +93,7 @@ export interface DialogButton {
 
 const DIALOG_TONE: Record<DialogButton['tone'], string> = {
   primary: 'bg-accent text-white border-accent',
-  ink: 'bg-ink text-white border-ink',
+  ink: 'bg-accent text-white border-accent',
   danger: 'bg-danger_fg text-white border-danger_fg',
   plain: 'bg-card text-ink border-line',
 }

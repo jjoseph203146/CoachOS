@@ -185,6 +185,7 @@ export function buildSeed(
     capacity,
     status: 'scheduled',
     programId: null,
+    coachMembershipId: null,
     attendanceSkipped: false,
     cancelledAt: null,
     createdAt: NOW,

@@ -107,6 +107,7 @@ export const createSessionSchema = z
     capacity: z.coerce.number().int().min(2).max(12).nullable().optional(),
     playerIds: z.array(id).min(1, 'Choose at least one player.'),
     allowConflict: z.coerce.boolean().optional(),
+    allowOutsideAvailability: z.coerce.boolean().optional(),
   })
   .transform((value, ctx) => {
     let priceCents = 0
@@ -379,4 +380,18 @@ export const programIdSchema = z.object({ programId: id })
 export const setExpectedSchema = z.object({
   sessionId: id,
   marks: z.array(z.object({ playerId: id, expected: z.coerce.boolean() })).max(500),
+})
+
+// ---- availability ----
+
+export const saveAvailabilitySchema = z.object({
+  windows: z
+    .array(
+      z.object({
+        weekday: z.number().int().min(0).max(6),
+        startMin: z.number().int().min(0).max(24 * 60 - 1),
+        endMin: z.number().int().min(1).max(24 * 60),
+      }),
+    )
+    .max(7),
 })

@@ -134,6 +134,8 @@ export interface Session {
   status: SessionStatus
   /** The program this session is an occurrence of; `null` for one-off sessions. */
   programId: string | null
+  /** Who runs the session (a membership id); `null` for sessions from before this was recorded. */
+  coachMembershipId: string | null
   /** Coach explicitly chose to skip attendance for this session. */
   attendanceSkipped: boolean
   cancelledAt: string | null
@@ -233,6 +235,17 @@ export interface Credit {
   amountCents: number
   reason: string
   createdAt: string
+}
+
+/** The hours one coach offers private lessons on one weekday. No row = unavailable. */
+export interface AvailabilityWindow {
+  id: string
+  coachId: string
+  membershipId: string
+  /** 0 = Sunday … 6 = Saturday. */
+  weekday: number
+  startMin: number
+  endMin: number
 }
 
 export type ProgramAudience = 'youth' | 'adult'

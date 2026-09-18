@@ -24,6 +24,7 @@ import type {
   Enrollment,
   ISODate,
   Payment,
+  AvailabilityWindow,
   Player,
   PriceBasis,
   PriceSource,
@@ -62,6 +63,8 @@ export interface NewSessionInput {
   capacity: number | null
   /** Set for a program's generated occurrences. */
   programId?: string | null
+  /** The coach running the session, for availability. */
+  coachMembershipId?: string | null
 }
 
 export interface UpdateSessionInput extends Partial<NewSessionInput> {
@@ -233,6 +236,18 @@ export interface DataStore {
     coachId: string,
     sessionId: string,
     marks: Array<{ playerId: string; attendance: AttendanceStatus }>,
+  ): Promise<void>
+
+  // ---- availability ----
+  listAvailability(coachId: string): Promise<AvailabilityWindow[]>
+  /**
+   * Replace one member's weekly hours. A day absent from `windows` becomes
+   * unavailable. Only the member themself may do this.
+   */
+  replaceAvailability(
+    coachId: string,
+    membershipId: string,
+    windows: Array<{ weekday: number; startMin: number; endMin: number }>,
   ): Promise<void>
 
   // ---- programs ----

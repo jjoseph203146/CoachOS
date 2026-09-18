@@ -24,6 +24,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   Academy,
   AttendanceStatus,
+  AvailabilityWindow,
   Charge,
   Coach,
   Credit,
@@ -112,6 +113,7 @@ function mapSession(row: Row): Session {
     capacity: row.capacity ?? null,
     status: row.status,
     programId: row.program_id ?? null,
+    coachMembershipId: row.coach_membership_id ?? null,
     attendanceSkipped: !!row.attendance_skipped,
     cancelledAt: row.cancelled_at ?? null,
     createdAt: row.created_at,
@@ -151,6 +153,17 @@ function mapCharge(row: Row): Charge {
     voidedAt: row.voided_at ?? null,
     voidNote: row.void_note ?? '',
     createdAt: row.created_at,
+  }
+}
+
+function mapAvailability(row: Row): AvailabilityWindow {
+  return {
+    id: row.id,
+    coachId: row.academy_id,
+    membershipId: row.membership_id,
+    weekday: Number(row.weekday),
+    startMin: row.start_min,
+    endMin: row.end_min,
   }
 }
 
@@ -490,6 +503,7 @@ export class SupabaseDataStore implements DataStore {
           location: input.location,
           capacity: input.capacity,
           program_id: input.programId ?? null,
+          coach_membership_id: input.coachMembershipId ?? null,
         })
         .select('*')
         .single(),
@@ -691,6 +705,48 @@ export class SupabaseDataStore implements DataStore {
         .eq('player_id', mark.playerId)
       if (error) throw new Error(error.message)
     }
+  }
+
+  // ---- availability ----
+
+  async listAvailability(coachId: string): Promise<AvailabilityWindow[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('availability_windows').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapAvailability)
+  }
+
+  /**
+   * Upsert the days that remain, THEN delete the days that were dropped, so a
+   * failure part-way never leaves someone with no availability at all.
+   */
+  async replaceAvailability(
+    coachId: string,
+    membershipId: string,
+    windows: Array<{ weekday: number; startMin: number; endMin: number }>,
+  ): Promise<void> {
+    if (windows.length > 0) {
+      const { error } = await this.client.from('availability_windows').upsert(
+        windows.map((w) => ({
+          academy_id: coachId,
+          membership_id: membershipId,
+          weekday: w.weekday,
+          start_min: w.startMin,
+          end_min: w.endMin,
+        })),
+        { onConflict: 'membership_id,weekday' },
+      )
+      if (error) throw new Error(error.message)
+    }
+    const keep = windows.map((w) => w.weekday)
+    let del = this.client
+      .from('availability_windows')
+      .delete()
+      .eq('academy_id', coachId)
+      .eq('membership_id', membershipId)
+    if (keep.length > 0) del = del.not('weekday', 'in', `(${keep.join(',')})`)
+    const { error } = await del
+    if (error) throw new Error(error.message)
   }
 
   // ---- programs ----

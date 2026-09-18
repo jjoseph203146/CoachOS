@@ -13,6 +13,7 @@ import {
 import { Dialog, useToast } from '@/components/ui/overlays'
 import { ErrorBanner } from '@/components/ui/primitives'
 import { createSessionAction } from '@/lib/actions/sessions'
+import { checkAvailability, windowLabel, type HoursWindow } from '@/lib/domain/availability'
 import { addDays, dayOfMonth, dowFull, dowShort, formatTime } from '@/lib/domain/dates'
 import { centsToInput, formatMoney, parseMoneyToCents } from '@/lib/domain/money'
 
@@ -35,6 +36,7 @@ export function NewSessionForm({
   coachDefaultRateCents,
   players,
   existing,
+  availability,
 }: {
   draft: Draft
   today: string
@@ -47,6 +49,8 @@ export function NewSessionForm({
     startMin: number
     endMin: number
   }>
+  /** The signed-in coach's private-lesson hours. Empty = none set, so no checks. */
+  availability: HoursWindow[]
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -56,6 +60,7 @@ export function NewSessionForm({
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [conflictOpen, setConflictOpen] = useState(false)
+  const [outsideOpen, setOutsideOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const isGroup = state.type === 'group'
@@ -89,6 +94,16 @@ export function NewSessionForm({
     )
   }, [existing, state.date, state.startMin, state.durationMin])
 
+  // Private lessons are offered within the coach's own hours. Outside them is
+  // allowed, but deliberately.
+  const outside = useMemo(
+    () =>
+      isGroup
+        ? ({ ok: true } as const)
+        : checkAvailability(availability, state.date, state.startMin, state.durationMin),
+    [availability, isGroup, state.date, state.startMin, state.durationMin],
+  )
+
   const togglePlayer = (playerId: string) => {
     setState((current) => {
       const nextIds = isGroup
@@ -113,7 +128,7 @@ export function NewSessionForm({
 
   const priceCents = parseMoneyToCents(state.price) ?? 0
 
-  const submit = (allowConflict = false) => {
+  const submit = (allowConflict = false, allowOutsideAvailability = false) => {
     setError('')
     if (state.playerIds.length === 0) {
       setError(isGroup ? 'Add at least one player.' : 'Choose a player for this lesson.')
@@ -131,6 +146,10 @@ export function NewSessionForm({
       setConflictOpen(true)
       return
     }
+    if (!outside.ok && !allowOutsideAvailability) {
+      setOutsideOpen(true)
+      return
+    }
 
     startTransition(async () => {
       const result = await createSessionAction({
@@ -145,6 +164,7 @@ export function NewSessionForm({
         capacity: isGroup ? state.capacity : null,
         playerIds: state.playerIds,
         allowConflict,
+        allowOutsideAvailability,
       })
       if (!result.ok) {
         setError(result.error)
@@ -276,6 +296,12 @@ export function NewSessionForm({
                 background: minute === state.startMin ? '#1677EE' : '#FFFFFF',
                 color: minute === state.startMin ? '#FFFFFF' : '#0D1B31',
                 borderColor: minute === state.startMin ? '#1677EE' : '#DCE5EF',
+                // With hours set, times outside them are dimmed but still choosable.
+                opacity:
+                  isGroup || minute === state.startMin ||
+                  checkAvailability(availability, state.date, minute, state.durationMin).ok
+                    ? 1
+                    : 0.45,
               }}
             >
               {formatTime(minute)}
@@ -306,6 +332,25 @@ export function NewSessionForm({
             <div className="text-t125 font-medium text-warn_fg">
               Overlaps {conflict.name} · {formatTime(conflict.startMin)}–
               {formatTime(conflict.endMin)}
+            </div>
+          </div>
+        ) : null}
+
+        {!outside.ok ? (
+          <div className="flex items-start gap-[9px] mt-3 bg-warn_bg rounded-r11 px-[13px] py-[10px]">
+            <div className="w-[7px] h-[7px] rounded-full bg-warn_dot shrink-0 mt-[6px]" />
+            <div className="text-t125 font-medium text-warn_fg">
+              {outside.reason === 'none' ? (
+                <>
+                  <b>No openings on {dowFull(state.date)}s.</b> You haven’t offered private
+                  lessons that day. Pick another day, or book anyway.
+                </>
+              ) : (
+                <>
+                  <b>Outside normal availability.</b> {dowFull(state.date)} availability is{' '}
+                  {windowLabel(outside.window)}. You can still book it.
+                </>
+              )}
             </div>
           </div>
         ) : null}
@@ -419,6 +464,33 @@ export function NewSessionForm({
       </div>
 
       <Dialog
+        open={outsideOpen}
+        title={outside.ok || outside.reason === 'outside' ? 'Outside your hours' : 'Not available that day'}
+        body={
+          outside.ok
+            ? ''
+            : outside.reason === 'none'
+              ? `You haven’t offered private lessons on ${dowFull(state.date)}s. Book it anyway?`
+              : `${dowFull(state.date)} availability is ${windowLabel(outside.window)}. Book anyway?`
+        }
+        buttons={[
+          {
+            label: 'Choose another time',
+            tone: 'plain',
+            onClick: () => setOutsideOpen(false),
+          },
+          {
+            label: 'Book anyway',
+            tone: 'ink',
+            onClick: () => {
+              setOutsideOpen(false)
+              submit(true, true)
+            },
+          },
+        ]}
+      />
+
+      <Dialog
         open={conflictOpen}
         title="Schedule conflict"
         body={
@@ -437,7 +509,7 @@ export function NewSessionForm({
             tone: 'ink',
             onClick: () => {
               setConflictOpen(false)
-              submit(true)
+              submit(true, false)
             },
           },
         ]}

@@ -43,9 +43,10 @@ export async function createSessionAction(input: {
   capacity: number | null
   playerIds: string[]
   allowConflict?: boolean
+  allowOutsideAvailability?: boolean
 }): Promise<ActionResult<{ sessionId: string }>> {
   return runAction('createSession', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach, membershipId } = await requireCoachAction()
     const data = createSessionSchema.parse(input)
 
     const session = await createSession(store, coachId, {
@@ -60,6 +61,8 @@ export async function createSessionAction(input: {
       capacity: data.type === 'group' ? (data.capacity ?? 6) : null,
       playerIds: data.playerIds,
       allowConflict: data.allowConflict,
+      allowOutsideAvailability: data.allowOutsideAvailability,
+      coachMembershipId: membershipId,
     })
 
     revalidateSessionViews(session.id)

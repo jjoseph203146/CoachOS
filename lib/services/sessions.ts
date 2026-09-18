@@ -17,6 +17,7 @@
  */
 
 import type { DataStore, NewSessionInput } from '@/lib/data/store'
+import { checkAvailability, windowLabel, WEEKDAY_NAMES } from '@/lib/domain/availability'
 import {
   privateLessonSnapshot,
   sessionPriceSnapshot,
@@ -92,6 +93,8 @@ export interface CreateSessionArgs extends NewSessionInput {
   playerIds: string[]
   /** Set once the coach has acknowledged a scheduling conflict. */
   allowConflict?: boolean
+  /** Set once the coach has chosen to book outside their usual private-lesson hours. */
+  allowOutsideAvailability?: boolean
 }
 
 /**
@@ -146,6 +149,24 @@ export async function createSession(
     }
   }
 
+  // Private lessons are offered within the coach's own hours. Outside them is
+  // allowed, but only deliberately — like a scheduling conflict.
+  if (args.type === 'private' && args.coachMembershipId && !args.allowOutsideAvailability) {
+    const windows = (await store.listAvailability(coachId)).filter(
+      (w) => w.membershipId === args.coachMembershipId,
+    )
+    const check = checkAvailability(windows, args.date, args.startMin, args.durationMin)
+    if (!check.ok) {
+      const day = WEEKDAY_NAMES[new Date(args.date + 'T12:00:00').getDay()]
+      throw new DomainError(
+        'CONFLICT',
+        check.reason === 'none'
+          ? `You’re not available on ${day}s.`
+          : `That’s outside your ${day} availability (${windowLabel(check.window)}).`,
+      )
+    }
+  }
+
   // Snapshot where the price came from. The server works this out from the
   // player's and academy's real rates; it never trusts a provenance label from
   // the browser. A private lesson entered at a different price than the
@@ -170,6 +191,7 @@ export async function createSession(
       isFree: args.isFree,
       location: args.location,
       capacity: args.type === 'group' ? args.capacity : null,
+      coachMembershipId: args.coachMembershipId ?? null,
     })
 
     for (const playerId of args.playerIds) {

@@ -14,6 +14,7 @@ import { DEFAULT_TIME_ZONE } from '@/lib/domain/dates'
 import type {
   Academy,
   AttendanceStatus,
+  AvailabilityWindow,
   Charge,
   Coach,
   Credit,
@@ -56,6 +57,7 @@ interface Tables {
   programs: Program[]
   priceOptions: ProgramPriceOption[]
   programEnrollments: ProgramEnrollment[]
+  availability: AvailabilityWindow[]
 }
 
 function emptyTables(): Tables {
@@ -71,6 +73,7 @@ function emptyTables(): Tables {
     programs: [],
     priceOptions: [],
     programEnrollments: [],
+    availability: [],
   }
 }
 
@@ -275,6 +278,7 @@ export class MockDataStore implements DataStore {
       capacity: input.capacity,
       status: 'scheduled',
       programId: input.programId ?? null,
+      coachMembershipId: input.coachMembershipId ?? null,
       attendanceSkipped: false,
       cancelledAt: null,
       createdAt: nowISO(),
@@ -397,6 +401,30 @@ export class MockDataStore implements DataStore {
     return clone(
       this.db.charges.find((c) => c.id === chargeId && c.coachId === coachId) ?? null,
     )
+  }
+
+  // ---- availability ----
+
+  async listAvailability(coachId: string): Promise<AvailabilityWindow[]> {
+    return clone(this.db.availability.filter((w) => w.coachId === coachId))
+  }
+
+  async replaceAvailability(
+    coachId: string,
+    membershipId: string,
+    windows: Array<{ weekday: number; startMin: number; endMin: number }>,
+  ): Promise<void> {
+    this.db.availability = this.db.availability.filter(
+      (w) => !(w.coachId === coachId && w.membershipId === membershipId),
+    )
+    for (const window of windows) {
+      this.db.availability.push({
+        id: nextId('av'),
+        coachId,
+        membershipId,
+        ...window,
+      })
+    }
   }
 
   // ---- programs ----

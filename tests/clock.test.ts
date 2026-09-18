@@ -97,6 +97,7 @@ describe('attendance window', () => {
     capacity: 6,
     status: 'scheduled',
     programId: null,
+    coachMembershipId: null,
     attendanceSkipped: false,
     cancelledAt: null,
     createdAt: '2026-08-01T00:00:00Z',
