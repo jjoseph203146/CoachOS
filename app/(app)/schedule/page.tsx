@@ -4,7 +4,7 @@ import { attendanceMissing, attendanceState, isPast } from '@/lib/domain/session
 import { ScheduleView, type ScheduleRow } from './ScheduleView'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Schedule — CoachOS' }
+export const metadata = { title: 'Calendar — CoachOS' }
 
 export default async function SchedulePage() {
   const { store, coachId, coach } = await requireCoachPage()
@@ -34,19 +34,20 @@ export default async function SchedulePage() {
     const state = attendanceState(session, roster)
 
     let badge: ScheduleRow['badge'] = null
-    if (cancelled) badge = { text: 'Cancelled', bg: '#EDEDE8', fg: '#6B706C' }
+    if (cancelled) badge = { text: 'Cancelled', bg: '#EEF3F8', fg: '#6D7A8C' }
     else if (attendanceMissing(session, roster, clock, grace))
-      badge = { text: 'Attendance missing', bg: '#F6EEDB', fg: '#96690F' }
+      badge = { text: 'Attendance missing', bg: '#FBF3E4', fg: '#96690F' }
     else if (ended && state === 'complete')
-      badge = { text: 'Done', bg: '#EDEDE8', fg: '#6B706C' }
+      badge = { text: 'Done', bg: '#EEF3F8', fg: '#6D7A8C' }
     else if (session.capacity && roster.length >= session.capacity)
-      badge = { text: 'Full', bg: '#E4F2E9', fg: '#2E7D4F' }
+      badge = { text: 'Full', bg: '#EAF8EF', fg: '#159A55' }
 
     return {
       id: session.id,
       date: session.date,
       startMin: session.startMin,
       durationMin: session.durationMin,
+      kind: session.type === 'private' ? 'private' : 'group',
       title: session.type === 'private' ? 'Private Lesson' : session.name,
       subtitle:
         session.type === 'private'

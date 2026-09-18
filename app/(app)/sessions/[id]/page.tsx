@@ -18,7 +18,7 @@ export default async function SessionDetailPage({
 }: {
   params: { id: string }
 }) {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
   const clock = coachClock(coach)
 
   let detail
@@ -72,6 +72,7 @@ export default async function SessionDetailPage({
 
   return (
     <SessionDetailView
+      canManageMoney={role === 'owner'}
       session={{
         id: session.id,
         name: session.name,

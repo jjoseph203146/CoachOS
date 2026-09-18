@@ -59,6 +59,7 @@ export function SessionDetailView({
   addChargeNote,
   unpaid,
   today,
+  canManageMoney,
 }: {
   session: SessionData
   typeChip: string
@@ -75,6 +76,11 @@ export function SessionDetailView({
   addChargeNote: string
   unpaid: { count: number; cents: number }
   today: string
+  /**
+   * Owners can credit or reprice charges; coaches can't (the server refuses),
+   * so the screen doesn't offer it, and doesn't surface per-player payment status.
+   */
+  canManageMoney: boolean
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -110,7 +116,7 @@ export function SessionDetailView({
       <DetailHeader
         backHref="/schedule"
         title={
-          <div className="font-mono text-t105 font-medium tracking-mono2 uppercase text-muted">
+          <div className="text-t15 font-bold">
             {typeChip}
           </div>
         }
@@ -145,7 +151,7 @@ export function SessionDetailView({
       ) : null}
 
       <div className="mt-[26px] flex items-center justify-between">
-        <div className="font-mono text-t105 font-medium tracking-mono uppercase text-muted">
+        <div className="text-t17 font-extrabold text-ink">
           Roster
         </div>
         {session.type === 'group' ? (
@@ -172,7 +178,7 @@ export function SessionDetailView({
                   {row.attendanceText}
                 </div>
               </div>
-              {row.chargeId ? (
+              {row.chargeId && canManageMoney ? (
                 <button
                   onClick={() => router.push('/payments?tab=pending')}
                   className="text-t115 font-semibold px-[10px] py-[6px] rounded-full shrink-0 tnum"
@@ -209,7 +215,7 @@ export function SessionDetailView({
         <button
           onClick={() => setAddOpen(true)}
           className="w-full mt-[10px] h-11 border border-dashed border-dashed rounded-r12 flex items-center justify-center text-t135 font-semibold text-accent bg-card"
-          style={{ borderColor: '#C9CCC3', borderStyle: 'dashed' }}
+          style={{ borderColor: '#C9D3DE', borderStyle: 'dashed' }}
         >
           + Add Player
         </button>
@@ -217,7 +223,7 @@ export function SessionDetailView({
 
       {!session.cancelled ? (
         <div className="mt-[26px]">
-          <div className="font-mono text-t105 font-medium tracking-mono uppercase text-muted">
+          <div className="text-t17 font-extrabold text-ink">
             Actions
           </div>
           <div className="grid grid-cols-2 gap-[10px] mt-[10px]">
@@ -255,6 +261,7 @@ export function SessionDetailView({
         session={session}
         today={today}
         pending={pending}
+        canManageMoney={canManageMoney}
         onClose={() => setEditOpen(false)}
         onSaved={() => {
           setEditOpen(false)
@@ -354,23 +361,27 @@ export function SessionDetailView({
               )
             },
           },
-          {
-            label: 'Credit the charge',
-            tone: 'plain',
-            onClick: () => {
-              const target = removeTarget!
-              setRemoveTarget(null)
-              run(
-                () =>
-                  removePlayerFromSessionAction({
-                    sessionId: session.id,
-                    playerId: target.playerId,
-                    chargeDecision: 'credit',
-                  }),
-                `${target.name.split(' ')[0]} removed from session`,
-              )
-            },
-          },
+          ...(canManageMoney
+            ? [
+                {
+                  label: 'Credit the charge',
+                  tone: 'plain' as const,
+                  onClick: () => {
+                    const target = removeTarget!
+                    setRemoveTarget(null)
+                    run(
+                      () =>
+                        removePlayerFromSessionAction({
+                          sessionId: session.id,
+                          playerId: target.playerId,
+                          chargeDecision: 'credit',
+                        }),
+                      `${target.name.split(' ')[0]} removed from session`,
+                    )
+                  },
+                },
+              ]
+            : []),
           { label: 'Cancel', tone: 'plain', onClick: () => setRemoveTarget(null) },
         ]}
       />
@@ -497,6 +508,7 @@ function EditSessionSheet({
   session,
   today,
   pending,
+  canManageMoney,
   onClose,
   onSaved,
 }: {
@@ -504,6 +516,7 @@ function EditSessionSheet({
   session: SessionData
   today: string
   pending: boolean
+  canManageMoney: boolean
   onClose: () => void
   onSaved: () => void
 }) {
@@ -570,19 +583,19 @@ function EditSessionSheet({
                 onClick={() => setDate(iso)}
                 className="shrink-0 w-[50px] py-[7px] rounded-r12 border text-center"
                 style={{
-                  background: selected ? '#171918' : '#FFFFFF',
-                  borderColor: selected ? '#171918' : '#E5E6E1',
+                  background: selected ? '#1677EE' : '#FFFFFF',
+                  borderColor: selected ? '#1677EE' : '#DCE5EF',
                 }}
               >
                 <div
-                  className="font-mono text-t9 tracking-mono4"
-                  style={{ color: selected ? '#B9BDB6' : '#6B706C' }}
+                  className="text-t10 font-semibold"
+                  style={{ color: selected ? '#CFE3FD' : '#6D7A8C' }}
                 >
                   {dowShort(iso).toUpperCase()}
                 </div>
                 <div
                   className="text-t14 font-bold mt-[1px] tnum"
-                  style={{ color: selected ? '#F7F7F3' : '#171918' }}
+                  style={{ color: selected ? '#FFFFFF' : '#0D1B31' }}
                 >
                   {dayOfMonth(iso)}
                 </div>
@@ -598,9 +611,9 @@ function EditSessionSheet({
               onClick={() => setStartMin(minute)}
               className="shrink-0 px-3 py-2 rounded-full border text-t125 font-semibold tnum"
               style={{
-                background: minute === startMin ? '#171918' : '#FFFFFF',
-                color: minute === startMin ? '#F7F7F3' : '#171918',
-                borderColor: minute === startMin ? '#171918' : '#E5E6E1',
+                background: minute === startMin ? '#1677EE' : '#FFFFFF',
+                color: minute === startMin ? '#FFFFFF' : '#0D1B31',
+                borderColor: minute === startMin ? '#1677EE' : '#DCE5EF',
               }}
             >
               {formatTime(minute)}
@@ -615,9 +628,9 @@ function EditSessionSheet({
               onClick={() => setDurationMin(minutes)}
               className="px-3 py-2 rounded-full border text-t125 font-semibold"
               style={{
-                background: minutes === durationMin ? '#171918' : '#FFFFFF',
-                color: minutes === durationMin ? '#F7F7F3' : '#171918',
-                borderColor: minutes === durationMin ? '#171918' : '#E5E6E1',
+                background: minutes === durationMin ? '#1677EE' : '#FFFFFF',
+                color: minutes === durationMin ? '#FFFFFF' : '#0D1B31',
+                borderColor: minutes === durationMin ? '#1677EE' : '#DCE5EF',
               }}
             >
               {minutes} min
@@ -680,11 +693,15 @@ function EditSessionSheet({
         title="Session price changed"
         body="There are unpaid charges for this session. Paid charges are never changed."
         buttons={[
-          {
-            label: `Update unpaid to ${price ? formatMoney(Math.round(Number(price) * 100)) : ''}`,
-            tone: 'ink',
-            onClick: () => save('update'),
-          },
+          ...(canManageMoney
+            ? [
+                {
+                  label: `Update unpaid to ${price ? formatMoney(Math.round(Number(price) * 100)) : ''}`,
+                  tone: 'ink' as const,
+                  onClick: () => save('update'),
+                },
+              ]
+            : []),
           {
             label: 'Keep existing payments',
             tone: 'plain',
@@ -699,7 +716,7 @@ function EditSessionSheet({
 
 function SheetFieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="font-mono text-t10 font-medium tracking-mono2 uppercase text-muted mt-4">
+    <div className="text-t12 font-bold text-ink mt-4">
       {children}
     </div>
   )

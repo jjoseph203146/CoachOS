@@ -17,7 +17,7 @@ import { PlayerDetailView } from './PlayerDetailView'
 export const dynamic = 'force-dynamic'
 
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
   const clock = coachClock(coach)
 
   let player
@@ -52,6 +52,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
 
   return (
     <PlayerDetailView
+      showMoney={role === 'owner'}
       player={{
         id: player.id,
         name: player.name,
@@ -89,12 +90,12 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                 ? 'Absent'
                 : 'Unmarked'
         const color = cancelled
-          ? '#8A8E89'
+          ? '#8A94A3'
           : mark === 'present'
-            ? '#2E7D4F'
+            ? '#159A55'
             : mark === 'absent'
-              ? '#B3402F'
-              : '#8A8E89'
+              ? '#A72A38'
+              : '#8A94A3'
         return {
           id: session.id,
           line1: formatMedium(session.date),

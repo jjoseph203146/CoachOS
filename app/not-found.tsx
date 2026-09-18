@@ -11,7 +11,7 @@ export default function NotFound() {
         </div>
         <Link
           href="/dashboard"
-          className="h-[46px] w-40 rounded-r12 bg-ink text-shell text-t14 font-semibold flex items-center justify-center mx-auto mt-5"
+          className="h-[46px] w-40 rounded-r12 bg-accent text-white text-t14 font-semibold flex items-center justify-center mx-auto mt-5"
         >
           Go Home
         </Link>

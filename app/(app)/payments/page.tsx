@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { requireCoachPage } from '@/lib/auth'
 import { coachClock } from '@/lib/services/clock'
 import { formatMedium, formatShort } from '@/lib/domain/dates'
@@ -7,14 +8,17 @@ import { listSelectablePlayers } from '@/lib/services/players'
 import { PaymentsView, type ChargeRow } from './PaymentsView'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Payments — CoachOS' }
+export const metadata = { title: 'Revenue — CoachOS' }
 
 export default async function PaymentsPage({
   searchParams,
 }: {
   searchParams: { tab?: string; player?: string }
 }) {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
+  // Revenue is the academy owner's. (RLS also blocks a coach from writing
+  // payments; this just avoids showing them a screen they can't use.)
+  if (role !== 'owner') redirect('/dashboard')
   const clock = coachClock(coach)
 
   const [finance, sessions, players, selectable] = await Promise.all([

@@ -3,18 +3,24 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Sheet, SheetTitle } from '@/components/ui/overlays'
+import type { MembershipRole } from '@/lib/domain/types'
 
 /**
- * Bottom tab bar with the centre "+" FAB, reproduced from the prototype:
- * translucent #FBFBF8 at 94% with a 14px blur, hairline top border, 23px
- * stroked icons, 10px labels, and a 52px green FAB lifted 26px above the bar.
+ * Bottom tab bar with the centre "+" FAB, from the V1 spec (preview.html):
+ * Today / Calendar / [+] / People / More. Active tab and the FAB are the brand
+ * blue on a translucent white bar with a hairline top border. The 56px FAB has
+ * a 4px white ring and a blue glow.
+ *
+ * Money lives under More (owner only), not in the bar, so a coach never sees a
+ * Revenue entry point here.
  */
 
-const ACTIVE = '#171918'
-const INACTIVE = '#A8ACA5'
+const ACTIVE = '#1677EE'
+const INACTIVE = '#718095'
 
-function HomeIcon({ color }: { color: string }) {
+function Icon({ color, children }: { color: string; children: ReactNode }) {
   return (
     <svg
       width="23"
@@ -26,104 +32,88 @@ function HomeIcon({ color }: { color: string }) {
       strokeLinejoin="round"
       strokeLinecap="round"
     >
-      <path d="M4 10.5 12 4l8 6.5V20h-5.2v-4.8h-5.6V20H4Z" />
+      {children}
     </svg>
   )
 }
 
-function ScheduleIcon({ color }: { color: string }) {
-  return (
-    <svg
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    >
-      <rect x="3.5" y="5.5" width="17" height="15" rx="3" />
-      <path d="M3.5 10.5h17M8.5 3.5v3.5M15.5 3.5v3.5" />
-    </svg>
-  )
+const TodayIcon = ({ color }: { color: string }) => (
+  <Icon color={color}>
+    <path d="M4 10.5 12 4l8 6.5V20h-5.2v-4.8h-5.6V20H4Z" />
+  </Icon>
+)
+
+const CalendarIcon = ({ color }: { color: string }) => (
+  <Icon color={color}>
+    <rect x="3.5" y="5.5" width="17" height="15" rx="3" />
+    <path d="M3.5 10.5h17M8.5 3.5v3.5M15.5 3.5v3.5" />
+  </Icon>
+)
+
+const PeopleIcon = ({ color }: { color: string }) => (
+  <Icon color={color}>
+    <circle cx="12" cy="8.6" r="3.4" />
+    <path d="M5.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4" />
+  </Icon>
+)
+
+const MoreIcon = ({ color }: { color: string }) => (
+  <Icon color={color}>
+    <path d="M4.5 7h15M4.5 12h15M4.5 17h15" />
+  </Icon>
+)
+
+interface Tab {
+  href: string
+  label: string
+  Icon: (props: { color: string }) => JSX.Element
+  /** Extra path prefixes that keep this tab highlighted (screens it hosts). */
+  alsoActiveFor?: string[]
 }
 
-function PlayersIcon({ color }: { color: string }) {
-  return (
-    <svg
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    >
-      <circle cx="12" cy="8.6" r="3.4" />
-      <path d="M5.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4" />
-    </svg>
-  )
-}
-
-function PaymentsIcon({ color }: { color: string }) {
-  return (
-    <svg
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="1.9"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    >
-      <rect x="3" y="6.5" width="18" height="12" rx="2.5" />
-      <circle cx="12" cy="12.5" r="2.4" />
-    </svg>
-  )
-}
-
-const TABS = [
-  { href: '/dashboard', label: 'Home', Icon: HomeIcon },
-  { href: '/schedule', label: 'Schedule', Icon: ScheduleIcon },
-  { href: '/players', label: 'Players', Icon: PlayersIcon },
-  { href: '/payments', label: 'Payments', Icon: PaymentsIcon },
+const TABS: Tab[] = [
+  { href: '/dashboard', label: 'Today', Icon: TodayIcon },
+  { href: '/schedule', label: 'Calendar', Icon: CalendarIcon },
+  { href: '/players', label: 'People', Icon: PeopleIcon },
+  { href: '/settings', label: 'More', Icon: MoreIcon, alsoActiveFor: ['/payments', '/help'] },
 ]
 
-export function TabBar() {
+const matches = (pathname: string, prefix: string) =>
+  pathname === prefix || pathname.startsWith(prefix + '/')
+
+export function TabBar({ role }: { role: MembershipRole }) {
   const pathname = usePathname()
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  const isActive = (tab: Tab) =>
+    matches(pathname, tab.href) || (tab.alsoActiveFor ?? []).some((p) => matches(pathname, p))
 
-  const go = (type: 'private' | 'group') => {
+  const go = (href: string) => {
     setCreateOpen(false)
-    router.push(`/schedule/new?type=${type}`)
+    router.push(href)
   }
 
   return (
     <>
       <nav
         className="absolute left-0 right-0 bottom-0 z-30 border-t border-line px-2 pt-[6px] pb-1"
-        style={{ background: 'rgba(251,251,248,.94)', backdropFilter: 'blur(14px)' }}
+        style={{ background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)' }}
       >
         <div className="flex items-center">
           {TABS.slice(0, 2).map((tab) => (
-            <TabLink key={tab.href} tab={tab} active={isActive(tab.href)} />
+            <TabLink key={tab.href} tab={tab} active={isActive(tab)} />
           ))}
 
           <div className="flex-1 flex justify-center">
             <button
               onClick={() => setCreateOpen(true)}
-              aria-label="New session"
-              className="w-[52px] h-[52px] rounded-full bg-accent text-white flex items-center justify-center -mt-[26px] shadow-fab"
+              aria-label="Quick add"
+              className="w-14 h-14 rounded-full bg-accent flex items-center justify-center -mt-[28px] border-4 border-white shadow-fab"
             >
               <svg
-                width="24"
-                height="24"
+                width="26"
+                height="26"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="#FFFFFF"
@@ -136,7 +126,7 @@ export function TabBar() {
           </div>
 
           {TABS.slice(2).map((tab) => (
-            <TabLink key={tab.href} tab={tab} active={isActive(tab.href)} />
+            <TabLink key={tab.href} tab={tab} active={isActive(tab)} />
           ))}
         </div>
         {/* Home indicator bar from the design. */}
@@ -146,73 +136,126 @@ export function TabBar() {
       </nav>
 
       <Sheet open={createOpen} onClose={() => setCreateOpen(false)}>
-        <SheetTitle>New Session</SheetTitle>
-        <button
-          onClick={() => go('private')}
-          className="w-full flex items-center gap-[13px] bg-card border border-line rounded-r14 px-4 py-[15px] mt-4"
+        <SheetTitle>Quick Add</SheetTitle>
+
+        <QuickAddRow
+          title="Private Lesson"
+          subtitle="One player, one-on-one"
+          onClick={() => go('/schedule/new?type=private')}
+          first
         >
-          <div className="w-10 h-10 rounded-r12 bg-accent_soft flex items-center justify-center shrink-0">
-            <svg
-              width="19"
-              height="19"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#2E7D4F"
-              strokeWidth="2"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            >
-              <circle cx="12" cy="8.6" r="3.4" />
-              <path d="M5.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4" />
-            </svg>
-          </div>
-          <div className="flex-1 text-left">
-            <div className="text-t15 font-bold">Private Lesson</div>
-            <div className="text-t125 text-muted mt-[1px]">One player, one-on-one</div>
-          </div>
-          <span className="text-chevron text-t17">›</span>
-        </button>
-        <button
-          onClick={() => go('group')}
-          className="w-full flex items-center gap-[13px] bg-card border border-line rounded-r14 px-4 py-[15px] mt-[10px]"
+          <PeopleIcon color="#1677EE" />
+        </QuickAddRow>
+
+        <QuickAddRow
+          title="Person"
+          subtitle="Add a player to your roster"
+          onClick={() => go('/players/new')}
         >
-          <div className="w-10 h-10 rounded-r12 bg-neutral_chip flex items-center justify-center shrink-0">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1677EE"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="10" cy="8.6" r="3.4" />
+            <path d="M3.5 19.5c.8-3.6 3.3-5.4 6.5-5.4s5.7 1.8 6.5 5.4M19 8v6M16 11h6" />
+          </svg>
+        </QuickAddRow>
+
+        {/* Becomes "Program" when recurring programs ship. */}
+        <QuickAddRow
+          title="Group Session"
+          subtitle="Multiple players, per-player price"
+          onClick={() => go('/schedule/new?type=group')}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1677EE"
+            strokeWidth="1.9"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          >
+            <circle cx="9" cy="8.8" r="3" />
+            <path d="M3.5 19c.7-3.1 2.8-4.7 5.5-4.7s4.8 1.6 5.5 4.7" />
+            <circle cx="16.8" cy="9.6" r="2.5" />
+            <path d="M16.2 14.5c2.3.3 3.8 1.7 4.3 4.5" />
+          </svg>
+        </QuickAddRow>
+
+        {role === 'owner' ? (
+          <QuickAddRow
+            title="Revenue"
+            subtitle="Record a payment or add a charge"
+            onClick={() => go('/payments')}
+          >
             <svg
               width="20"
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#171918"
+              stroke="#1677EE"
               strokeWidth="1.9"
               strokeLinejoin="round"
               strokeLinecap="round"
             >
-              <circle cx="9" cy="8.8" r="3" />
-              <path d="M3.5 19c.7-3.1 2.8-4.7 5.5-4.7s4.8 1.6 5.5 4.7" />
-              <circle cx="16.8" cy="9.6" r="2.5" />
-              <path d="M16.2 14.5c2.3.3 3.8 1.7 4.3 4.5" />
+              <rect x="3" y="6.5" width="18" height="12" rx="2.5" />
+              <circle cx="12" cy="12.5" r="2.4" />
             </svg>
-          </div>
-          <div className="flex-1 text-left">
-            <div className="text-t15 font-bold">Group Session</div>
-            <div className="text-t125 text-muted mt-[1px]">
-              Multiple players, per-player price
-            </div>
-          </div>
-          <span className="text-chevron text-t17">›</span>
+          </QuickAddRow>
+        ) : null}
+
+        <button
+          onClick={() => setCreateOpen(false)}
+          className="w-full h-12 rounded-r13 bg-accent_soft text-accent_text text-t15 font-bold mt-4 text-center"
+        >
+          Close
         </button>
       </Sheet>
     </>
   )
 }
 
-function TabLink({
-  tab,
-  active,
+function QuickAddRow({
+  title,
+  subtitle,
+  onClick,
+  children,
+  first = false,
 }: {
-  tab: (typeof TABS)[number]
-  active: boolean
+  title: string
+  subtitle: string
+  onClick: () => void
+  children: ReactNode
+  first?: boolean
 }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-[13px] bg-card border border-line rounded-r14 px-4 py-[14px] ${
+        first ? 'mt-4' : 'mt-[10px]'
+      }`}
+    >
+      <div className="w-10 h-10 rounded-r12 bg-accent_soft flex items-center justify-center shrink-0">
+        {children}
+      </div>
+      <div className="flex-1 text-left">
+        <div className="text-t15 font-bold">{title}</div>
+        <div className="text-t125 text-muted mt-[1px]">{subtitle}</div>
+      </div>
+      <span className="text-chevron text-t17">›</span>
+    </button>
+  )
+}
+
+function TabLink({ tab, active }: { tab: Tab; active: boolean }) {
   const color = active ? ACTIVE : INACTIVE
   return (
     <Link

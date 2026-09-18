@@ -3,11 +3,13 @@ import { requireCoachPage } from '@/lib/auth'
 import { coachClock, coachGraceMinutes } from '@/lib/services/clock'
 import { ScreenBody } from '@/components/shell/AppShell'
 import {
-  Card,
   Chevron,
   EmptyCard,
+  EventCard,
+  Notice,
   SectionLabel,
   StatPair,
+  StatTile,
 } from '@/components/ui/primitives'
 import {
   firstName,
@@ -17,37 +19,104 @@ import {
   greetingFor,
 } from '@/lib/domain/dates'
 import { formatMoney } from '@/lib/domain/money'
-import { loadDashboard } from '@/lib/services/dashboard'
+import { loadDashboard, type DashboardModel } from '@/lib/services/dashboard'
 import { AccountButton } from './AccountButton'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Home — CoachOS' }
+export const metadata = { title: 'Today — CoachOS' }
+
+type TodayItem = DashboardModel['alsoToday'][number]
+
+/** "1.5h", "2h", "45m" — scheduled time for the coach's stat tile. */
+function formatHours(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`
+  return `${(minutes / 60).toFixed(1).replace(/\.0$/, '')}h`
+}
 
 export default async function DashboardPage() {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
+  const isOwner = role === 'owner'
   const clock = coachClock(coach)
   const model = await loadDashboard(store, coachId, clock, coachGraceMinutes(coach))
 
   const today = clock.today
   const up = model.upNext
 
+  const playerName = (item: { enrollments: Array<{ playerId: string }> }) =>
+    model.players.get(item.enrollments[0]?.playerId ?? '')?.name ?? ''
+
+  // Today's list: the next session (when it is later today) plus the rest.
+  const todayItems: TodayItem[] = [
+    ...(up && up.session.date === today
+      ? [
+          {
+            session: up.session,
+            enrollments: up.enrollments,
+            ended: false,
+            attendanceMissing: false,
+            skipped: up.session.attendanceSkipped,
+            complete: up.attendanceComplete,
+          },
+        ]
+      : []),
+    ...model.alsoToday,
+  ].sort((a, b) => a.session.startMin - b.session.startMin)
+
+  // Overdue money is the owner's business; attendance is everyone's.
+  const attention = model.attention.filter((item) => isOwner || item.kind === 'attendance')
+
+  const card = (item: TodayItem) => {
+    const { session } = item
+    const isPrivate = session.type === 'private'
+    const detail = [
+      isPrivate ? playerName(item) : `${item.enrollments.length} players`,
+      `${session.durationMin} min`,
+      session.location,
+    ].filter(Boolean)
+    const tag = item.attendanceMissing
+      ? { text: 'Attendance missing', color: '#96690F' }
+      : item.ended && item.complete
+        ? { text: 'Done', color: '#6D7A8C' }
+        : item.ended && item.skipped
+          ? { text: 'Skipped', color: '#6D7A8C' }
+          : undefined
+    const canTakeAttendance =
+      item.enrollments.length > 0 && !item.complete && !item.skipped && !item.attendanceMissing
+    return (
+      <EventCard
+        key={session.id}
+        href={`/sessions/${session.id}`}
+        time={formatTime(session.startMin)}
+        title={isPrivate ? 'Private Lesson' : session.name}
+        sub={detail.join(' · ')}
+        kind={isPrivate ? 'private' : 'group'}
+        tag={tag}
+        dim={item.ended}
+        action={
+          canTakeAttendance
+            ? { href: `/sessions/${session.id}/attendance`, label: 'Attendance' }
+            : undefined
+        }
+      />
+    )
+  }
+
   return (
     <ScreenBody className="px-5 pt-1">
       <div className="flex items-start justify-between pt-3">
         <div>
-          <SectionLabel>{formatLong(today)}</SectionLabel>
-          <div className="text-t25 font-bold tracking-tight2 mt-[6px]">
-            {greetingFor(clock.nowMinutes)}, {firstName(coach.name)}
+          <div className="text-t13 text-muted">{greetingFor(clock.nowMinutes)},</div>
+          <div className="text-t26 font-extrabold tracking-tight2 leading-[1.05]">
+            {firstName(coach.name)}
           </div>
+          <div className="text-t13 text-muted mt-[3px]">{formatLong(today)}</div>
         </div>
         <AccountButton name={coach.name} businessName={coach.businessName} />
       </div>
 
       {model.isNewCoach ? (
         <div className="bg-card border border-line rounded-r18 shadow-card p-[22px] mt-6">
-          <div className="font-mono text-t105 font-medium tracking-mono uppercase text-accent">
-            Welcome
-          </div>
+          <div className="text-t13 font-bold text-accent">Welcome</div>
           <div className="text-t20 font-bold tracking-tight1 mt-2">
             Set up your coaching base
           </div>
@@ -57,76 +126,71 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/players/new"
-            className="h-12 rounded-r12 bg-accent text-white text-t15 font-semibold flex items-center justify-center mt-[18px]"
+            className="h-12 rounded-r13 bg-accent text-white text-t15 font-bold flex items-center justify-center mt-[18px]"
           >
             Add Your First Player
           </Link>
           <Link
             href="/schedule/new?type=private"
-            className="h-12 rounded-r12 bg-card border border-line text-ink text-t15 font-semibold flex items-center justify-center mt-[10px]"
+            className="h-12 rounded-r13 bg-accent_soft text-accent_text text-t15 font-bold flex items-center justify-center mt-[10px]"
           >
             Schedule a Session
           </Link>
         </div>
       ) : (
         <>
-          {up ? (
-            <div className="bg-card border border-line rounded-r18 shadow-card_hi p-[18px] mt-6">
-              <div className="flex items-center justify-between">
-                <div className="font-mono text-t105 font-semibold tracking-mono uppercase text-accent">
-                  Up next
-                </div>
-                <div className="font-mono text-t105 font-medium tracking-mono3 uppercase text-faint">
-                  {up.session.type === 'private'
-                    ? 'Private lesson'
-                    : `Group · ${up.enrollments.length} of ${up.session.capacity ?? up.enrollments.length}`}
-                </div>
+          <div className="flex gap-2 mt-4">
+            <StatTile value={String(model.todayCount)} label="Sessions Today" />
+            <StatTile value={String(model.todayPlayers)} label="Players Today" />
+            {isOwner ? (
+              <StatTile
+                value={formatMoney(model.revenueTodayCents)}
+                label="Revenue Today"
+                tone="success"
+              />
+            ) : (
+              <StatTile value={formatHours(model.todayMinutes)} label="Scheduled Today" />
+            )}
+          </div>
+
+          <div className="flex items-center justify-between mt-[22px]">
+            <SectionLabel>Today</SectionLabel>
+            <Link href="/schedule" className="text-t13 font-semibold text-accent">
+              See All
+            </Link>
+          </div>
+
+          {todayItems.length > 0 ? (
+            <div className="mt-[10px] flex flex-col gap-[10px]">{todayItems.map(card)}</div>
+          ) : up ? (
+            <>
+              <div className="text-t13 text-muted mt-2">Nothing else scheduled today.</div>
+              <div className="mt-4">
+                <SectionLabel>Up next</SectionLabel>
               </div>
-              <Link href={`/sessions/${up.session.id}`} className="block">
-                <div className="text-t22 font-bold tracking-tight15 mt-3">
-                  {up.session.type === 'private'
-                    ? (model.players.get(up.enrollments[0]?.playerId ?? '')?.name ??
-                      up.session.name)
-                    : up.session.name}
-                </div>
-                <div className="text-t14 text-muted mt-[5px]">
-                  {formatRelative(up.session.date, today)} · {formatTime(up.session.startMin)} ·{' '}
-                  {up.session.durationMin} min
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-t15 font-semibold tnum">
-                    {up.session.isFree
-                      ? 'Free session'
-                      : `${formatMoney(up.session.priceCents)}${
-                          up.session.type === 'group' ? ' per player' : ''
-                        }`}
-                  </span>
-                  {up.outstandingCents > 0 ? (
-                    <span className="text-t12 font-semibold px-[9px] py-[3px] rounded-full bg-warn_bg text-warn_fg">
-                      {up.session.type === 'private'
-                        ? 'Unpaid'
-                        : `${formatMoney(up.outstandingCents)} unpaid`}
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-              {up.session.date === today &&
-              up.enrollments.length > 0 &&
-              !up.attendanceComplete ? (
-                <Link
-                  href={`/sessions/${up.session.id}/attendance`}
-                  className="h-12 rounded-r12 bg-accent text-white text-t15 font-semibold flex items-center justify-center mt-4"
-                >
-                  Take Attendance
-                </Link>
-              ) : null}
-            </div>
+              <div className="mt-[10px]">
+                <EventCard
+                  href={`/sessions/${up.session.id}`}
+                  time={formatTime(up.session.startMin)}
+                  title={up.session.type === 'private' ? 'Private Lesson' : up.session.name}
+                  sub={[
+                    formatRelative(up.session.date, today),
+                    up.session.type === 'private'
+                      ? playerName(up)
+                      : `${up.enrollments.length} players`,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                  kind={up.session.type === 'private' ? 'private' : 'group'}
+                />
+              </div>
+            </>
           ) : (
-            <div className="mt-6">
+            <div className="mt-[10px]">
               <EmptyCard title="No sessions scheduled" body="Your calendar is clear.">
                 <Link
                   href="/schedule/new?type=private"
-                  className="h-[46px] rounded-r12 bg-accent text-white text-t145 font-semibold flex items-center justify-center mt-[14px]"
+                  className="h-[46px] rounded-r13 bg-accent text-white text-t145 font-bold flex items-center justify-center mt-[14px]"
                 >
                   Schedule Session
                 </Link>
@@ -134,92 +198,36 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {model.alsoToday.length > 0 ? (
-            <div className="mt-[26px]">
-              <SectionLabel>Also today</SectionLabel>
-              <Card className="mt-[10px] shadow-card">
-                {model.alsoToday.map((item, index) => {
-                  const tag = item.attendanceMissing
-                    ? { text: 'Attendance missing', color: '#96690F' }
-                    : item.ended && item.complete
-                      ? { text: 'Done', color: '#6B706C' }
-                      : item.ended && item.skipped
-                        ? { text: 'Skipped', color: '#6B706C' }
-                        : null
-                  return (
-                    <Link
-                      key={item.session.id}
-                      href={`/sessions/${item.session.id}`}
-                      className={`flex items-center gap-3 px-4 py-[13px] ${
-                        index === 0 ? '' : 'border-t border-divider'
-                      }`}
-                      style={{ opacity: item.ended ? 0.62 : 1 }}
-                    >
-                      <div className="w-16 shrink-0 text-t13 font-semibold tnum">
-                        {formatTime(item.session.startMin)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-t145 font-semibold">
-                          {item.session.type === 'private'
-                            ? 'Private Lesson'
-                            : item.session.name}
-                        </div>
-                        <div className="text-t125 text-muted mt-[1px]">
-                          {item.session.type === 'private'
-                            ? (model.players.get(item.enrollments[0]?.playerId ?? '')
-                                ?.name ?? '')
-                            : `${item.enrollments.length} players`}
-                        </div>
-                      </div>
-                      {tag ? (
-                        <span
-                          className="text-t115 font-semibold"
-                          style={{ color: tag.color }}
-                        >
-                          {tag.text}
-                        </span>
-                      ) : null}
-                      <Chevron />
-                    </Link>
-                  )
-                })}
-              </Card>
-            </div>
-          ) : null}
-
-          <div className="mt-[26px]">
-            <SectionLabel>Needs attention</SectionLabel>
-            {model.attention.length === 0 ? (
-              <div className="bg-card border border-line rounded-r16 mt-[10px] p-4 flex items-center gap-[10px]">
-                <div className="w-[22px] h-[22px] rounded-full bg-accent_soft text-accent_dark flex items-center justify-center text-t12 font-bold shrink-0">
-                  ✓
-                </div>
-                <div className="text-t14 text-muted">All attendance is caught up</div>
-              </div>
+          <div className="mt-[14px] flex flex-col gap-[10px]">
+            {attention.length === 0 ? (
+              <Notice tone="green" title="Attendance is caught up">
+                Nothing needs marking right now.
+              </Notice>
             ) : (
-              <Card className="mt-[10px]">
-                {model.attention.map((item, index) => (
-                  <Link
+              attention.map((item, index) =>
+                item.kind === 'attendance' ? (
+                  <Notice
                     key={`${item.kind}-${index}`}
+                    tone="red"
+                    title="Attendance Needed"
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-[14px] ${
-                      index === 0 ? '' : 'border-t border-divider'
-                    }`}
+                    action={item.cta}
                   >
-                    <div
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ background: item.dot }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-t145 font-semibold">{item.main}</div>
-                      <div className="text-t125 text-muted mt-[1px]">{item.sub}</div>
-                    </div>
-                    <span className="text-t125 font-semibold text-accent shrink-0">
-                      {item.cta}
-                    </span>
-                  </Link>
-                ))}
-              </Card>
+                    {item.subject} · {item.date ? formatRelative(item.date, today) : ''} ·
+                    Attendance hasn’t been recorded yet.
+                  </Notice>
+                ) : (
+                  <Notice
+                    key={`${item.kind}-${index}`}
+                    tone="red"
+                    title={item.main}
+                    href={item.href}
+                    action={item.cta}
+                  >
+                    {item.sub}
+                  </Notice>
+                ),
+              )
             )}
           </div>
 
@@ -239,32 +247,34 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-[26px]">
-            <SectionLabel>Outstanding</SectionLabel>
-            {model.outstandingCents > 0 ? (
-              <Link
-                href="/payments?tab=pending"
-                className="bg-card border border-line rounded-r16 shadow-card mt-[10px] px-[18px] py-4 flex items-center"
-              >
-                <div className="flex-1">
-                  <div className="text-t24 font-bold tnum">
-                    {formatMoney(model.outstandingCents)}
+          {isOwner ? (
+            <div className="mt-[26px]">
+              <SectionLabel>Outstanding</SectionLabel>
+              {model.outstandingCents > 0 ? (
+                <Link
+                  href="/payments?tab=pending"
+                  className="bg-card border border-line rounded-r18 shadow-card mt-[10px] px-[18px] py-4 flex items-center"
+                >
+                  <div className="flex-1">
+                    <div className="text-t24 font-bold tnum">
+                      {formatMoney(model.outstandingCents)}
+                    </div>
+                    <div className="text-t125 text-muted mt-[2px]">
+                      {model.outstandingPlayers} player
+                      {model.outstandingPlayers === 1 ? '' : 's'} · {model.outstandingCharges}{' '}
+                      charge{model.outstandingCharges === 1 ? '' : 's'}
+                    </div>
                   </div>
-                  <div className="text-t125 text-muted mt-[2px]">
-                    {model.outstandingPlayers} player
-                    {model.outstandingPlayers === 1 ? '' : 's'} · {model.outstandingCharges}{' '}
-                    charge{model.outstandingCharges === 1 ? '' : 's'}
-                  </div>
+                  <Chevron />
+                </Link>
+              ) : (
+                <div className="bg-card border border-line rounded-r18 mt-[10px] px-[18px] py-4">
+                  <div className="text-t14 font-semibold">No outstanding payments</div>
+                  <div className="text-t125 text-muted mt-[2px]">Everything is settled.</div>
                 </div>
-                <Chevron />
-              </Link>
-            ) : (
-              <div className="bg-card border border-line rounded-r16 mt-[10px] px-[18px] py-4">
-                <div className="text-t14 font-semibold">No outstanding payments</div>
-                <div className="text-t125 text-muted mt-[2px]">Everything is settled.</div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : null}
         </>
       )}
     </ScreenBody>

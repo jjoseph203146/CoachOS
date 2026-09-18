@@ -6,10 +6,10 @@ import { formatMoney } from '@/lib/domain/money'
 import { PlayersView, type PlayerListRow } from './PlayersView'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Players — CoachOS' }
+export const metadata = { title: 'People — CoachOS' }
 
 export default async function PlayersPage() {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
   const clock = coachClock(coach)
 
   const [active, archived] = await Promise.all([
@@ -29,7 +29,9 @@ export default async function PlayersPage() {
       : archivedTab
         ? 'Archived'
         : 'No upcoming',
-    outstanding: row.outstandingCents > 0 ? formatMoney(row.outstandingCents) : '',
+    // Money is the owner's business; a coach sees the roster without balances.
+    outstanding:
+      role === 'owner' && row.outstandingCents > 0 ? formatMoney(row.outstandingCents) : '',
   })
 
   return (

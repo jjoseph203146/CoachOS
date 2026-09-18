@@ -39,28 +39,17 @@ export function PlayersView({
   return (
     <ScreenBody className="px-5 pt-1">
       <div className="flex items-center justify-between pt-3">
-        <div className="text-t25 font-bold tracking-tight2">Players</div>
+        <div className="text-t26 font-extrabold tracking-tight2">People</div>
         <Link
           href="/players/new"
-          aria-label="Add player"
-          className="w-[38px] h-[38px] rounded-full bg-ink flex items-center justify-center"
+          className="h-10 px-4 rounded-r13 bg-accent text-white text-t14 font-bold flex items-center"
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#F7F7F3"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          + Add
         </Link>
       </div>
 
       <div className="mt-[14px]">
-        <SearchInput value={query} onChange={setQuery} placeholder="Search players" />
+        <SearchInput value={query} onChange={setQuery} placeholder="Search people" />
       </div>
 
       <Segmented
@@ -85,7 +74,7 @@ export function PlayersView({
             >
               <Avatar name={row.name} size={40} />
               <div className="flex-1 min-w-0">
-                <div className="text-t15 font-semibold">{row.name}</div>
+                <div className="text-t15 font-bold">{row.name}</div>
                 <div className="text-t125 text-muted mt-[1px]">{row.subtitle}</div>
               </div>
               <div className="text-right shrink-0">

@@ -45,7 +45,7 @@ export function AccountButton({
           }}
           className="w-full flex items-center px-[2px] py-[15px] border-b border-divider"
         >
-          <div className="flex-1 text-left text-t15 font-semibold">Settings</div>
+          <div className="flex-1 text-left text-t15 font-semibold">More</div>
           <span className="text-chevron text-t17">›</span>
         </button>
         <button

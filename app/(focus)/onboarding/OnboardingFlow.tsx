@@ -65,7 +65,7 @@ export function OnboardingFlow({
           <div
             key={index}
             className="w-[7px] h-[7px] rounded-full"
-            style={{ background: index <= step ? '#3FA66B' : '#DADBD4' }}
+            style={{ background: index <= step ? '#1677EE' : '#D5DCE5' }}
           />
         ))}
       </div>

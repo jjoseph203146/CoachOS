@@ -12,7 +12,8 @@ type ButtonTone = 'primary' | 'ink' | 'plain' | 'danger' | 'soft'
 
 const TONE: Record<ButtonTone, string> = {
   primary: 'bg-accent text-white border border-accent',
-  ink: 'bg-ink text-shell border border-ink',
+  // The spec has one primary action colour; 'ink' remains as an alias.
+  ink: 'bg-accent text-white border border-accent',
   plain: 'bg-card text-ink border border-line',
   danger: 'bg-card text-danger_fg border border-danger_line',
   soft: 'bg-card text-accent_dark border border-accent_line',
@@ -92,7 +93,7 @@ export function Segmented<T extends string>({
   )
 }
 
-/** Pill chip. Selected = ink fill, unselected = white with hairline border. */
+/** Pill chip. Selected = brand blue fill, unselected = white with hairline border. */
 export function Chip({
   label,
   selected,
@@ -110,7 +111,7 @@ export function Chip({
     <button
       onClick={onClick}
       className={`rounded-full font-semibold border ${sizing} ${
-        selected ? 'bg-ink text-shell border-ink' : 'bg-card text-ink border-line'
+        selected ? 'bg-accent text-white border-accent' : 'bg-card text-ink border-field'
       }`}
     >
       {label}
@@ -153,7 +154,7 @@ export function TextInput({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       style={{ height }}
-      className={`w-full border border-line rounded-r12 bg-card px-[14px] text-t145 font-medium ${className}`}
+      className={`w-full border border-field rounded-r12 bg-card px-[14px] text-t145 font-medium ${className}`}
     />
   )
 }
@@ -175,7 +176,7 @@ export function TextArea({
       rows={rows}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
-      className="w-full border border-line rounded-r12 bg-card px-[14px] py-3 text-t14 leading-[1.5] resize-none"
+      className="w-full border border-field rounded-r12 bg-card px-[14px] py-3 text-t14 leading-[1.5] resize-none"
     />
   )
 }
@@ -203,7 +204,7 @@ export function MoneyInput({
 }) {
   return (
     <div
-      className="flex items-center bg-card border border-line rounded-r12 px-4"
+      className="flex items-center bg-card border border-field rounded-r12 px-4"
       style={{ height }}
     >
       <span className="font-bold text-subtle" style={{ fontSize: symbolSize }}>

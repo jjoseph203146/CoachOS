@@ -18,6 +18,7 @@ const config: Config = {
         sheet: '#FFFFFF', // bottom sheet / dialog surface
         navbar: '#FFFFFF', // tab bar (rendered translucent at the call site)
         track: '#F0F3F7', // segmented-control track, skeleton base
+        tile: '#F7F9FC', // stat tile / neutral notice surface
         shimmer: '#F4F8FC', // skeleton highlight
         avatar: '#CBE3FF', // avatar circle background (flattened from preview.html's gradient)
         neutral_chip: '#EEF3F8', // neutral pill background
@@ -32,7 +33,8 @@ const config: Config = {
         avatar_fg: '#1E5A99', // avatar initials text
 
         // lines
-        line: '#E7EDF5', // card + input borders
+        line: '#E7EDF5', // card borders
+        field: '#DCE5EF', // input + chip borders (preview.html `.field input`)
         divider: '#E7EDF5', // in-card row dividers
         ring: '#DEE7F0', // app shell outline
         dashed: '#C9D3DE', // dashed "add" borders

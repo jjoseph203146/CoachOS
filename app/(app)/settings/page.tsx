@@ -4,10 +4,10 @@ import { centsToInput } from '@/lib/domain/money'
 import { SettingsView } from './SettingsView'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Settings — CoachOS' }
+export const metadata = { title: 'More — CoachOS' }
 
 export default async function SettingsPage() {
-  const { coach } = await requireCoachPage()
+  const { coach, role } = await requireCoachPage()
   return (
     <SettingsView
       initial={{
@@ -20,6 +20,7 @@ export default async function SettingsPage() {
         timezone: coach.timezone,
       }}
       timezones={supportedTimeZones()}
+      role={role}
     />
   )
 }

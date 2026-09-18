@@ -41,7 +41,16 @@ export interface DashboardModel {
     href: string
     dot: string
     cta: string
+    /** For attendance items: what needs marking and when it happened. */
+    subject?: string
+    date?: string
   }>
+  /** Today's non-cancelled sessions, for the stat strip. */
+  todayCount: number
+  todayPlayers: number
+  todayMinutes: number
+  /** Money recorded as received today. Owner-facing. */
+  revenueTodayCents: number
   monthSessions: number
   monthAttendanceRate: number | null
   outstandingCents: number
@@ -56,12 +65,13 @@ export async function loadDashboard(
   clock: Clock,
   graceMinutes = 0,
 ): Promise<DashboardModel> {
-  const [sessions, enrollments, players, finance, needsAttendance] = await Promise.all([
+  const [sessions, enrollments, players, finance, needsAttendance, payments] = await Promise.all([
     store.listSessions(coachId),
     store.listEnrollments(coachId),
     store.listPlayers(coachId, { includeDeleted: true }),
     loadFinance(store, coachId, clock.today),
     sessionsNeedingAttendance(store, coachId, clock, graceMinutes),
+    store.listPayments(coachId),
   ])
 
   const playerMap = new Map(players.map((p) => [p.id, p]))
@@ -115,6 +125,8 @@ export async function loadDashboard(
         href: `/sessions/${session.id}/attendance`,
         dot: '#C77E1F',
         cta: 'Mark now',
+        subject: label,
+        date: session.date,
       }
     },
   )
@@ -143,11 +155,19 @@ export async function loadDashboard(
 
   const pending = finance.pending()
 
+  const todaySessions = live.filter((s) => s.date === clock.today)
+
   return {
     isNewCoach: sessions.length === 0 && players.filter((p) => !p.deletedAt).length === 0,
     upNext,
     alsoToday,
     attention,
+    todayCount: todaySessions.length,
+    todayPlayers: todaySessions.reduce((n, s) => n + (bySession.get(s.id)?.length ?? 0), 0),
+    todayMinutes: todaySessions.reduce((n, s) => n + s.durationMin, 0),
+    revenueTodayCents: payments
+      .filter((pay) => pay.paidOn === clock.today)
+      .reduce((n, pay) => n + pay.amountCents, 0),
     monthSessions: monthSessions.length,
     monthAttendanceRate: attendanceRate(monthEnrollments),
     outstandingCents: finance.totalOutstanding(),

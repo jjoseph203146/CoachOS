@@ -96,7 +96,7 @@ export function AttendanceView({
       <DetailHeader backHref={`/sessions/${sessionId}`} title="Attendance" />
 
       <div className="mt-[18px]">
-        <div className="font-mono text-t105 font-medium tracking-mono uppercase text-muted">
+        <div className="text-t13 font-semibold text-muted">
           {typeLabel}
         </div>
         <div className="text-t22 font-bold tracking-tight15 mt-[6px]">{title}</div>
@@ -153,8 +153,8 @@ export function AttendanceView({
                     className="flex-1 h-11 rounded-r11 border text-t14 font-semibold flex items-center justify-center"
                     style={
                       mark === 'present'
-                        ? { background: '#3FA66B', color: '#FFFFFF', borderColor: '#3FA66B' }
-                        : { background: '#FFFFFF', color: '#171918', borderColor: '#E5E6E1' }
+                        ? { background: '#159A55', color: '#FFFFFF', borderColor: '#159A55' }
+                        : { background: '#F0F3F7', color: '#7B8796', borderColor: '#F0F3F7' }
                     }
                   >
                     Present
@@ -165,8 +165,8 @@ export function AttendanceView({
                     className="flex-1 h-11 rounded-r11 border text-t14 font-semibold flex items-center justify-center"
                     style={
                       mark === 'absent'
-                        ? { background: '#171918', color: '#FFFFFF', borderColor: '#171918' }
-                        : { background: '#FFFFFF', color: '#171918', borderColor: '#E5E6E1' }
+                        ? { background: '#EF4759', color: '#FFFFFF', borderColor: '#EF4759' }
+                        : { background: '#F0F3F7', color: '#7B8796', borderColor: '#F0F3F7' }
                     }
                   >
                     Absent
@@ -188,7 +188,7 @@ export function AttendanceView({
       <button
         onClick={save}
         disabled={pending}
-        className="w-full h-12 rounded-r12 bg-ink text-shell text-t15 font-semibold flex items-center justify-center mt-[18px] disabled:opacity-60"
+        className="w-full h-12 rounded-r13 bg-accent text-white text-t15 font-bold flex items-center justify-center mt-[18px] disabled:opacity-60"
       >
         {pending ? 'Saving…' : 'Done'}
       </button>

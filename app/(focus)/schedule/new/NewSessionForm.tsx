@@ -195,7 +195,7 @@ export function NewSessionForm({
 
       {/* ---- who ---- */}
       <div className="mt-[22px]">
-        <SectionMono>Who</SectionMono>
+        <FormSection>Who</FormSection>
         {players.length === 0 ? (
           <div className="bg-card border border-line rounded-r14 p-[18px] text-center mt-[10px]">
             <div className="text-t14 font-semibold">No players available</div>
@@ -204,7 +204,7 @@ export function NewSessionForm({
             </div>
             <button
               onClick={() => router.push('/players/new')}
-              className="w-full h-[42px] rounded-r11 bg-ink text-shell text-t135 font-semibold flex items-center justify-center mt-3"
+              className="w-full h-[42px] rounded-r11 bg-accent text-white text-t135 font-semibold flex items-center justify-center mt-3"
             >
               Add Player
             </button>
@@ -231,7 +231,7 @@ export function NewSessionForm({
 
       {/* ---- when ---- */}
       <div className="mt-[26px]">
-        <SectionMono>When</SectionMono>
+        <FormSection>When</FormSection>
         <div className="flex gap-2 overflow-x-auto mt-[10px] pb-[2px]">
           {dates.map((iso) => {
             const selected = iso === state.date
@@ -241,23 +241,23 @@ export function NewSessionForm({
                 onClick={() => setState((c) => ({ ...c, date: iso }))}
                 className="shrink-0 w-[52px] py-2 rounded-r12 border text-center"
                 style={{
-                  background: selected ? '#171918' : '#FFFFFF',
+                  background: selected ? '#1677EE' : '#FFFFFF',
                   borderColor: selected
-                    ? '#171918'
+                    ? '#1677EE'
                     : iso === today
-                      ? '#B9BDB6'
-                      : '#E5E6E1',
+                      ? '#9AA6B4'
+                      : '#DCE5EF',
                 }}
               >
                 <div
-                  className="font-mono text-t9 tracking-mono4"
-                  style={{ color: selected ? '#B9BDB6' : '#6B706C' }}
+                  className="text-t10 font-semibold"
+                  style={{ color: selected ? '#CFE3FD' : '#6D7A8C' }}
                 >
                   {dowShort(iso).toUpperCase()}
                 </div>
                 <div
                   className="text-t15 font-bold mt-[1px] tnum"
-                  style={{ color: selected ? '#F7F7F3' : '#171918' }}
+                  style={{ color: selected ? '#FFFFFF' : '#0D1B31' }}
                 >
                   {dayOfMonth(iso)}
                 </div>
@@ -273,9 +273,9 @@ export function NewSessionForm({
               onClick={() => setState((c) => ({ ...c, startMin: minute }))}
               className="shrink-0 px-[13px] py-[9px] rounded-full border text-t13 font-semibold tnum"
               style={{
-                background: minute === state.startMin ? '#171918' : '#FFFFFF',
-                color: minute === state.startMin ? '#F7F7F3' : '#171918',
-                borderColor: minute === state.startMin ? '#171918' : '#E5E6E1',
+                background: minute === state.startMin ? '#1677EE' : '#FFFFFF',
+                color: minute === state.startMin ? '#FFFFFF' : '#0D1B31',
+                borderColor: minute === state.startMin ? '#1677EE' : '#DCE5EF',
               }}
             >
               {formatTime(minute)}
@@ -290,9 +290,9 @@ export function NewSessionForm({
               onClick={() => setState((c) => ({ ...c, durationMin: minutes }))}
               className="px-[13px] py-[9px] rounded-full border text-t13 font-semibold"
               style={{
-                background: minutes === state.durationMin ? '#171918' : '#FFFFFF',
-                color: minutes === state.durationMin ? '#F7F7F3' : '#171918',
-                borderColor: minutes === state.durationMin ? '#171918' : '#E5E6E1',
+                background: minutes === state.durationMin ? '#1677EE' : '#FFFFFF',
+                color: minutes === state.durationMin ? '#FFFFFF' : '#0D1B31',
+                borderColor: minutes === state.durationMin ? '#1677EE' : '#DCE5EF',
               }}
             >
               {minutes} min
@@ -313,7 +313,7 @@ export function NewSessionForm({
 
       {/* ---- how much ---- */}
       <div className="mt-[26px]">
-        <SectionMono>How much</SectionMono>
+        <FormSection>How much</FormSection>
         <div className="flex bg-track rounded-r11 p-[2px] mt-[10px]">
           <button
             onClick={() => setState((c) => ({ ...c, isFree: false }))}
@@ -366,7 +366,7 @@ export function NewSessionForm({
 
       {/* ---- details ---- */}
       <div className="mt-[26px]">
-        <SectionMono>Details</SectionMono>
+        <FormSection>Details</FormSection>
         <div className="mt-[10px]">
           <FieldLabel>Session name</FieldLabel>
           <TextInput
@@ -446,9 +446,9 @@ export function NewSessionForm({
   )
 }
 
-function SectionMono({ children }: { children: React.ReactNode }) {
+function FormSection({ children }: { children: React.ReactNode }) {
   return (
-    <div className="font-mono text-t105 font-medium tracking-mono uppercase text-muted">
+    <div className="text-t17 font-extrabold text-ink">
       {children}
     </div>
   )

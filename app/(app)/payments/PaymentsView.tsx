@@ -120,12 +120,12 @@ export function PaymentsView({
   return (
     <ScreenBody className="px-5 pt-1">
       <div className="flex items-center justify-between pt-3">
-        <div className="text-t25 font-bold tracking-tight2">Payments</div>
+        <div className="text-t26 font-extrabold tracking-tight2">Revenue</div>
         <button
           onClick={() => setManualOpen(true)}
-          className="text-t125 font-semibold px-[13px] py-[9px] rounded-full bg-ink text-shell"
+          className="h-10 px-4 rounded-r13 bg-accent text-white text-t14 font-bold"
         >
-          Add Charge
+          + Add Charge
         </button>
       </div>
 
@@ -160,7 +160,7 @@ export function PaymentsView({
         <>
           <div className="bg-card border border-line rounded-r16 shadow-card mt-[14px] px-[18px] py-[14px] flex items-center justify-between">
             <div>
-              <div className="font-mono text-t10 font-medium tracking-mono2 uppercase text-muted">
+              <div className="text-t12 font-medium text-muted">
                 {tab === 'pending' ? 'Pending total' : tab === 'paid' ? 'Collected' : 'Overdue total'}
               </div>
               <div className="text-t24 font-bold mt-[3px] tnum">{formatMoney(total)}</div>
@@ -262,7 +262,7 @@ export function PaymentsView({
                   label="Collected"
                   value={formatMoney(open.paidCents)}
                   bold
-                  color="#2E7D4F"
+                  color="#159A55"
                 />
               ) : null}
               {open.outstandingCents > 0 ? (
@@ -448,7 +448,7 @@ function SheetLine({
       <span className="text-t135 text-muted">{label}</span>
       <span
         className={`text-t15 tnum ${bold ? 'font-bold' : 'font-medium'}`}
-        style={{ color: color ?? (muted ? '#8A8E89' : '#171918') }}
+        style={{ color: color ?? (muted ? '#8A94A3' : '#0D1B31') }}
       >
         {value}
       </span>
@@ -599,7 +599,7 @@ function ManualChargeSheet({
     <Sheet open={open} onClose={onClose} maxHeight="84%">
       <SheetTitle>Add Manual Charge</SheetTitle>
 
-      <div className="font-mono text-t10 font-medium tracking-mono2 uppercase text-muted mt-4">
+      <div className="text-t12 font-bold text-ink mt-4">
         Player
       </div>
       <div className="flex flex-wrap gap-[7px] mt-[9px]">
@@ -614,7 +614,7 @@ function ManualChargeSheet({
         ))}
       </div>
 
-      <div className="font-mono text-t10 font-medium tracking-mono2 uppercase text-muted mt-4">
+      <div className="text-t12 font-bold text-ink mt-4">
         Amount
       </div>
       <div className="mt-[9px]">
@@ -627,7 +627,7 @@ function ManualChargeSheet({
         />
       </div>
 
-      <div className="font-mono text-t10 font-medium tracking-mono2 uppercase text-muted mt-4">
+      <div className="text-t12 font-bold text-ink mt-4">
         Due
       </div>
       <div className="flex flex-wrap gap-[7px] mt-[9px]">

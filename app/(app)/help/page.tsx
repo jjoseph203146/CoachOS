@@ -6,12 +6,12 @@ export const metadata = { title: 'Help — CoachOS' }
 export default function HelpPage() {
   return (
     <ScreenBody className="px-5">
-      <DetailHeader backHref="/dashboard" title="Help" />
+      <DetailHeader backHref="/settings" title="Help" />
 
       <div className="bg-card border border-line rounded-r14 mt-5 p-4">
         <div className="text-t14 font-bold">Getting started</div>
         <div className="text-t13 text-muted leading-[1.6] mt-[6px] pretty">
-          Add players, then schedule sessions with the green + button. Priced sessions
+          Add players, then schedule sessions with the blue + button. Priced sessions
           automatically create a pending charge per player — mark them paid as money comes
           in, and take attendance right from the session.
         </div>

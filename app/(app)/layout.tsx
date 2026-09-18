@@ -11,11 +11,11 @@ export const revalidate = 0
 
 /** Signed-in screens that show the bottom tab bar. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  await requireCoachPage()
+  const { role } = await requireCoachPage()
   return (
     <AppShell>
       {children}
-      <TabBar />
+      <TabBar role={role} />
     </AppShell>
   )
 }

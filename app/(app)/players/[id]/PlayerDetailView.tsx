@@ -34,6 +34,7 @@ export function PlayerDetailView({
   history,
   hasAnySession,
   paymentSummary,
+  showMoney,
 }: {
   player: {
     id: string
@@ -45,6 +46,8 @@ export function PlayerDetailView({
     email: string
   }
   tiles: Tile
+  /** Balances and payment history are the academy owner's; coaches don't see them. */
+  showMoney: boolean
   upcoming: Array<{ id: string; line1: string; line2: string }>
   history: Array<{
     id: string
@@ -113,13 +116,13 @@ export function PlayerDetailView({
     })
 
   const tileList = [
-    { key: 'Next', value: tiles.next, color: '#171918', href: null },
-    { key: 'Activity', value: tiles.activity, color: '#171918', href: null },
-    { key: 'Attendance', value: tiles.attendance, color: '#171918', href: null },
+    { key: 'Next', value: tiles.next, color: '#0D1B31', href: null },
+    { key: 'Activity', value: tiles.activity, color: '#0D1B31', href: null },
+    { key: 'Attendance', value: tiles.attendance, color: '#0D1B31', href: null },
     {
       key: 'Outstanding',
       value: tiles.outstanding,
-      color: tiles.outstandingRaw > 0 ? '#96690F' : '#171918',
+      color: tiles.outstandingRaw > 0 ? '#96690F' : '#0D1B31',
       href:
         tiles.outstandingRaw > 0
           ? `/payments?tab=pending&player=${player.id}`
@@ -164,7 +167,7 @@ export function PlayerDetailView({
       )}
 
       <div className="grid grid-cols-2 gap-[10px] mt-[14px]">
-        {tileList.map((tile) => {
+        {tileList.filter((tile) => showMoney || tile.key !== 'Outstanding').map((tile) => {
           const inner = (
             <>
               <div className="flex items-center justify-between">
@@ -236,7 +239,7 @@ export function PlayerDetailView({
           <div className="text-t125 text-muted mt-[3px]">Schedule their first session.</div>
           <Link
             href={`/schedule/new?type=private&player=${player.id}`}
-            className="h-11 rounded-r11 bg-ink text-shell text-t135 font-semibold flex items-center justify-center mt-[14px]"
+            className="h-11 rounded-r11 bg-accent text-white text-t135 font-semibold flex items-center justify-center mt-[14px]"
           >
             Schedule First Session
           </Link>
@@ -272,6 +275,7 @@ export function PlayerDetailView({
         </div>
       ) : null}
 
+      {showMoney ? (
       <div className="mt-6">
         <SectionLabel>Payments</SectionLabel>
         <Link
@@ -282,6 +286,7 @@ export function PlayerDetailView({
           <span className="text-chevron text-t16">›</span>
         </Link>
       </div>
+      ) : null}
 
       {player.phone || player.email ? (
         <div className="mt-6">

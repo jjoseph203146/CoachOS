@@ -1,14 +1,15 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { ScreenBody } from '@/components/shell/AppShell'
-import { DetailHeader, ErrorBanner, SectionLabel } from '@/components/ui/primitives'
+import { Avatar, Card, Chevron, ErrorBanner, SectionLabel } from '@/components/ui/primitives'
 import { Button, Segmented } from '@/components/ui/controls'
 import { Dialog, Sheet, SheetTitle, useToast } from '@/components/ui/overlays'
 import { signOutAction } from '@/lib/actions/auth'
 import { updateSettingsAction } from '@/lib/actions/settings'
-import type { AttendanceWindow, Theme } from '@/lib/domain/types'
+import type { AttendanceWindow, MembershipRole, Theme } from '@/lib/domain/types'
 
 interface SettingsValues {
   name: string
@@ -25,10 +26,15 @@ const WINDOWS: AttendanceWindow[] = ['Same day', '24 hours', '48 hours', '72 hou
 export function SettingsView({
   initial,
   timezones,
+  role,
 }: {
   initial: SettingsValues
   timezones: string[]
+  role: MembershipRole
 }) {
+  // Business-wide settings belong to the academy owner. The server ignores a
+  // coach's edits to them; the screen simply doesn't offer them.
+  const isOwner = role === 'owner'
   const router = useRouter()
   const { toast } = useToast()
   const [values, setValues] = useState(initial)
@@ -75,7 +81,27 @@ export function SettingsView({
 
   return (
     <ScreenBody className="px-5">
-      <DetailHeader backHref="/dashboard" title="Settings" />
+      <div className="pt-2">
+        <div className="text-t26 font-extrabold tracking-tight2 leading-[1.05]">More</div>
+      </div>
+
+      <Card className="mt-4" padded>
+        <div className="flex items-center gap-3">
+          <Avatar name={initial.name || 'You'} size={44} />
+          <div className="min-w-0">
+            <div className="text-t15 font-bold truncate">{initial.name || 'Your name'}</div>
+            <div className="text-t125 text-muted truncate">
+              {isOwner ? 'Owner' : 'Coach'}
+              {initial.businessName ? ` · ${initial.businessName}` : ''}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="mt-3">
+        {isOwner ? <MenuRow href="/payments" label="Revenue" first /> : null}
+        <MenuRow href="/help" label="Help" first={!isOwner} />
+      </Card>
 
       <div className="mt-5">
         <SectionLabel>Profile</SectionLabel>
@@ -97,6 +123,8 @@ export function SettingsView({
         </div>
       </div>
 
+      {isOwner ? (
+        <>
       <div className="mt-5">
         <SectionLabel>Business</SectionLabel>
         <div className="bg-card border border-line rounded-r14 mt-[10px] px-4 py-[14px]">
@@ -195,6 +223,8 @@ export function SettingsView({
           ) : null}
         </div>
       </div>
+        </>
+      ) : null}
 
       <div className="mt-5">
         <SectionLabel>Account</SectionLabel>
@@ -261,5 +291,27 @@ export function SettingsView({
         ]}
       />
     </ScreenBody>
+  )
+}
+
+function MenuRow({
+  href,
+  label,
+  first = false,
+}: {
+  href: string
+  label: string
+  first?: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center justify-between px-4 py-[14px] text-ink ${
+        first ? '' : 'border-t border-divider'
+      }`}
+    >
+      <span className="text-t15 font-bold">{label}</span>
+      <Chevron />
+    </Link>
   )
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { initials as toInitials } from '@/lib/domain/dates'
 
@@ -228,6 +229,129 @@ export function StatPair({
         <div className="text-t12 text-muted font-medium">{right.label}</div>
         <div className="text-t24 font-bold mt-[3px] tnum">{right.value}</div>
       </div>
+    </div>
+  )
+}
+
+/** Stat tile from the spec's `.stat`: a big number over a small two-line label. */
+export function StatTile({
+  value,
+  label,
+  tone = 'ink',
+}: {
+  value: string
+  label: string
+  tone?: 'ink' | 'success'
+}) {
+  return (
+    <div className="flex-1 min-w-0 bg-tile rounded-r14 p-3">
+      <div
+        className={`text-t20 font-extrabold tnum ${tone === 'success' ? 'text-success' : ''}`}
+      >
+        {value}
+      </div>
+      <div className="text-t12 text-muted mt-[2px] leading-[1.25]">{label}</div>
+    </div>
+  )
+}
+
+/** Callout from the spec's `.notice`. Red is for things that need action. */
+export function Notice({
+  tone = 'neutral',
+  title,
+  children,
+  href,
+  action,
+}: {
+  tone?: 'neutral' | 'red' | 'green'
+  title: string
+  children?: ReactNode
+  href?: string
+  /** Trailing call to action, e.g. "Mark now". */
+  action?: string
+}) {
+  const palette = {
+    neutral: 'bg-tile text-ink',
+    red: 'bg-danger_bg text-danger_fg',
+    green: 'bg-success_bg text-success',
+  }[tone]
+  const body = (
+    <div className="flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="text-t14 font-bold">{title}</div>
+        {children ? <div className="text-t125 mt-[2px] leading-[1.4]">{children}</div> : null}
+      </div>
+      {action ? <span className="text-t125 font-bold shrink-0">{action}</span> : null}
+    </div>
+  )
+  const className = `block rounded-r14 p-3 ${palette}`
+  return href ? (
+    <Link href={href} className={className}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
+  )
+}
+
+/**
+ * A session row from the spec's `.event`: a 4px left rule coloured by kind
+ * (blue private, green group/program, purple adult program), time and title on
+ * one line, detail beneath. `action` adds a trailing pill link that is a
+ * sibling of — not nested inside — the main link.
+ */
+export function EventCard({
+  href,
+  time,
+  title,
+  sub,
+  kind = 'private',
+  tag,
+  action,
+  dim = false,
+  strike = false,
+}: {
+  href: string
+  time: string
+  title: string
+  sub?: string
+  kind?: 'private' | 'group' | 'adult'
+  /** Quiet status text, e.g. "Done". */
+  tag?: { text: string; color: string }
+  action?: { href: string; label: string }
+  dim?: boolean
+  /** Cancelled sessions are struck through. */
+  strike?: boolean
+}) {
+  const rule = { private: 'border-l-accent', group: 'border-l-success', adult: 'border-l-purple' }[kind]
+  return (
+    <div
+      className={`bg-card border border-line border-l-4 ${rule} rounded-r18 shadow-card flex items-center gap-2 pr-3`}
+      style={{ opacity: dim ? 0.62 : 1 }}
+    >
+      <Link href={href} className="flex-1 min-w-0 pl-3 py-[13px] flex items-center gap-2 text-ink">
+        <div className="min-w-0 flex-1" style={{ textDecoration: strike ? 'line-through' : 'none' }}>
+          <div className="text-t145 font-bold truncate">
+            <span className="tnum">{time}</span>
+            <span className="ml-2">{title}</span>
+          </div>
+          {sub ? <div className="text-t125 text-muted mt-[2px] truncate">{sub}</div> : null}
+        </div>
+        {tag ? (
+          <span className="text-t115 font-semibold shrink-0" style={{ color: tag.color }}>
+            {tag.text}
+          </span>
+        ) : null}
+        {action ? null : <Chevron />}
+      </Link>
+      {action ? (
+        <Link
+          href={action.href}
+          className="shrink-0 h-8 px-3 rounded-full bg-accent_soft text-accent_text text-t12 font-bold flex items-center"
+        >
+          {action.label}
+        </Link>
+      ) : null}
     </div>
   )
 }

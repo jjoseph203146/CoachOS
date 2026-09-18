@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { ScreenBody } from '@/components/shell/AppShell'
-import { Card, Chevron } from '@/components/ui/primitives'
+import { EventCard } from '@/components/ui/primitives'
 import { Segmented } from '@/components/ui/controls'
 import {
   addDays,
@@ -23,6 +23,7 @@ export interface ScheduleRow {
   date: string
   startMin: number
   durationMin: number
+  kind: 'private' | 'group'
   title: string
   subtitle: string
   cancelled: boolean
@@ -31,7 +32,7 @@ export interface ScheduleRow {
 }
 
 export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: string }) {
-  const [view, setView] = useState<'week' | 'month'>('week')
+  const [view, setView] = useState<'day' | 'week' | 'month'>('day')
   const [selected, setSelected] = useState(today)
   const [month, setMonth] = useState(today.slice(0, 7))
   const [showCancelled, setShowCancelled] = useState(false)
@@ -81,35 +82,39 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
   return (
     <ScreenBody className="pt-1">
       <div className="flex items-center justify-between px-5 pt-3">
-        <div className="text-t25 font-bold tracking-tight2">Schedule</div>
-        <div className="flex items-center gap-2">
-          {selected !== today ? (
-            <button
-              onClick={() => {
-                setSelected(today)
-                setMonth(today.slice(0, 7))
-              }}
-              className="text-t125 font-semibold text-accent px-3 py-[7px] border border-accent_line rounded-full bg-card"
-            >
-              Today
-            </button>
-          ) : null}
-          <Segmented
-            className="w-[142px]"
-            options={[
-              { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
-            ]}
-            value={view}
-            onChange={(next) => {
-              setView(next)
-              if (next === 'month') setMonth(selected.slice(0, 7))
-            }}
-          />
+        <div className="text-t26 font-extrabold tracking-tight2">
+          {monthFull(view === 'month' ? `${month}-01` : selected)}{' '}
+          {(view === 'month' ? month : selected).slice(0, 4)}
         </div>
+        {selected !== today ? (
+          <button
+            onClick={() => {
+              setSelected(today)
+              setMonth(today.slice(0, 7))
+            }}
+            className="text-t125 font-semibold text-accent px-3 py-[7px] border border-accent_line rounded-full bg-card"
+          >
+            Today
+          </button>
+        ) : null}
       </div>
 
-      {view === 'week' ? (
+      <div className="px-5 pt-3">
+        <Segmented
+          options={[
+            { value: 'day', label: 'Day' },
+            { value: 'week', label: 'Week' },
+            { value: 'month', label: 'Month' },
+          ]}
+          value={view}
+          onChange={(next) => {
+            setView(next)
+            if (next === 'month') setMonth(selected.slice(0, 7))
+          }}
+        />
+      </div>
+
+      {view !== 'month' ? (
         <div className="flex gap-2 overflow-x-auto px-5 pt-4 pb-1">
           {weekDays.map((iso) => {
             const isSelected = iso === selected
@@ -120,19 +125,19 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
                 onClick={() => setSelected(iso)}
                 className="shrink-0 w-[52px] pt-[9px] pb-2 rounded-r13 border flex flex-col items-center gap-[2px]"
                 style={{
-                  background: isSelected ? '#171918' : '#FFFFFF',
-                  borderColor: isSelected ? '#171918' : iso === today ? '#B9BDB6' : '#E5E6E1',
+                  background: isSelected ? '#1677EE' : '#FFFFFF',
+                  borderColor: isSelected ? '#1677EE' : iso === today ? '#9AA6B4' : '#DCE5EF',
                 }}
               >
                 <div
-                  className="font-mono text-t95 tracking-mono4"
-                  style={{ color: isSelected ? '#B9BDB6' : '#8A8E89' }}
+                  className="text-t10 font-semibold"
+                  style={{ color: isSelected ? '#CFE3FD' : '#8A94A3' }}
                 >
                   {dowShort(iso).toUpperCase()}
                 </div>
                 <div
                   className="text-t16 font-bold tnum"
-                  style={{ color: isSelected ? '#F7F7F3' : '#171918' }}
+                  style={{ color: isSelected ? '#FFFFFF' : '#0D1B31' }}
                 >
                   {dayOfMonth(iso)}
                 </div>
@@ -141,7 +146,7 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
                     <div
                       key={index}
                       className="w-1 h-1 rounded-full"
-                      style={{ background: isSelected ? '#7BC79A' : '#3FA66B' }}
+                      style={{ background: isSelected ? '#5CA7FF' : '#1677EE' }}
                     />
                   ))}
                 </div>
@@ -159,9 +164,7 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
             >
               ‹
             </button>
-            <div className="text-t145 font-semibold">
-              {monthFull(`${month}-01`)} {month.slice(0, 4)}
-            </div>
+            <div />
             <button
               onClick={() => setMonth(shiftMonth(month, 1))}
               aria-label="Next month"
@@ -174,7 +177,7 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
             {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((label) => (
               <div
                 key={label}
-                className="text-center font-mono text-t95 text-subtle py-1"
+                className="text-center text-t105 font-semibold text-subtle py-1"
               >
                 {label}
               </div>
@@ -189,14 +192,14 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
                   onClick={() => setSelected(cell.iso!)}
                   className="h-[46px] rounded-r10 border flex flex-col items-center justify-center gap-[3px]"
                   style={{
-                    background: isSelected ? '#171918' : 'transparent',
+                    background: isSelected ? '#1677EE' : 'transparent',
                     borderColor:
-                      cell.iso === today && !isSelected ? '#B9BDB6' : 'transparent',
+                      cell.iso === today && !isSelected ? '#CFE3FD' : 'transparent',
                   }}
                 >
                   <div
                     className="text-t13 font-semibold tnum"
-                    style={{ color: isSelected ? '#F7F7F3' : '#171918' }}
+                    style={{ color: isSelected ? '#FFFFFF' : '#0D1B31' }}
                   >
                     {cell.day}
                   </div>
@@ -205,7 +208,7 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
                       <div
                         key={dot}
                         className="w-[3px] h-[3px] rounded-full"
-                        style={{ background: isSelected ? '#7BC79A' : '#3FA66B' }}
+                        style={{ background: isSelected ? '#5CA7FF' : '#1677EE' }}
                       />
                     ))}
                   </div>
@@ -224,49 +227,26 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
           </div>
         </div>
 
-        {visible.length > 0 ? (
-          <Card className="mt-3">
-            {visible.map((row, index) => (
-              <Link
+        {visible.length > 0 && view === 'day' ? (
+          <DayTimeline rows={visible} />
+        ) : null}
+
+        {visible.length > 0 && view !== 'day' ? (
+          <div className="mt-3 flex flex-col gap-[10px]">
+            {visible.map((row) => (
+              <EventCard
                 key={row.id}
                 href={`/sessions/${row.id}`}
-                className={`flex items-center gap-3 px-4 py-[14px] ${
-                  index === 0 ? '' : 'border-t border-divider'
-                }`}
-                style={{ opacity: row.cancelled ? 0.55 : row.ended ? 0.72 : 1 }}
-              >
-                <div className="w-16 shrink-0">
-                  <div className="text-t135 font-bold tnum">
-                    {formatTime(row.startMin)}
-                  </div>
-                  <div className="text-t11 text-subtle mt-[1px]">{row.durationMin} min</div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div
-                    className="text-t145 font-semibold"
-                    style={{ textDecoration: row.cancelled ? 'line-through' : 'none' }}
-                  >
-                    {row.title}
-                  </div>
-                  <div
-                    className="text-t125 text-muted mt-[1px]"
-                    style={{ textDecoration: row.cancelled ? 'line-through' : 'none' }}
-                  >
-                    {row.subtitle}
-                  </div>
-                </div>
-                {row.badge ? (
-                  <span
-                    className="text-t11 font-semibold px-2 py-[3px] rounded-full shrink-0"
-                    style={{ background: row.badge.bg, color: row.badge.fg }}
-                  >
-                    {row.badge.text}
-                  </span>
-                ) : null}
-                <Chevron />
-              </Link>
+                time={formatTime(row.startMin)}
+                title={row.title}
+                sub={[row.subtitle, `${row.durationMin} min`].filter(Boolean).join(' · ')}
+                kind={row.kind}
+                tag={row.badge ? { text: row.badge.text, color: row.badge.fg } : undefined}
+                dim={row.ended && !row.cancelled}
+                strike={row.cancelled}
+              />
             ))}
-          </Card>
+          </div>
         ) : null}
 
         {active.length === 0 && (!showCancelled || cancelled.length === 0) ? (
@@ -275,7 +255,7 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
             <div className="text-t13 text-muted mt-[3px]">This day is open.</div>
             <Link
               href={`/schedule/new?type=private&date=${selected}`}
-              className="h-[46px] rounded-r12 bg-accent text-white text-t145 font-semibold flex items-center justify-center mt-4"
+              className="h-[46px] rounded-r13 bg-accent text-white text-t145 font-bold flex items-center justify-center mt-4"
             >
               Schedule Session
             </Link>
@@ -292,5 +272,76 @@ export function ScheduleView({ rows, today }: { rows: ScheduleRow[]; today: stri
         ) : null}
       </div>
     </ScreenBody>
+  )
+}
+
+const HOUR_PX = 64
+
+/**
+ * Hour-by-hour view of one day (the spec's Day view). Blocks are positioned by
+ * start and duration; sessions that overlap — the app lets you double-book on
+ * purpose — sit side by side instead of hiding each other.
+ */
+function DayTimeline({ rows }: { rows: ScheduleRow[] }) {
+  const first = Math.min(...rows.map((row) => row.startMin))
+  const last = Math.max(...rows.map((row) => row.startMin + row.durationMin))
+  const from = Math.min(8 * 60, Math.floor(first / 60) * 60)
+  const to = Math.max(20 * 60, Math.ceil(last / 60) * 60)
+  const hours = Array.from({ length: (to - from) / 60 }, (_, index) => from + index * 60)
+
+  // Greedy column packing: each block goes in the first column that has freed up.
+  const sorted = [...rows].sort((a, b) => a.startMin - b.startMin)
+  const columnEnds: number[] = []
+  const placed = sorted.map((row) => {
+    let column = columnEnds.findIndex((end) => end <= row.startMin)
+    if (column === -1) column = columnEnds.length
+    columnEnds[column] = row.startMin + row.durationMin
+    return { row, column }
+  })
+  const columns = columnEnds.length
+
+  return (
+    <div className="relative mt-3 ml-[38px]" style={{ height: hours.length * HOUR_PX }}>
+      {hours.map((minute, index) => (
+        <div
+          key={minute}
+          className="absolute left-0 right-0 border-t border-line"
+          style={{ top: index * HOUR_PX }}
+        >
+          <span className="absolute -left-[38px] -top-[7px] text-t10 text-subtle tnum">
+            {formatTime(minute).replace(':00', '')}
+          </span>
+        </div>
+      ))}
+      {placed.map(({ row, column }) => {
+        const isPrivate = row.kind === 'private'
+        return (
+          <Link
+            key={row.id}
+            href={`/sessions/${row.id}`}
+            className={`absolute rounded-r10 border-l-[3px] px-[9px] py-[6px] overflow-hidden ${
+              isPrivate ? 'bg-accent_soft border-l-accent' : 'bg-success_bg border-l-success'
+            }`}
+            style={{
+              top: ((row.startMin - from) / 60) * HOUR_PX + 1,
+              height: Math.max((row.durationMin / 60) * HOUR_PX - 2, 30),
+              left: `calc(${(column / columns) * 100}% + 5px)`,
+              width: `calc(${100 / columns}% - 5px)`,
+              opacity: row.cancelled ? 0.55 : row.ended ? 0.75 : 1,
+            }}
+          >
+            <div
+              className="text-t115 font-bold truncate"
+              style={{ textDecoration: row.cancelled ? 'line-through' : 'none' }}
+            >
+              {row.title}
+            </div>
+            <div className="text-t105 text-muted truncate tnum">
+              {[row.subtitle, formatTime(row.startMin)].filter(Boolean).join(' · ')}
+            </div>
+          </Link>
+        )
+      })}
+    </div>
   )
 }

@@ -30,26 +30,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#F7F7F3',
+  themeColor: '#FFFFFF',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/*
-          Geist + Geist Mono, loaded exactly as the design prototype does.
-          next/font would self-host these, but it fetches them at build time;
-          a plain stylesheet link keeps the build independent of network access.
-        */}
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body className="bg-canvas font-sans text-ink antialiased">
         <ToastProvider>{children}</ToastProvider>
         <ServiceWorker />

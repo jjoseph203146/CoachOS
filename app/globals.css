@@ -20,13 +20,11 @@ body {
   display: none;
 }
 
+/* Links are mostly whole rows and buttons, so they inherit their text color;
+   inline text links opt in with text-accent. */
 a {
-  color: #1677ee;
+  color: inherit;
   text-decoration: none;
-}
-
-a:hover {
-  color: #125ec2;
 }
 
 input,
@@ -48,9 +46,11 @@ textarea::placeholder {
   color: #a7b0bd;
 }
 
+/* Reset only the border WIDTH. `border: none` also sets border-style: none,
+   which silently defeats Tailwind's `border` utility (it sets width only). */
 button {
   background: none;
-  border: none;
+  border-width: 0;
   padding: 0;
   cursor: pointer;
   text-align: inherit;
