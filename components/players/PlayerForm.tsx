@@ -22,9 +22,12 @@ export interface PlayerFormValues {
 export function PlayerForm({
   initial,
   coachDefaultRateCents,
+  canSetRate,
 }: {
   initial: PlayerFormValues
   coachDefaultRateCents: number
+  /** A player's own rate is the academy owner's to set. */
+  canSetRate: boolean
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -114,6 +117,7 @@ export function PlayerForm({
         </div>
       </div>
 
+      {canSetRate ? (
       <div className="mt-[14px]">
         <FieldLabel>Default rate</FieldLabel>
         <div className="flex items-center bg-card border border-line rounded-r12 h-[46px] px-[14px]">
@@ -132,6 +136,7 @@ export function PlayerForm({
           Leave empty to use your default rate ({formatMoney(coachDefaultRateCents)})
         </div>
       </div>
+      ) : null}
 
       <div className="mt-[14px]">
         <FieldLabel>Coach notes</FieldLabel>

@@ -3,6 +3,7 @@ import { MockDataStore, createTestStore } from '@/lib/data/mock/store'
 import { addDays, todayISO } from '@/lib/domain/dates'
 import { manualSnapshot, privateLessonSnapshot, standardRateFor } from '@/lib/domain/pricing'
 import { createManualCharge } from '@/lib/services/finance'
+import { createPlayer, updatePlayer } from '@/lib/services/players'
 import {
   addPlayerToSession,
   cancelSession,
@@ -301,5 +302,46 @@ describe('only the owner may change what an existing charge is worth', () => {
     // Voiding never rewrites the amount or its snapshot.
     expect(charge.amountCents).toBe(3500)
     expect(charge.priceSource).toBe('session_price')
+  })
+})
+
+describe('a player’s own rate is the owner’s to set', () => {
+  const input = {
+    name: 'New Kid',
+    phone: '',
+    email: '',
+    level: 'Beginner' as const,
+    defaultRateCents: 9900,
+    notes: '',
+  }
+
+  it('an owner can create a player with their own rate and change it', async () => {
+    const player = await createPlayer(store, coachId, input, 'owner')
+    expect(player.defaultRateCents).toBe(9900)
+    const updated = await updatePlayer(store, coachId, player.id, { defaultRateCents: 8800 }, 'owner')
+    expect(updated.defaultRateCents).toBe(8800)
+  })
+
+  it('a coach adds players at the academy default, whatever rate they send', async () => {
+    const player = await createPlayer(store, coachId, input, 'coach')
+    expect(player.defaultRateCents).toBeNull()
+  })
+
+  it('a coach cannot change an existing player’s rate, but can edit them otherwise', async () => {
+    // Seed player p1 has a 7500 rate.
+    await expect(
+      updatePlayer(store, coachId, 'p1', { defaultRateCents: 100 }, 'coach'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(
+      updatePlayer(store, coachId, 'p1', { defaultRateCents: null }, 'coach'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    expect((await store.getPlayer(coachId, 'p1'))!.defaultRateCents).toBe(7500)
+
+    // Re-sending the unchanged rate (the edit form does) and other fields is fine.
+    const edited = await updatePlayer(
+      store, coachId, 'p1', { name: 'Maya O.', defaultRateCents: 7500 }, 'coach',
+    )
+    expect(edited.name).toBe('Maya O.')
+    expect(edited.defaultRateCents).toBe(7500)
   })
 })

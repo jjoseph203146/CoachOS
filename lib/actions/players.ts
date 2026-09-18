@@ -29,7 +29,7 @@ export async function savePlayerAction(
   input: PlayerFormInput,
 ): Promise<ActionResult<{ playerId: string }>> {
   return runAction('savePlayer', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, role } = await requireCoachAction()
     const data = playerFormSchema.parse(input)
 
     const payload = {
@@ -42,8 +42,8 @@ export async function savePlayerAction(
     }
 
     const player = data.playerId
-      ? await updatePlayer(store, coachId, data.playerId, payload)
-      : await createPlayer(store, coachId, payload)
+      ? await updatePlayer(store, coachId, data.playerId, payload, role)
+      : await createPlayer(store, coachId, payload, role)
 
     revalidatePath('/players')
     revalidatePath(`/players/${player.id}`)

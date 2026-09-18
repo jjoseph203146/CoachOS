@@ -106,7 +106,7 @@ describe('reads are scoped to the owning coach', () => {
 describe('writes are scoped to the owning coach', () => {
   it('coach A cannot mutate coach B’s player', async () => {
     await expect(
-      updatePlayer(store, coachA, bPlayerId, { name: 'Hijacked' }),
+      updatePlayer(store, coachA, bPlayerId, { name: 'Hijacked' }, 'owner'),
     ).rejects.toThrow(DomainError)
     await expect(setPlayerArchived(store, coachA, bPlayerId, true)).rejects.toThrow(
       DomainError,

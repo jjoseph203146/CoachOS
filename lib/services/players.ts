@@ -5,7 +5,7 @@
 
 import type { DataStore, NewPlayerInput } from '@/lib/data/store'
 import { activityLabel, compareSessions, isPast, type Clock } from '@/lib/domain/sessions'
-import type { Player } from '@/lib/domain/types'
+import type { MembershipRole, Player } from '@/lib/domain/types'
 import { DomainError } from './errors'
 import { loadFinance } from './finance'
 
@@ -80,12 +80,21 @@ export async function getPlayer(
   return player
 }
 
+/**
+ * A player's own default rate is pricing configuration — it decides what their
+ * future bookings cost — so it is the academy owner's to set. A coach adds
+ * players at the academy default (no rate of their own).
+ */
 export async function createPlayer(
   store: DataStore,
   coachId: string,
   input: NewPlayerInput,
+  role: MembershipRole,
 ): Promise<Player> {
-  return store.createPlayer(coachId, input)
+  return store.createPlayer(coachId, {
+    ...input,
+    defaultRateCents: role === 'owner' ? input.defaultRateCents : null,
+  })
 }
 
 export async function updatePlayer(
@@ -93,8 +102,16 @@ export async function updatePlayer(
   coachId: string,
   playerId: string,
   input: Partial<NewPlayerInput>,
+  role: MembershipRole,
 ): Promise<Player> {
-  await getPlayer(store, coachId, playerId)
+  const existing = await getPlayer(store, coachId, playerId)
+  if (
+    role !== 'owner' &&
+    input.defaultRateCents !== undefined &&
+    input.defaultRateCents !== existing.defaultRateCents
+  ) {
+    throw new DomainError('FORBIDDEN', 'Only the academy owner can set a player’s rate.')
+  }
   // NOTE: changing `defaultRateCents` intentionally does NOT touch existing
   // charges. Charge amounts are captured at creation and stay historical.
   return store.updatePlayer(coachId, playerId, input)

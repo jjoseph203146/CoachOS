@@ -581,14 +581,19 @@ describe('players', () => {
   })
 
   it('a new player starts with no charges', async () => {
-    const player = await createPlayer(store, coachId, {
-      name: 'Test Player',
-      phone: '',
-      email: '',
-      level: 'Beginner',
-      defaultRateCents: null,
-      notes: '',
-    })
+    const player = await createPlayer(
+      store,
+      coachId,
+      {
+        name: 'Test Player',
+        phone: '',
+        email: '',
+        level: 'Beginner',
+        defaultRateCents: null,
+        notes: '',
+      },
+      'owner',
+    )
     const finance = await loadFinance(store, coachId, TODAY)
     expect(finance.forPlayer(player.id)).toHaveLength(0)
     expect(finance.outstandingFor(player.id)).toBe(0)

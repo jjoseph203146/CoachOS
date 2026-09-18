@@ -5,9 +5,10 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'New player — CoachOS' }
 
 export default async function NewPlayerPage() {
-  const { coach } = await requireCoachPage()
+  const { coach, role } = await requireCoachPage()
   return (
     <PlayerForm
+      canSetRate={role === 'owner'}
       coachDefaultRateCents={coach.defaultRateCents}
       initial={{
         name: '',

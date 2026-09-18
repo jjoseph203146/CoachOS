@@ -9,12 +9,13 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Edit player — CoachOS' }
 
 export default async function EditPlayerPage({ params }: { params: { id: string } }) {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, role } = await requireCoachPage()
 
   try {
     const player = await getPlayer(store, coachId, params.id)
     return (
       <PlayerForm
+        canSetRate={role === 'owner'}
         coachDefaultRateCents={coach.defaultRateCents}
         initial={{
           playerId: player.id,
