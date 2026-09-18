@@ -17,7 +17,7 @@ import {
   viewCharges,
 } from '@/lib/domain/finance'
 import { manualSnapshot } from '@/lib/domain/pricing'
-import type { ChargeView, ISODate, Payment } from '@/lib/domain/types'
+import type { Charge, ChargeView, ISODate, Payment } from '@/lib/domain/types'
 import { DomainError } from './errors'
 
 export interface FinanceSnapshot {
@@ -220,8 +220,8 @@ export async function markUnpaid(
 export async function createManualCharge(
   store: DataStore,
   coachId: string,
-  args: { playerId: string; amountCents: number; dueDate: ISODate; label: string },
-): Promise<void> {
+  args: { playerId: string; amountCents: number; dueDate: ISODate; label: string; note?: string },
+): Promise<Charge> {
   const player = await store.getPlayer(coachId, args.playerId)
   if (!player || player.deletedAt) {
     throw new DomainError('NOT_FOUND', 'That player could not be found.')
@@ -229,7 +229,7 @@ export async function createManualCharge(
   if (args.amountCents <= 0) {
     throw new DomainError('INVALID', 'Enter an amount greater than zero.')
   }
-  await store.createCharge(coachId, {
+  return store.createCharge(coachId, {
     playerId: args.playerId,
     sessionId: null,
     amountCents: args.amountCents,
@@ -237,6 +237,6 @@ export async function createManualCharge(
     dueDate: args.dueDate,
     isManual: true,
     label: args.label || 'Manual charge',
-    note: '',
+    note: args.note ?? '',
   })
 }

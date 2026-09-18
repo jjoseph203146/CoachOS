@@ -192,8 +192,8 @@ export function TabBar({ role }: { role: MembershipRole }) {
         {role === 'owner' ? (
           <QuickAddRow
             title="Revenue"
-            subtitle="Record a payment or add a charge"
-            onClick={() => go('/payments')}
+            subtitle="Record money you’ve received"
+            onClick={() => go('/payments?record=1')}
           >
             <svg
               width="20"

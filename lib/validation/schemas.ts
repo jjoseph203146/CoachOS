@@ -407,3 +407,13 @@ export const setSessionCoachesSchema = z.object({
   sessionId: id,
   membershipIds: z.array(id).max(50),
 })
+
+// ---- revenue ----
+
+export const recordRevenueSchema = z.object({
+  playerId: id,
+  amount: moneyCents,
+  category: z.enum(['private', 'group', 'youth', 'adult', 'other']),
+  paidOn: isoDate,
+  note: z.string().trim().max(400),
+})

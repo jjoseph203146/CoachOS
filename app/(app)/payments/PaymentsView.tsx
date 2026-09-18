@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { ScreenBody } from '@/components/shell/AppShell'
-import { Avatar, Card, EmptyInline } from '@/components/ui/primitives'
+import { Avatar, Card, EmptyInline, SectionLabel } from '@/components/ui/primitives'
 import {
   Button,
   Chip,
@@ -23,6 +23,9 @@ import {
 import { addDays, formatMedium } from '@/lib/domain/dates'
 import { formatMoney } from '@/lib/domain/money'
 import type { ChargeStatus } from '@/lib/domain/types'
+import type { RevenueSummary } from '@/lib/services/revenue'
+import { RecordRevenueSheet } from './RecordRevenueSheet'
+import { RevenueHeader } from './RevenueHeader'
 
 export interface ChargeRow {
   id: string
@@ -53,7 +56,11 @@ export function PaymentsView({
   initialPlayerFilter,
   players,
   playerNames,
+  summary,
+  initialRecordOpen,
 }: {
+  summary: RevenueSummary
+  initialRecordOpen: boolean
   rows: ChargeRow[]
   today: string
   initialTab: Tab
@@ -70,6 +77,13 @@ export function PaymentsView({
   const [creditOpen, setCreditOpen] = useState(false)
   const [partialOpen, setPartialOpen] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
+  const [recordOpen, setRecordOpen] = useState(initialRecordOpen)
+
+  // "?record=1" (from Quick Add) opens the sheet once; drop it so a refresh doesn't reopen it.
+  useEffect(() => {
+    if (initialRecordOpen) router.replace('/payments', { scroll: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [confirmUnpaid, setConfirmUnpaid] = useState(false)
   const [pending, startTransition] = useTransition()
 
@@ -122,14 +136,26 @@ export function PaymentsView({
       <div className="flex items-center justify-between pt-3">
         <div className="text-t26 font-extrabold tracking-tight2">Revenue</div>
         <button
-          onClick={() => setManualOpen(true)}
+          onClick={() => setRecordOpen(true)}
           className="h-10 px-4 rounded-r13 bg-accent text-white text-t14 font-bold"
+        >
+          + Record
+        </button>
+      </div>
+
+      <RevenueHeader summary={summary} />
+
+      <div className="flex items-center justify-between mt-[26px]">
+        <SectionLabel>Charges</SectionLabel>
+        <button
+          onClick={() => setManualOpen(true)}
+          className="text-t13 font-semibold text-accent"
         >
           + Add Charge
         </button>
       </div>
 
-      <div className="mt-[14px]">
+      <div className="mt-[10px]">
         <SearchInput value={query} onChange={setQuery} placeholder="Search payments" />
       </div>
 
@@ -413,6 +439,17 @@ export function PaymentsView({
           />
         </>
       ) : null}
+
+      <RecordRevenueSheet
+        open={recordOpen}
+        onClose={() => setRecordOpen(false)}
+        onDone={() => {
+          setRecordOpen(false)
+          router.refresh()
+        }}
+        today={today}
+        players={players}
+      />
 
       <ManualChargeSheet
         open={manualOpen}

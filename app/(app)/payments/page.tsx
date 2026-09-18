@@ -5,6 +5,7 @@ import { formatMedium, formatShort } from '@/lib/domain/dates'
 import { CHARGE_TONE } from '@/lib/domain/finance'
 import { formatMoney } from '@/lib/domain/money'
 import { loadFinance } from '@/lib/services/finance'
+import { loadRevenue } from '@/lib/services/revenue'
 import { listSelectablePlayers } from '@/lib/services/players'
 import { PaymentsView, type ChargeRow } from './PaymentsView'
 
@@ -14,7 +15,7 @@ export const metadata = { title: 'Revenue — CoachOS' }
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: { tab?: string; player?: string }
+  searchParams: { tab?: string; player?: string; record?: string }
 }) {
   const { store, coachId, coach, role } = await requireCoachPage()
   // Revenue is the academy owner's. (RLS also blocks a coach from writing
@@ -22,11 +23,12 @@ export default async function PaymentsPage({
   if (role !== 'owner') redirect('/dashboard')
   const clock = coachClock(coach)
 
-  const [finance, sessions, players, selectable] = await Promise.all([
+  const [finance, sessions, players, selectable, summary] = await Promise.all([
     loadFinance(store, coachId, clock.today),
     store.listSessions(coachId),
     store.listPlayers(coachId, { includeDeleted: true }),
     listSelectablePlayers(store, coachId),
+    loadRevenue(store, coachId, clock.today),
   ])
 
   const sessionsById = new Map(sessions.map((s) => [s.id, s]))
@@ -103,6 +105,8 @@ export default async function PaymentsPage({
             : 'pending'
       }
       initialPlayerFilter={searchParams.player ?? null}
+      summary={summary}
+      initialRecordOpen={searchParams.record === '1'}
       players={selectable.map((p) => ({ id: p.id, name: p.name }))}
       playerNames={Object.fromEntries(players.map((p) => [p.id, p.name]))}
     />
