@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base resets copied verbatim from the design prototype's <helmet> block. */
+/* Base resets from the CoachOS V1 spec (preview.html). */
 html,
 body {
   margin: 0;
   padding: 0;
-  background: #e7e8e2;
+  background: #dceeff;
 }
 
 * {
@@ -21,12 +21,12 @@ body {
 }
 
 a {
-  color: #3fa66b;
+  color: #1677ee;
   text-decoration: none;
 }
 
 a:hover {
-  color: #2e7d4f;
+  color: #125ec2;
 }
 
 input,
@@ -45,7 +45,7 @@ select:focus {
 
 input::placeholder,
 textarea::placeholder {
-  color: #a2a69f;
+  color: #a7b0bd;
 }
 
 button {
@@ -56,9 +56,9 @@ button {
   text-align: inherit;
 }
 
-/* Skeleton shimmer — exact gradient + background-size from the prototype. */
+/* Skeleton shimmer, updated to the new surface tones. */
 .skeleton {
-  background: linear-gradient(90deg, #ecece7 25%, #f4f4ef 42%, #ecece7 60%);
+  background: linear-gradient(90deg, #f0f3f7 25%, #f4f8fc 42%, #f0f3f7 60%);
   background-size: 780px 100%;
   animation: shimmer 1.2s linear infinite;
 }

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
 /**
- * The phone shell from the prototype: a centred 430px column on a #E7E8E2
- * canvas, filling the viewport height, with a 1px ring.
+ * The app shell: a centred 430px column on a #DCEEFF canvas, filling the
+ * viewport height, with a 1px ring.
  *
  * The design prototype drew a fake status bar (time, signal, battery) at the
  * top. That was a canvas prop, not part of the product, so it is not rendered

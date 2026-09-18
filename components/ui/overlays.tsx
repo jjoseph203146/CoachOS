@@ -6,9 +6,9 @@ import type { ReactNode } from 'react'
 /**
  * Bottom sheets, dialogs and toasts.
  *
- * Geometry and motion come straight from the prototype:
- *  sheet   #FCFCFA, 20px top radius, 10px/20px/34px padding, sheetUp .28s
- *  scrim   rgba(23,25,24,.45), fadeIn .2s
+ * Geometry and motion:
+ *  sheet   #FFFFFF, 20px top radius, 10px/20px/34px padding, sheetUp .28s
+ *  scrim   rgba(13,27,49,.45), fadeIn .2s
  *  dialog  18px radius, max-width 330px, popIn .22s
  *  toast   106px from the bottom, ink pill, toastUp .25s
  */
@@ -18,7 +18,7 @@ export function Scrim({ onClick }: { onClick?: () => void }) {
     <div
       onClick={onClick}
       className="absolute inset-0 z-40 animate-fadeIn"
-      style={{ background: 'rgba(23,25,24,.45)' }}
+      style={{ background: 'rgba(13,27,49,.45)' }}
     />
   )
 }
@@ -119,7 +119,7 @@ export function Dialog({
   return (
     <div
       className="absolute inset-0 z-[60] flex items-center justify-center p-7 animate-fadeIn"
-      style={{ background: 'rgba(23,25,24,.5)' }}
+      style={{ background: 'rgba(13,27,49,.5)' }}
       role="alertdialog"
       aria-modal="true"
     >

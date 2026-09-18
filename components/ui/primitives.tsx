@@ -2,9 +2,9 @@ import type { ReactNode } from 'react'
 import { initials as toInitials } from '@/lib/domain/dates'
 
 /**
- * Presentational primitives. Every measurement here is lifted verbatim from
- * docs/CoachOS.dc.html — card radius 16px, hairline #E5E6E1, row divider
- * #F0F1EC, shadow 0 1px 2px rgba(23,25,24,.04), and so on.
+ * Presentational primitives. Measurements match the CoachOS V1 spec
+ * (preview.html) — card radius 18px, hairline #E7EDF5, shadow
+ * 0 4px 16px rgba(20,55,90,.04), and so on.
  */
 
 export function Card({
@@ -18,7 +18,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`bg-card border border-line rounded-r16 shadow-card overflow-hidden ${
+      className={`bg-card border border-line rounded-r18 shadow-card overflow-hidden ${
         padded ? 'p-4' : ''
       } ${className}`}
     >
@@ -27,7 +27,7 @@ export function Card({
   )
 }
 
-/** Uppercase mono section heading: 10.5px / 500 / .14em tracking / #6B706C. */
+/** Section heading: 17px / 800 / ink, plain sentence case (preview.html `.section`). */
 export function SectionLabel({
   children,
   className = '',
@@ -35,13 +35,7 @@ export function SectionLabel({
   children: ReactNode
   className?: string
 }) {
-  return (
-    <div
-      className={`font-mono text-t105 font-medium tracking-mono uppercase text-muted ${className}`}
-    >
-      {children}
-    </div>
-  )
+  return <div className={`text-t17 font-extrabold text-ink ${className}`}>{children}</div>
 }
 
 /** List row inside a Card. The first row carries no top divider. */
@@ -85,7 +79,7 @@ export function Avatar({
   return (
     <div
       className={`rounded-full flex items-center justify-center font-semibold shrink-0 ${
-        dark ? 'bg-ink text-shell' : 'bg-avatar text-ink'
+        dark ? 'bg-ink text-shell' : 'bg-avatar text-avatar_fg'
       }`}
       style={{ width: size, height: size, fontSize }}
     >

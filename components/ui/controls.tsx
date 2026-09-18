@@ -3,9 +3,9 @@
 import type { ReactNode } from 'react'
 
 /**
- * Interactive controls. Sizes and colours are the prototype's literal values:
- * primary CTA 48px/12px radius/15px, form CTA 50px/13px radius/15.5px,
- * secondary 46px, segmented track #ECECE7 with a 9px-radius white thumb.
+ * Interactive controls. Sizes follow the existing scale: primary CTA
+ * 48px/12px radius/15px, form CTA 50px/13px radius/15.5px, secondary 46px,
+ * segmented track #F0F3F7 with a 9px-radius white thumb.
  */
 
 type ButtonTone = 'primary' | 'ink' | 'plain' | 'danger' | 'soft'
@@ -248,7 +248,7 @@ export function Stepper({
   )
 }
 
-/** Search field with the magnifier glyph, 42px tall on a #ECECE7 track. */
+/** Search field with the magnifier glyph, 42px tall on a #F0F3F7 track. */
 export function SearchInput({
   value,
   onChange,
@@ -265,7 +265,7 @@ export function SearchInput({
         height="16"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#8A8E89"
+        stroke="#8A94A3"
         strokeWidth="2"
         strokeLinecap="round"
       >

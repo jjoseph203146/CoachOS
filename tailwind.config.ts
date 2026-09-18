@@ -1,9 +1,10 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * Design tokens extracted verbatim from the CoachOS design prototype
- * (docs/CoachOS.dc.html). Every value here appears literally in that file —
- * nothing is approximated or substituted with a Tailwind default.
+ * Design tokens extracted from the CoachOS V1 UX spec (preview.html, the
+ * approved prototype). Superseded from the earlier docs/CoachOS.dc.html
+ * system — colors, type treatment, radii and shadows below are read off
+ * preview.html's `:root` variables and component classes.
  */
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
@@ -11,51 +12,68 @@ const config: Config = {
     extend: {
       colors: {
         // surfaces
-        canvas: '#E7E8E2', // page backdrop behind the phone shell
-        shell: '#F7F7F3', // app shell background
+        canvas: '#DCEEFF', // page backdrop behind the app column (preview.html body gradient, flattened)
+        shell: '#FFFFFF', // app shell background — preview.html screens sit on flat white
         card: '#FFFFFF', // card surface
-        sheet: '#FCFCFA', // bottom sheet / dialog surface
-        navbar: '#FBFBF8', // tab bar (rendered at 94% opacity)
-        track: '#ECECE7', // segmented-control track, skeleton base
-        shimmer: '#F4F4EF', // skeleton highlight
-        avatar: '#E9EAE4', // avatar circle background
-        neutral_chip: '#EDEDE8', // neutral pill background
+        sheet: '#FFFFFF', // bottom sheet / dialog surface
+        navbar: '#FFFFFF', // tab bar (rendered translucent at the call site)
+        track: '#F0F3F7', // segmented-control track, skeleton base
+        shimmer: '#F4F8FC', // skeleton highlight
+        avatar: '#CBE3FF', // avatar circle background (flattened from preview.html's gradient)
+        neutral_chip: '#EEF3F8', // neutral pill background
 
         // ink
-        ink: '#171918', // primary text
-        muted: '#6B706C', // secondary text
-        subtle: '#8A8E89', // tertiary text
-        faint: '#A2A69F', // placeholder text
-        nav_off: '#A8ACA5', // inactive tab icon/label
-        chevron: '#B9BDB6', // chevron glyphs, today ring
+        ink: '#0D1B31', // primary text
+        muted: '#6D7A8C', // secondary text
+        subtle: '#8A94A3', // tertiary text
+        faint: '#A7B0BD', // placeholder text
+        nav_off: '#718095', // inactive tab icon/label
+        chevron: '#9AA6B4', // chevron glyphs
+        avatar_fg: '#1E5A99', // avatar initials text
 
         // lines
-        line: '#E5E6E1', // card + input borders
-        divider: '#F0F1EC', // in-card row dividers
-        ring: '#DEDFD8', // phone shell outline
-        dashed: '#C9CCC3', // dashed "add" borders
-        handle: '#DADBD4', // sheet grab handle, inactive dots
+        line: '#E7EDF5', // card + input borders
+        divider: '#E7EDF5', // in-card row dividers
+        ring: '#DEE7F0', // app shell outline
+        dashed: '#C9D3DE', // dashed "add" borders
+        handle: '#D5DCE5', // sheet grab handle, inactive dots
 
-        // accent (green)
-        accent: '#3FA66B',
-        accent_dark: '#2E7D4F',
-        accent_light: '#7BC79A',
-        accent_soft: '#E4F2E9',
-        accent_line: '#D5E5DB',
+        // accent (blue — preview.html's primary/brand color)
+        accent: '#1677EE',
+        accent_dark: '#125EC2',
+        accent_light: '#5CA7FF',
+        accent_soft: '#EDF4FF',
+        accent_line: '#D5E5FA',
+        accent_text: '#2263AA', // pill/badge text on accent_soft
 
-        // warning (amber)
-        warn_bg: '#F6EEDB',
+        // success (green — preview.html reserves green for positive/present, not brand)
+        success: '#159A55',
+        success_bg: '#EAF8EF',
+
+        // warning (amber — not shown explicitly in preview.html, kept for soft warnings)
+        warn_bg: '#FBF3E4',
         warn_fg: '#96690F',
         warn_dot: '#C77E1F',
 
         // danger (red)
-        danger_bg: '#F7E9E6',
-        danger_fg: '#B3402F',
-        danger_line: '#EBD4D0',
+        danger: '#EF4759',
+        danger_bg: '#FFF0F1',
+        danger_fg: '#A72A38',
+        danger_line: '#F6D9DC',
+
+        // program/adult accent (purple — new category introduced by preview.html)
+        purple: '#7C63F3',
+        purple_bg: '#F1EFFF',
       },
       fontFamily: {
-        sans: ["'Geist'", "'Helvetica Neue'", '-apple-system', 'sans-serif'],
-        mono: ["'Geist Mono'", 'monospace'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"SF Pro Display"',
+          '"Segoe UI"',
+          'sans-serif',
+        ],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       // Exact type ramp used by the prototype. Key `tNNN` == NN.N px.
       fontSize: {
@@ -99,16 +117,17 @@ const config: Config = {
         r16: '16px',
         r18: '18px',
         r20: '20px',
+        r28: '28px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(23,25,24,.04)',
-        card_hi: '0 1px 2px rgba(23,25,24,.05)',
-        seg: '0 1px 3px rgba(23,25,24,.10)',
-        sheet: '0 -12px 40px rgba(23,25,24,.18)',
-        dialog: '0 24px 60px rgba(23,25,24,.3)',
-        fab: '0 6px 16px rgba(63,166,107,.38), 0 1px 2px rgba(23,25,24,.15)',
-        toast: '0 8px 24px rgba(23,25,24,.28)',
-        shell: '0 0 0 1px #DEDFD8',
+        card: '0 4px 16px rgba(20,55,90,.04)',
+        card_hi: '0 4px 16px rgba(20,55,90,.06)',
+        seg: '0 2px 8px rgba(20,50,80,.08)',
+        sheet: '0 -12px 40px rgba(20,55,90,.15)',
+        dialog: '0 12px 40px rgba(30,65,105,.13)',
+        fab: '0 8px 22px rgba(22,119,238,.35)',
+        toast: '0 8px 24px rgba(13,27,49,.28)',
+        shell: '0 0 0 1px #DEE7F0',
       },
       letterSpacing: {
         mono: '.14em',
