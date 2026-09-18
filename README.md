@@ -73,11 +73,17 @@ The migrations are:
 | `0001_initial_schema.sql` | Tables, enums, constraints, indexes, `updated_at` triggers |
 | `0002_financial_integrity.sql` | Triggers that make over-payment, over-crediting and cross-tenant financial writes impossible |
 | `0003_rls_policies.sql` | Row-level security: every table scoped to the owning coach |
-| `0004_new_coach_bootstrap.sql` | Creates a `coaches` row automatically when an auth user signs up |
+| `0004_new_coach_bootstrap.sql` | Creates a profile row automatically when an auth user signs up |
 | `0005_coach_timezone.sql` | Per-coach IANA timezone — every calendar decision is made in it |
+| `0006_academy_memberships.sql` | Splits business from person: `academies` (the tenant) and `academy_memberships` (people + role). Re-points every data table from `coach_id` to `academy_id` and rewrites the RLS policies and guard triggers |
+| `0007_charge_price_snapshots.sql` | Every charge records where its price came from and the standard at that moment; snapshots are immutable |
 
-> Upgrading an existing database? Apply `0005_coach_timezone.sql`. Rows default
-> to `UTC`; each coach sets their real zone at onboarding or in Settings.
+> Upgrading an existing database? Apply `0005_coach_timezone.sql`, then
+> `0006_academy_memberships.sql` and `0007_charge_price_snapshots.sql`. Rows default to `UTC`; each coach sets their
+> real zone at onboarding or in Settings. `0006` preserves all existing data:
+> every existing coach becomes the **owner** of an academy that reuses their
+> id, so no data row is rewritten. Apply it as one file — it must not be
+> applied partially.
 
 ### 3. Configure auth
 
@@ -119,7 +125,7 @@ be added to the app or to Vercel.
 
 ### 5. (Optional) Seed development data
 
-Sign up in the app first so an auth user and its `coaches` row exist. Then open
+Sign up in the app first so an auth user and its academy membership exist. Then open
 [`supabase/seed.sql`](supabase/seed.sql), change `v_email` at the top to the
 address you signed up with, and run the file in the SQL editor.
 
@@ -234,7 +240,7 @@ tapping the active choice again clears it back to `unmarked`.
 
 Every calendar decision — "today", whether a session has ended, whether a
 charge is overdue — is made in the **coach's own IANA timezone**, stored on
-`coaches.timezone`. The server runs in UTC on Vercel, so reading the server's
+`academies.timezone`. The server runs in UTC on Vercel, so reading the server's
 local date would roll a Californian coach's dashboard over to tomorrow at 5pm,
 mid-evening-sessions. The zone is detected from the browser at onboarding and
 editable in Settings, which shows the current local time so a wrong pick is
@@ -267,8 +273,20 @@ Full account lifecycle:
 Authorization is enforced in the **database**, not the frontend:
 
 - every coach-owned table has RLS enabled and forced;
-- policies scope every row to `current_coach_id()`, derived from `auth.uid()`;
-- triggers reject any write whose parent record belongs to a different coach;
+- policies scope every row to `current_academy_id()`, derived from `auth.uid()`;
+- recording payments and credits is owner-only, enforced by policy on top of the
+  application check (`current_membership_role()`);
+- charges are financial history: every member can read them, but a coach can
+  only create the charge a real booking implies, move an unsettled charge's due
+  date with its session, or write it off by cancelling that session. Changing an
+  amount, manual charges, credits and payments are owner-only, and **nobody**
+  can delete a charge;
+- a charge is a **price snapshot** (amount, source, basis, and the standard at
+  that moment) with no link to any live price, so changing a rate or price later
+  never rewrites an existing charge;
+- a membership's role can never be changed in place, so nobody can promote
+  themselves to owner;
+- triggers reject any write whose parent record belongs to a different academy;
 - the `anon` role is granted nothing.
 
 So a leaked or guessed row id from another tenant returns nothing, and a bug in

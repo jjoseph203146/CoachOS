@@ -22,6 +22,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
+  Academy,
   AttendanceStatus,
   Charge,
   Coach,
@@ -44,16 +45,29 @@ import type {
 
 type Row = Record<string, any>
 
-function mapCoach(row: Row): Coach {
+/** Columns selected for a membership row with its academy embedded. */
+const MEMBERSHIP_SELECT = '*, academy:academies(*)'
+
+function mapAcademy(row: Row): Academy {
   return {
     id: row.id,
-    name: row.name ?? '',
-    email: row.email ?? '',
     businessName: row.business_name ?? '',
     defaultRateCents: row.default_rate_cents ?? 0,
     attendanceWindow: row.attendance_window ?? '24 hours',
     theme: row.theme ?? 'Light',
     timezone: row.timezone || 'UTC',
+  }
+}
+
+/** Joins a membership row (with its embedded academy) into the `Coach` read view. */
+function mapCoach(row: Row): Coach {
+  const academy = mapAcademy(row.academy ?? { id: row.academy_id })
+  return {
+    ...academy,
+    membershipId: row.id,
+    role: row.role,
+    name: row.name ?? '',
+    email: row.email ?? '',
     onboardedAt: row.onboarded_at ?? null,
   }
 }
@@ -61,7 +75,7 @@ function mapCoach(row: Row): Coach {
 function mapPlayer(row: Row): Player {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     name: row.name ?? '',
     phone: row.phone ?? '',
     email: row.email ?? '',
@@ -77,7 +91,7 @@ function mapPlayer(row: Row): Player {
 function mapSession(row: Row): Session {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     type: row.type,
     name: row.name ?? '',
     date: row.date,
@@ -97,7 +111,7 @@ function mapSession(row: Row): Session {
 function mapEnrollment(row: Row): Enrollment {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     sessionId: row.session_id,
     playerId: row.player_id,
     attendance: row.attendance,
@@ -108,10 +122,13 @@ function mapEnrollment(row: Row): Enrollment {
 function mapCharge(row: Row): Charge {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     playerId: row.player_id,
     sessionId: row.session_id ?? null,
     amountCents: row.amount_cents,
+    priceSource: row.price_source,
+    priceBasis: row.price_basis ?? null,
+    standardAmountCents: row.standard_amount_cents ?? null,
     dueDate: row.due_date,
     isManual: !!row.is_manual,
     label: row.label ?? '',
@@ -125,7 +142,7 @@ function mapCharge(row: Row): Charge {
 function mapPayment(row: Row): Payment {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     chargeId: row.charge_id,
     amountCents: row.amount_cents,
     paidOn: row.paid_on,
@@ -137,7 +154,7 @@ function mapPayment(row: Row): Payment {
 function mapCredit(row: Row): Credit {
   return {
     id: row.id,
-    coachId: row.coach_id,
+    coachId: row.academy_id,
     chargeId: row.charge_id,
     amountCents: row.amount_cents,
     reason: row.reason ?? '',
@@ -181,41 +198,85 @@ export class SupabaseDataStore implements DataStore {
 
   // ---- coach ----
 
-  async getCoach(coachId: string): Promise<Coach | null> {
+  async getCoach(membershipId: string): Promise<Coach | null> {
     const { data, error } = await this.client
-      .from('coaches')
-      .select('*')
-      .eq('id', coachId)
+      .from('academy_memberships')
+      .select(MEMBERSHIP_SELECT)
+      .eq('id', membershipId)
       .maybeSingle()
     if (error) throw new Error(error.message)
     return data ? mapCoach(data) : null
   }
 
+  async getAcademy(academyId: string): Promise<Academy | null> {
+    const { data, error } = await this.client
+      .from('academies')
+      .select('*')
+      .eq('id', academyId)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? mapAcademy(data) : null
+  }
+
   async getCoachByAuthId(authId: string): Promise<Coach | null> {
     const { data, error } = await this.client
-      .from('coaches')
-      .select('*')
+      .from('academy_memberships')
+      .select(MEMBERSHIP_SELECT)
       .eq('auth_user_id', authId)
       .maybeSingle()
     if (error) throw new Error(error.message)
     return data ? mapCoach(data) : null
   }
 
+  /**
+   * Bootstraps an academy with this user as owner. Clients cannot insert
+   * academies or memberships directly (no INSERT policy exists), so this goes
+   * through the `bootstrap_academy_owner` security-definer RPC, which is atomic
+   * and idempotent. It identifies the caller from the session, so `authId` is
+   * only used to read the resulting membership back.
+   */
   async createCoach(authId: string, input: { name: string; email: string }): Promise<Coach> {
+    const { error } = await this.client.rpc('bootstrap_academy_owner', {
+      p_name: input.name,
+      p_email: input.email,
+    })
+    if (error) throw new Error(error.message)
+
+    const coach = await this.getCoachByAuthId(authId)
+    if (!coach) throw new Error('Academy bootstrap succeeded but no membership was found')
+    return coach
+  }
+
+  async updateMembershipProfile(
+    membershipId: string,
+    patch: Partial<{ name: string; email: string; onboardedAt: string | null }>,
+  ): Promise<Coach> {
+    const payload: Row = {}
+    if (patch.name !== undefined) payload.name = patch.name
+    if (patch.email !== undefined) payload.email = patch.email
+    if (patch.onboardedAt !== undefined) payload.onboarded_at = patch.onboardedAt
+
     const row = await this.unwrap(
-      this.client
-        .from('coaches')
-        .insert({ auth_user_id: authId, name: input.name, email: input.email })
-        .select('*')
+      this.from('academy_memberships')
+        .update(payload)
+        .eq('id', membershipId)
+        .select(MEMBERSHIP_SELECT)
         .single(),
     )
     return mapCoach(row)
   }
 
-  async updateCoach(coachId: string, patch: Partial<Omit<Coach, 'id'>>): Promise<Coach> {
+  async updateAcademySettings(
+    academyId: string,
+    patch: Partial<{
+      businessName: string
+      defaultRateCents: number
+      attendanceWindow: Academy['attendanceWindow']
+      theme: Academy['theme']
+      timezone: string
+    }>,
+  ): Promise<Academy> {
     const payload: Row = {}
-    if (patch.name !== undefined) payload.name = patch.name
-    if (patch.email !== undefined) payload.email = patch.email
     if (patch.businessName !== undefined) payload.business_name = patch.businessName
     if (patch.defaultRateCents !== undefined) {
       payload.default_rate_cents = patch.defaultRateCents
@@ -225,18 +286,17 @@ export class SupabaseDataStore implements DataStore {
     }
     if (patch.theme !== undefined) payload.theme = patch.theme
     if (patch.timezone !== undefined) payload.timezone = patch.timezone
-    if (patch.onboardedAt !== undefined) payload.onboarded_at = patch.onboardedAt
 
     const row = await this.unwrap(
-      this.from('coaches').update(payload).eq('id', coachId).select('*').single(),
+      this.from('academies').update(payload).eq('id', academyId).select('*').single(),
     )
-    return mapCoach(row)
+    return mapAcademy(row)
   }
 
   // ---- players ----
 
   async listPlayers(coachId: string, opts?: { includeDeleted?: boolean }): Promise<Player[]> {
-    let query = this.from('players').select('*').eq('coach_id', coachId)
+    let query = this.from('players').select('*').eq('academy_id', coachId)
     if (!opts?.includeDeleted) query = query.is('deleted_at', null)
     const rows = await this.unwrap<Row[]>(query.order('name'))
     return (rows ?? []).map(mapPlayer)
@@ -246,7 +306,7 @@ export class SupabaseDataStore implements DataStore {
     const { data, error } = await this.client
       .from('players')
       .select('*')
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('id', playerId)
       .maybeSingle()
     if (error) throw new Error(error.message)
@@ -258,7 +318,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('players')
         .insert({
-          coach_id: coachId,
+          academy_id: coachId,
           name: input.name,
           phone: input.phone,
           email: input.email,
@@ -297,7 +357,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('players')
         .update(payload)
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('id', playerId)
         .select('*')
         .single(),
@@ -329,7 +389,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('sessions')
         .select('*')
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .order('date')
         .order('start_min'),
     )
@@ -340,7 +400,7 @@ export class SupabaseDataStore implements DataStore {
     const { data, error } = await this.client
       .from('sessions')
       .select('*')
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('id', sessionId)
       .maybeSingle()
     if (error) throw new Error(error.message)
@@ -352,7 +412,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('sessions')
         .insert({
-          coach_id: coachId,
+          academy_id: coachId,
           type: input.type,
           name: input.name,
           date: input.date,
@@ -398,7 +458,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('sessions')
         .update(payload)
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('id', sessionId)
         .select('*')
         .single(),
@@ -430,7 +490,7 @@ export class SupabaseDataStore implements DataStore {
 
   async listEnrollments(coachId: string): Promise<Enrollment[]> {
     const rows = await this.unwrap<Row[]>(
-      this.from('enrollments').select('*').eq('coach_id', coachId),
+      this.from('enrollments').select('*').eq('academy_id', coachId),
     )
     return (rows ?? []).map(mapEnrollment)
   }
@@ -443,7 +503,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('enrollments')
         .select('*')
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('session_id', sessionId)
         .order('created_at'),
     )
@@ -459,7 +519,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('enrollments')
         .upsert(
-          { coach_id: coachId, session_id: sessionId, player_id: playerId },
+          { academy_id: coachId, session_id: sessionId, player_id: playerId },
           { onConflict: 'session_id,player_id' },
         )
         .select('*')
@@ -479,7 +539,7 @@ export class SupabaseDataStore implements DataStore {
     const { data } = await this.client
       .from('enrollments')
       .select('*')
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('session_id', sessionId)
       .eq('player_id', playerId)
       .maybeSingle()
@@ -487,7 +547,7 @@ export class SupabaseDataStore implements DataStore {
     const { error } = await this.client
       .from('enrollments')
       .delete()
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('session_id', sessionId)
       .eq('player_id', playerId)
     if (error) throw new Error(error.message)
@@ -496,7 +556,7 @@ export class SupabaseDataStore implements DataStore {
       this.track(async () => {
         await this.from('enrollments').insert({
           id: data.id,
-          coach_id: data.coach_id,
+          academy_id: data.academy_id,
           session_id: data.session_id,
           player_id: data.player_id,
           attendance: data.attendance,
@@ -514,7 +574,7 @@ export class SupabaseDataStore implements DataStore {
       const { error } = await this.client
         .from('enrollments')
         .update({ attendance: mark.attendance })
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('session_id', sessionId)
         .eq('player_id', mark.playerId)
       if (error) throw new Error(error.message)
@@ -525,21 +585,21 @@ export class SupabaseDataStore implements DataStore {
 
   async listCharges(coachId: string): Promise<Charge[]> {
     const rows = await this.unwrap<Row[]>(
-      this.from('charges').select('*').eq('coach_id', coachId),
+      this.from('charges').select('*').eq('academy_id', coachId),
     )
     return (rows ?? []).map(mapCharge)
   }
 
   async listPayments(coachId: string): Promise<Payment[]> {
     const rows = await this.unwrap<Row[]>(
-      this.from('payments').select('*').eq('coach_id', coachId),
+      this.from('payments').select('*').eq('academy_id', coachId),
     )
     return (rows ?? []).map(mapPayment)
   }
 
   async listCredits(coachId: string): Promise<Credit[]> {
     const rows = await this.unwrap<Row[]>(
-      this.from('credits').select('*').eq('coach_id', coachId),
+      this.from('credits').select('*').eq('academy_id', coachId),
     )
     return (rows ?? []).map(mapCredit)
   }
@@ -548,7 +608,7 @@ export class SupabaseDataStore implements DataStore {
     const { data, error } = await this.client
       .from('charges')
       .select('*')
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('id', chargeId)
       .maybeSingle()
     if (error) throw new Error(error.message)
@@ -567,10 +627,13 @@ export class SupabaseDataStore implements DataStore {
         .from('charges')
         .insert(
           inputs.map((input) => ({
-            coach_id: coachId,
+            academy_id: coachId,
             player_id: input.playerId,
             session_id: input.sessionId,
             amount_cents: input.amountCents,
+            price_source: input.priceSource,
+            price_basis: input.priceBasis,
+            standard_amount_cents: input.standardAmountCents,
             due_date: input.dueDate,
             is_manual: input.isManual,
             label: input.label,
@@ -580,12 +643,12 @@ export class SupabaseDataStore implements DataStore {
         .select('*'),
     )
     const list = (rows ?? []) as Row[]
-    this.track(async () => {
-      await this.client
-        .from('charges')
-        .delete()
-        .in('id', list.map((r) => r.id))
-    })
+    // No compensation is registered: charges are financial history and nobody
+    // can delete one (migration 0006 grants no DELETE). This is safe because
+    // creating charges is the LAST write of every workflow that does it
+    // (createSession, addPlayerToSession), so nothing after it can fail and
+    // need unwinding. A future workflow that writes AFTER creating charges must
+    // be made atomic in the database (an RPC), not compensated here.
     return list.map(mapCharge)
   }
 
@@ -593,12 +656,16 @@ export class SupabaseDataStore implements DataStore {
     coachId: string,
     chargeId: string,
     patch: Partial<
-      Pick<Charge, 'amountCents' | 'dueDate' | 'note' | 'label' | 'voidedAt' | 'voidNote'>
+      Pick<
+        Charge,
+        'amountCents' | 'dueDate' | 'note' | 'label' | 'voidedAt' | 'voidNote' | 'priceSource'
+      >
     >,
   ): Promise<Charge> {
     const before = await this.getCharge(coachId, chargeId)
     const payload: Row = {}
     if (patch.amountCents !== undefined) payload.amount_cents = patch.amountCents
+    if (patch.priceSource !== undefined) payload.price_source = patch.priceSource
     if (patch.dueDate !== undefined) payload.due_date = patch.dueDate
     if (patch.note !== undefined) payload.note = patch.note
     if (patch.label !== undefined) payload.label = patch.label
@@ -609,7 +676,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('charges')
         .update(payload)
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('id', chargeId)
         .select('*')
         .single(),
@@ -637,7 +704,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('payments')
         .insert({
-          coach_id: coachId,
+          academy_id: coachId,
           charge_id: input.chargeId,
           amount_cents: input.amountCents,
           paid_on: input.paidOn,
@@ -657,7 +724,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('credits')
         .insert({
-          coach_id: coachId,
+          academy_id: coachId,
           charge_id: input.chargeId,
           amount_cents: input.amountCents,
           reason: input.reason,
@@ -675,13 +742,13 @@ export class SupabaseDataStore implements DataStore {
     const { data } = await this.client
       .from('payments')
       .select('*')
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('charge_id', chargeId)
 
     const { error } = await this.client
       .from('payments')
       .delete()
-      .eq('coach_id', coachId)
+      .eq('academy_id', coachId)
       .eq('charge_id', chargeId)
     if (error) throw new Error(error.message)
 
@@ -691,7 +758,7 @@ export class SupabaseDataStore implements DataStore {
         await this.from('payments').insert(
           removed.map((r) => ({
             id: r.id,
-            coach_id: r.coach_id,
+            academy_id: r.academy_id,
             charge_id: r.charge_id,
             amount_cents: r.amount_cents,
             paid_on: r.paid_on,
@@ -707,7 +774,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('payments')
         .select('*')
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('charge_id', chargeId),
     )
     return (rows ?? []).map(mapPayment)
@@ -718,7 +785,7 @@ export class SupabaseDataStore implements DataStore {
       this.client
         .from('credits')
         .select('*')
-        .eq('coach_id', coachId)
+        .eq('academy_id', coachId)
         .eq('charge_id', chargeId),
     )
     return (rows ?? []).map(mapCredit)

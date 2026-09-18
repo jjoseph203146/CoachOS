@@ -79,7 +79,7 @@ export async function updateSessionAction(input: {
   priceChangeDecision?: 'keep' | 'update'
 }): Promise<ActionResult<{ requiresPriceDecision: boolean; unpaidCount: number }>> {
   return runAction('updateSession', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach, role } = await requireCoachAction()
     const data = updateSessionSchema.parse(input)
 
     const result = await updateSession(
@@ -97,6 +97,7 @@ export async function updateSessionAction(input: {
         priceChangeDecision: data.priceChangeDecision,
       },
       coachClock(coach).today,
+      role,
     )
 
     revalidateSessionViews(data.sessionId)
@@ -142,7 +143,7 @@ export async function removePlayerFromSessionAction(input: {
   chargeDecision: 'keep' | 'credit'
 }): Promise<ActionResult> {
   return runAction('removePlayerFromSession', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach, role } = await requireCoachAction()
     const data = removePlayerSchema.parse(input)
     await removePlayerFromSession(
       store,
@@ -151,6 +152,7 @@ export async function removePlayerFromSessionAction(input: {
       data.playerId,
       data.chargeDecision,
       coachClock(coach).today,
+      role,
     )
     revalidateSessionViews(data.sessionId)
     return ok()

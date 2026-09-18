@@ -12,6 +12,7 @@
 
 import { DEFAULT_TIME_ZONE } from '@/lib/domain/dates'
 import type {
+  Academy,
   AttendanceStatus,
   Charge,
   Coach,
@@ -84,7 +85,7 @@ export class MockDataStore implements DataStore {
     const seed = buildSeed(profile)
     this.db = emptyTables()
     this.db.coaches.push(seed.coach)
-    this.db.authLinks[authId] = seed.coach.id
+    this.db.authLinks[authId] = seed.coach.membershipId
     this.db.players.push(...seed.players)
     this.db.sessions.push(...seed.sessions)
     this.db.enrollments.push(...seed.enrollments)
@@ -95,20 +96,32 @@ export class MockDataStore implements DataStore {
   }
 
   // ---- coach ----
+  // `coaches` holds one row per membership; `id` is the shared academy id and
+  // `membershipId` is the row's own identity — see the `Coach` type's doc
+  // comment. `authLinks` maps an auth user id to a *membership* id.
 
-  async getCoach(coachId: string): Promise<Coach | null> {
-    return clone(this.db.coaches.find((c) => c.id === coachId) ?? null)
+  async getCoach(membershipId: string): Promise<Coach | null> {
+    return clone(this.db.coaches.find((c) => c.membershipId === membershipId) ?? null)
   }
 
   async getCoachByAuthId(authId: string): Promise<Coach | null> {
-    const coachId = this.db.authLinks[authId]
-    if (!coachId) return null
-    return this.getCoach(coachId)
+    const membershipId = this.db.authLinks[authId]
+    if (!membershipId) return null
+    return this.getCoach(membershipId)
+  }
+
+  async getAcademy(academyId: string): Promise<Academy | null> {
+    const row = this.db.coaches.find((c) => c.id === academyId)
+    if (!row) return null
+    const { id, businessName, defaultRateCents, attendanceWindow, theme, timezone } = row
+    return clone({ id, businessName, defaultRateCents, attendanceWindow, theme, timezone })
   }
 
   async createCoach(authId: string, input: { name: string; email: string }): Promise<Coach> {
     const coach: Coach = {
-      id: nextId('coach'),
+      id: nextId('academy'),
+      membershipId: nextId('member'),
+      role: 'owner',
       name: input.name,
       email: input.email,
       businessName: '',
@@ -119,15 +132,60 @@ export class MockDataStore implements DataStore {
       onboardedAt: null,
     }
     this.db.coaches.push(coach)
-    this.db.authLinks[authId] = coach.id
+    this.db.authLinks[authId] = coach.membershipId
     return clone(coach)
   }
 
-  async updateCoach(coachId: string, patch: Partial<Omit<Coach, 'id'>>): Promise<Coach> {
-    const coach = this.db.coaches.find((c) => c.id === coachId)
+  /**
+   * Test/demo support, deliberately not on the `DataStore` port: adds a
+   * coach-role teammate to an existing academy. Real teammates arrive through
+   * the invite flow.
+   */
+  addMember(
+    academyId: string,
+    authId: string,
+    input: { name: string; email: string },
+  ): Coach {
+    const owner = this.db.coaches.find((c) => c.id === academyId)
+    if (!owner) throw new Error('Academy not found')
+    const member: Coach = {
+      ...owner,
+      membershipId: nextId('member'),
+      role: 'coach',
+      name: input.name,
+      email: input.email,
+      onboardedAt: null,
+    }
+    this.db.coaches.push(member)
+    this.db.authLinks[authId] = member.membershipId
+    return clone(member)
+  }
+
+  async updateMembershipProfile(
+    membershipId: string,
+    patch: Partial<{ name: string; email: string; onboardedAt: string | null }>,
+  ): Promise<Coach> {
+    const coach = this.db.coaches.find((c) => c.membershipId === membershipId)
     if (!coach) throw new Error('Coach not found')
     Object.assign(coach, patch)
     return clone(coach)
+  }
+
+  async updateAcademySettings(
+    academyId: string,
+    patch: Partial<{
+      businessName: string
+      defaultRateCents: number
+      attendanceWindow: Coach['attendanceWindow']
+      theme: Coach['theme']
+      timezone: string
+    }>,
+  ): Promise<Academy> {
+    const members = this.db.coaches.filter((c) => c.id === academyId)
+    if (members.length === 0) throw new Error('Academy not found')
+    members.forEach((c) => Object.assign(c, patch))
+    const { id, businessName, defaultRateCents, attendanceWindow, theme, timezone } = members[0]
+    return clone({ id, businessName, defaultRateCents, attendanceWindow, theme, timezone })
   }
 
   // ---- players ----
@@ -307,6 +365,9 @@ export class MockDataStore implements DataStore {
       playerId: input.playerId,
       sessionId: input.sessionId,
       amountCents: input.amountCents,
+      priceSource: input.priceSource,
+      priceBasis: input.priceBasis,
+      standardAmountCents: input.standardAmountCents,
       dueDate: input.dueDate,
       isManual: input.isManual,
       label: input.label,

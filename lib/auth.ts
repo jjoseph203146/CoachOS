@@ -5,14 +5,18 @@ import { redirect } from 'next/navigation'
 import { getStore } from '@/lib/data'
 import { getMockStore } from '@/lib/data/mock/store'
 import type { DataStore } from '@/lib/data/store'
-import type { Coach } from '@/lib/domain/types'
+import type { Coach, MembershipRole } from '@/lib/domain/types'
 import { resolveBackend } from '@/lib/supabase/env'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { DomainError } from '@/lib/services/errors'
 
 export interface AuthContext {
   coach: Coach
+  /** Academy (tenant) id — scopes players, sessions, charges, etc. */
   coachId: string
+  /** The signed-in member's own row id — for self-profile and team operations. */
+  membershipId: string
+  role: MembershipRole
   store: DataStore
 }
 
@@ -32,7 +36,13 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
     const mock = getMockStore()
     const coach = await mock.getCoachByAuthId('demo-auth-user')
     if (!coach) return null
-    return { coach, coachId: coach.id, store: mock }
+    return {
+      coach,
+      coachId: coach.id,
+      membershipId: coach.membershipId,
+      role: coach.role,
+      store: mock,
+    }
   }
 
   const supabase = createSupabaseServerClient()
@@ -49,7 +59,13 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
       email: user.email ?? '',
     })
   }
-  return { coach, coachId: coach.id, store }
+  return {
+    coach,
+    coachId: coach.id,
+    membershipId: coach.membershipId,
+    role: coach.role,
+    store,
+  }
 })
 
 /** For pages: redirect to /login when signed out. */
@@ -64,6 +80,19 @@ export async function requireCoachAction(): Promise<AuthContext> {
   const context = await getAuthContext()
   if (!context) {
     throw new DomainError('UNAUTHENTICATED', 'Please sign in again.')
+  }
+  return context
+}
+
+/**
+ * For server actions only the academy owner may run (recording payments,
+ * managing the team). This is the friendly, early check; row-level security in
+ * the database is what actually enforces it.
+ */
+export async function requireOwnerAction(): Promise<AuthContext> {
+  const context = await requireCoachAction()
+  if (context.role !== 'owner') {
+    throw new DomainError('FORBIDDEN', 'Only the academy owner can do this.')
   }
   return context
 }

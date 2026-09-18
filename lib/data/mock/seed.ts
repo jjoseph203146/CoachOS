@@ -43,6 +43,8 @@ export function buildSeed(
 ): SeedData {
   const coach: Coach = {
     id: coachId,
+    membershipId: `${coachId}_owner`,
+    role: 'owner',
     name: 'Jacob Reyes',
     email: 'jacob@peakperformance.co',
     businessName: 'Peak Performance Tennis',
@@ -265,21 +267,28 @@ export function buildSeed(
     amountCents: number,
     dueDate: string,
     extra: Partial<Charge> = {},
-  ): Charge => ({
-    id,
-    coachId,
-    playerId,
-    sessionId,
-    amountCents,
-    dueDate,
-    isManual: false,
-    label: '',
-    note: '',
-    voidedAt: null,
-    voidNote: '',
-    createdAt: NOW,
-    ...extra,
-  })
+  ): Charge => {
+    const isManual = extra.isManual ?? false
+    return {
+      id,
+      coachId,
+      playerId,
+      sessionId,
+      amountCents,
+      // Snapshot provenance, matching how 0007 backfills existing rows.
+      priceSource: isManual ? 'manual' : 'session_price',
+      priceBasis: isManual ? null : 'per_session',
+      standardAmountCents: null,
+      dueDate,
+      isManual,
+      label: '',
+      note: '',
+      voidedAt: null,
+      voidNote: '',
+      createdAt: NOW,
+      ...extra,
+    }
+  }
 
   const voidNote = 'Written off — session cancelled'
 

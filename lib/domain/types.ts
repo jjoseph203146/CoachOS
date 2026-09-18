@@ -33,8 +33,50 @@ export type CoachLevel = 'Beginner' | 'Intermediate' | 'Advanced'
 export type AttendanceWindow = 'Same day' | '24 hours' | '48 hours' | '72 hours'
 export type Theme = 'Light' | 'Dark'
 
+/** A member's standing within their academy. Set only at creation — never changed in place. */
+export type MembershipRole = 'owner' | 'coach'
+
+/**
+ * The business/tenant. Every coach-owned row (players, sessions, charges…)
+ * scopes to an academy's id, shared by every member of that academy.
+ */
+export interface Academy {
+  id: string
+  businessName: string
+  /** Fallback rate used when a player has no rate of their own. */
+  defaultRateCents: number
+  attendanceWindow: AttendanceWindow
+  theme: Theme
+  /**
+   * IANA timezone, e.g. 'America/Los_Angeles'. Every "today" and "has this
+   * ended?" decision is made in this zone, never the server's.
+   */
+  timezone: string
+}
+
+/** One person's standing within one academy — an owner or an invited coach. */
+export interface Membership {
+  id: string
+  academyId: string
+  authUserId: string
+  role: MembershipRole
+  name: string
+  email: string
+  onboardedAt: string | null
+}
+
+/**
+ * Read-shaped join of a `Membership` and its `Academy`, kept for the ~150
+ * call sites that scope data by `coach.id` (the academy/tenant id) and read
+ * business settings directly off it (`coach.timezone`, `coach.businessName`).
+ * `id` is deliberately the ACADEMY id, not the membership id — see
+ * `membershipId` for the signed-in member's own row identity, needed only by
+ * self-profile operations (Settings, Team).
+ */
 export interface Coach {
   id: string
+  membershipId: string
+  role: MembershipRole
   name: string
   email: string
   businessName: string
@@ -105,9 +147,29 @@ export interface Enrollment {
   createdAt: string
 }
 
+/** Where a charge's amount came from — see `Charge.priceSource`. */
+export type PriceSource =
+  | 'academy_default'
+  | 'player_default'
+  | 'session_price'
+  | 'program_option'
+  | 'custom'
+  | 'manual'
+
+/** What a charge's amount is per. */
+export type PriceBasis =
+  | 'per_session'
+  | 'drop_in'
+  | 'weekly'
+  | 'monthly'
+  | 'full_program'
+  | 'custom'
+
 /**
  * A financial obligation. The charge amount is captured at creation time and
- * is historical: changing a player's default rate later never rewrites it.
+ * is HISTORICAL: it is a snapshot of what was agreed, never re-derived from a
+ * live price. Changing a player's rate, the academy default, a session's price
+ * or a program's price options later never rewrites a charge that exists.
  */
 export interface Charge {
   id: string
@@ -116,6 +178,18 @@ export interface Charge {
   /** `null` for manual/ad-hoc charges not tied to a session. */
   sessionId: string | null
   amountCents: number
+  /**
+   * Snapshot provenance, captured with the amount and immutable afterwards
+   * (the only exception: an owner repricing a charge relabels it 'custom').
+   * `standardAmountCents` is the standard price at that moment, so a discount
+   * or premium is visible as `amountCents !== standardAmountCents`. There is
+   * deliberately no reference to any live price row.
+   */
+  priceSource: PriceSource
+  /** `null` for manual charges. */
+  priceBasis: PriceBasis | null
+  /** `null` when there was no standard price to compare against. */
+  standardAmountCents: number | null
   dueDate: ISODate
   isManual: boolean
   /** Manual charges carry a label, e.g. "Racquet restring". */

@@ -429,7 +429,7 @@ describe('roster changes', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    await removePlayerFromSession(store, coachId, session.id, 'p2', 'keep', TODAY)
+    await removePlayerFromSession(store, coachId, session.id, 'p2', 'keep', TODAY, 'owner')
 
     const enrollments = await store.listEnrollmentsForSession(coachId, session.id)
     expect(enrollments).toHaveLength(1)
@@ -454,7 +454,7 @@ describe('roster changes', () => {
       playerIds: ['p1', 'p2'],
     })
 
-    await removePlayerFromSession(store, coachId, session.id, 'p2', 'credit', TODAY)
+    await removePlayerFromSession(store, coachId, session.id, 'p2', 'credit', TODAY, 'owner')
 
     const finance = await loadFinance(store, coachId, TODAY)
     const views = finance.forSession(session.id)
@@ -501,7 +501,7 @@ describe('price changes', () => {
     }
 
     // First attempt returns a decision request rather than acting.
-    const asked = await updateSession(store, coachId, session.id, args, TODAY)
+    const asked = await updateSession(store, coachId, session.id, args, TODAY, 'owner')
     expect(asked.requiresPriceDecision).toBe(true)
     expect(asked.unpaidCount).toBe(1)
 
@@ -511,6 +511,7 @@ describe('price changes', () => {
       session.id,
       { ...args, priceChangeDecision: 'update' },
       TODAY,
+      'owner',
     )
 
     finance = await loadFinance(store, coachId, TODAY)

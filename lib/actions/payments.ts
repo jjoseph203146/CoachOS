@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireCoachAction } from '@/lib/auth'
+import { requireOwnerAction } from '@/lib/auth'
 import { coachClock } from '@/lib/services/clock'
 import {
   createManualCharge,
@@ -38,7 +38,7 @@ export async function markPaidAction(input: {
   expectedOutstanding: number
 }): Promise<ActionResult> {
   return runAction('markPaid', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach } = await requireOwnerAction()
     const data = markPaidSchema.parse(input)
     const today = coachClock(coach).today
     const view = await getChargeView(store, coachId, data.chargeId, today)
@@ -63,7 +63,7 @@ export async function recordPaymentAction(input: {
   note?: string
 }): Promise<ActionResult> {
   return runAction('recordPayment', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach } = await requireOwnerAction()
     const data = recordPaymentSchema.parse(input)
 
     await recordPayment(store, coachId, {
@@ -83,7 +83,7 @@ export async function markUnpaidAction(input: {
   chargeId: string
 }): Promise<ActionResult> {
   return runAction('markUnpaid', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach } = await requireOwnerAction()
     const data = markUnpaidSchema.parse(input)
     await markUnpaid(store, coachId, data.chargeId)
     revalidateMoneyViews()
@@ -97,7 +97,7 @@ export async function recordCreditAction(input: {
   reason?: string
 }): Promise<ActionResult> {
   return runAction('recordCredit', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach } = await requireOwnerAction()
     const data = recordCreditSchema.parse(input)
     await recordCredit(store, coachId, {
       chargeId: data.chargeId,
@@ -117,7 +117,7 @@ export async function createManualChargeAction(input: {
   label: string
 }): Promise<ActionResult> {
   return runAction('createManualCharge', async () => {
-    const { store, coachId, coach } = await requireCoachAction()
+    const { store, coachId, coach } = await requireOwnerAction()
     const data = manualChargeSchema.parse(input)
     await createManualCharge(store, coachId, {
       playerId: data.playerId,

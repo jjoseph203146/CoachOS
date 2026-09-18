@@ -16,9 +16,9 @@ export async function updateSettingsAction(input: {
   timezone: string
 }): Promise<ActionResult> {
   return runAction('updateSettings', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, membershipId, role } = await requireCoachAction()
     const data = settingsSchema.parse(input)
-    await updateSettings(store, coachId, {
+    await updateSettings(store, membershipId, coachId, role, {
       name: data.name,
       email: data.email,
       businessName: data.businessName,
@@ -40,9 +40,9 @@ export async function completeOnboardingAction(input: {
   timezone?: string
 }): Promise<ActionResult> {
   return runAction('completeOnboarding', async () => {
-    const { store, coachId } = await requireCoachAction()
+    const { store, coachId, membershipId, role } = await requireCoachAction()
     const data = onboardingSchema.parse(input)
-    await completeOnboarding(store, coachId, {
+    await completeOnboarding(store, membershipId, coachId, role, {
       name: data.name,
       businessName: data.businessName,
       defaultRateCents: data.rate,

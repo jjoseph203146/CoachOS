@@ -9,12 +9,19 @@
  *  - cancelling asks what to do with UNPAID charges; paid charges are never
  *    touched;
  *  - editing a price asks whether to update unpaid charges; paid charges are
- *    never rewritten;
+ *    never rewritten, and only the academy owner may reprice an existing charge;
+ *  - every charge snapshots its price (amount, where it came from, the standard
+ *    at the time) and is never re-derived from a live price;
  *  - duplicating creates a brand-new session with fresh enrollments and fresh
  *    charges, and copies no attendance or payment history.
  */
 
 import type { DataStore, NewSessionInput } from '@/lib/data/store'
+import {
+  privateLessonSnapshot,
+  sessionPriceSnapshot,
+  standardRateFor,
+} from '@/lib/domain/pricing'
 import {
   attendanceMissing,
   attendanceState,
@@ -27,6 +34,7 @@ import type {
   AttendanceStatus,
   Enrollment,
   ISODate,
+  MembershipRole,
   Player,
   Session,
 } from '@/lib/domain/types'
@@ -137,6 +145,19 @@ export async function createSession(
     }
   }
 
+  // Snapshot where the price came from. The server works this out from the
+  // player's and academy's real rates; it never trusts a provenance label from
+  // the browser. A private lesson entered at a different price than the
+  // standard rate is a deliberate, recorded override.
+  let snapshot = sessionPriceSnapshot()
+  if (args.type === 'private' && !args.isFree) {
+    const academy = await store.getAcademy(coachId)
+    const player = players.find((p) => p.id === args.playerIds[0])
+    if (academy && player) {
+      snapshot = privateLessonSnapshot(args.priceCents, standardRateFor(player, academy))
+    }
+  }
+
   return store.transaction(async (tx) => {
     const session = await tx.createSession(coachId, {
       type: args.type,
@@ -161,6 +182,7 @@ export async function createSession(
           playerId,
           sessionId: session.id,
           amountCents: args.priceCents,
+          ...snapshot,
           dueDate: args.date,
           isManual: false,
           label: '',
@@ -184,7 +206,9 @@ export interface UpdateSessionArgs {
   /**
    * What to do with UNPAID charges when the price changed.
    * 'keep'   — leave existing charges alone (historical amounts preserved)
-   * 'update' — reprice unpaid charges to the new amount
+   * 'update' — reprice unpaid charges to the new amount (OWNER ONLY: changing
+   *            what an existing charge says is a financial action, not a
+   *            scheduling one)
    * Paid charges are never modified under either option.
    */
   priceChangeDecision?: 'keep' | 'update'
@@ -196,7 +220,14 @@ export async function updateSession(
   sessionId: string,
   args: UpdateSessionArgs,
   today: ISODate,
+  role: MembershipRole,
 ): Promise<{ requiresPriceDecision: boolean; unpaidCount: number }> {
+  if (args.priceChangeDecision === 'update' && role !== 'owner') {
+    throw new DomainError(
+      'FORBIDDEN',
+      'Only the academy owner can change the amount of an existing charge. The new price will apply to players added from now on.',
+    )
+  }
   const session = await getSession(store, coachId, sessionId)
   if (!args.name.trim()) throw new DomainError('INVALID', 'Session needs a name.')
   if (!session.isFree && args.priceCents <= 0) {
@@ -236,9 +267,22 @@ export async function updateSession(
     })
 
     for (const view of unpaid) {
-      const patch: { dueDate: ISODate; amountCents?: number } = { dueDate: args.date }
-      if (priceChanged && args.priceChangeDecision === 'update') {
+      const patch: {
+        dueDate: ISODate
+        amountCents?: number
+        priceSource?: 'custom'
+      } = { dueDate: args.date }
+      // An owner's reprice is the one sanctioned way an existing charge's
+      // amount changes. It relabels the charge 'custom' (the database requires
+      // it) so the record stays truthful: the amount no longer equals the
+      // standard, which the charge still carries.
+      if (
+        priceChanged &&
+        args.priceChangeDecision === 'update' &&
+        view.charge.amountCents !== args.priceCents
+      ) {
         patch.amountCents = args.priceCents
+        patch.priceSource = 'custom'
       }
       await tx.updateCharge(coachId, view.charge.id, patch)
     }
@@ -378,6 +422,7 @@ export async function addPlayerToSession(
         playerId,
         sessionId,
         amountCents: session.priceCents,
+        ...sessionPriceSnapshot(),
         dueDate: session.date,
         isManual: false,
         label: '',
@@ -401,12 +446,21 @@ export async function removePlayerFromSession(
   playerId: string,
   chargeDecision: 'keep' | 'credit',
   today: ISODate,
+  role: MembershipRole,
 ): Promise<void> {
   await getSession(store, coachId, sessionId)
   const finance = await loadFinance(store, coachId, today)
   const pending = finance
     .forSession(sessionId)
     .filter((v) => v.charge.playerId === playerId && v.isPending)
+
+  // Writing a balance down is a financial concession, not a roster change.
+  if (chargeDecision === 'credit' && pending.length > 0 && role !== 'owner') {
+    throw new DomainError(
+      'FORBIDDEN',
+      'Only the academy owner can credit a charge. Remove the player and keep the charge, and the owner can adjust it.',
+    )
+  }
 
   await store.transaction(async (tx) => {
     if (chargeDecision === 'credit') {

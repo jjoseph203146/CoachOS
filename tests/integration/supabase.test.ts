@@ -74,7 +74,11 @@ describe.skipIf(!configured)('Supabase adapter against a live database', () => {
   })
 
   afterAll(async () => {
-    // Best-effort teardown, children first.
+    // Best-effort teardown, children first. NOTE: charges are financial history
+    // and no user can delete them (migration 0006 grants no DELETE), so the
+    // charge deletes below are silent no-ops and the sessions/players that
+    // still have charges cannot be removed either. The fixtures stay behind,
+    // tagged `itest-*`; clear them with the service role / SQL editor.
     for (const sessionId of created.sessionIds) {
       await (clientA as any).from('charges').delete().eq('session_id', sessionId)
       await (clientA as any).from('enrollments').delete().eq('session_id', sessionId)
@@ -184,8 +188,8 @@ describe.skipIf(!configured)('Supabase adapter against a live database', () => {
       expect(players.some((p) => p.id === playerId)).toBe(false)
     })
 
-    it('blocks coach B even when they pass coach A’s own coach_id (IDOR)', async () => {
-      // Policies key off auth.uid(), not the coach_id in the query, so
+    it('blocks coach B even when they pass coach A’s own academy id (IDOR)', async () => {
+      // Policies key off auth.uid(), not the academy_id in the query, so
       // impersonating the id changes nothing.
       expect(await storeB.getPlayer(coachA.id, playerId)).toBeNull()
       expect(await storeB.getSession(coachA.id, sessionId)).toBeNull()
@@ -209,6 +213,9 @@ describe.skipIf(!configured)('Supabase adapter against a live database', () => {
           playerId, // belongs to coach A
           sessionId: null,
           amountCents: 100,
+          priceSource: 'manual',
+          priceBasis: null,
+          standardAmountCents: null,
           dueDate: todayISO(),
           isManual: true,
           label: 'cross tenant',
@@ -236,6 +243,9 @@ describe.skipIf(!configured)('Supabase adapter against a live database', () => {
         playerId: player.id,
         sessionId: null,
         amountCents: 5000,
+        priceSource: 'manual',
+        priceBasis: null,
+        standardAmountCents: null,
         dueDate: todayISO(),
         isManual: true,
         label: `${TAG} manual`,

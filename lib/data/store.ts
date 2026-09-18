@@ -15,7 +15,9 @@
  */
 
 import type {
+  Academy,
   AttendanceStatus,
+  AttendanceWindow,
   Charge,
   Coach,
   Credit,
@@ -23,7 +25,10 @@ import type {
   ISODate,
   Payment,
   Player,
+  PriceBasis,
+  PriceSource,
   Session,
+  Theme,
 } from '@/lib/domain/types'
 
 export interface NewPlayerInput {
@@ -62,6 +67,10 @@ export interface NewChargeInput {
   playerId: string
   sessionId: string | null
   amountCents: number
+  /** The price snapshot — captured now, never re-derived. See `Charge`. */
+  priceSource: PriceSource
+  priceBasis: PriceBasis | null
+  standardAmountCents: number | null
   dueDate: ISODate
   isManual: boolean
   label: string
@@ -88,10 +97,31 @@ export interface NewCreditInput {
  */
 export interface DataStore {
   // ---- coach / settings ----
-  getCoach(coachId: string): Promise<Coach | null>
+  // `membershipId` below is the signed-in member's own row id — distinct from
+  // the `coachId` (academy/tenant id) every other method takes. See the
+  // `Coach` type's doc comment.
+  getCoach(membershipId: string): Promise<Coach | null>
   getCoachByAuthId(authId: string): Promise<Coach | null>
+  /** The academy's shared business settings (default rate, timezone…). */
+  getAcademy(academyId: string): Promise<Academy | null>
+  /** Bootstraps a brand-new academy with this member as its owner. */
   createCoach(authId: string, input: { name: string; email: string }): Promise<Coach>
-  updateCoach(coachId: string, patch: Partial<Omit<Coach, 'id'>>): Promise<Coach>
+  /** Updates the signed-in member's own name/email/onboarding state. */
+  updateMembershipProfile(
+    membershipId: string,
+    patch: Partial<{ name: string; email: string; onboardedAt: string | null }>,
+  ): Promise<Coach>
+  /** Updates shared business settings. Callers must check the actor is the academy owner. */
+  updateAcademySettings(
+    academyId: string,
+    patch: Partial<{
+      businessName: string
+      defaultRateCents: number
+      attendanceWindow: AttendanceWindow
+      theme: Theme
+      timezone: string
+    }>,
+  ): Promise<Academy>
 
   // ---- players ----
   listPlayers(coachId: string, opts?: { includeDeleted?: boolean }): Promise<Player[]>
@@ -130,7 +160,12 @@ export interface DataStore {
   updateCharge(
     coachId: string,
     chargeId: string,
-    patch: Partial<Pick<Charge, 'amountCents' | 'dueDate' | 'note' | 'label' | 'voidedAt' | 'voidNote'>>,
+    patch: Partial<
+      Pick<
+        Charge,
+        'amountCents' | 'dueDate' | 'note' | 'label' | 'voidedAt' | 'voidNote' | 'priceSource'
+      >
+    >,
   ): Promise<Charge>
   recordPayment(coachId: string, input: NewPaymentInput): Promise<Payment>
   recordCredit(coachId: string, input: NewCreditInput): Promise<Credit>

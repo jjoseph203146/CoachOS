@@ -16,6 +16,7 @@ import {
   sessionOutstanding,
   viewCharges,
 } from '@/lib/domain/finance'
+import { manualSnapshot } from '@/lib/domain/pricing'
 import type { ChargeView, ISODate, Payment } from '@/lib/domain/types'
 import { DomainError } from './errors'
 
@@ -232,6 +233,7 @@ export async function createManualCharge(
     playerId: args.playerId,
     sessionId: null,
     amountCents: args.amountCents,
+    ...manualSnapshot(),
     dueDate: args.dueDate,
     isManual: true,
     label: args.label || 'Manual charge',
