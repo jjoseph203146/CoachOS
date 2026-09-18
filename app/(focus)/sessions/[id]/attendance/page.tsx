@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Attendance — CoachOS' }
 
 export default async function AttendancePage({ params }: { params: { id: string } }) {
-  const { store, coachId, coach } = await requireCoachPage()
+  const { store, coachId, coach, membershipId } = await requireCoachPage()
   const clock = coachClock(coach)
 
   let detail
@@ -23,6 +23,15 @@ export default async function AttendancePage({ params }: { params: { id: string 
 
   const { session, enrollments, players } = detail
 
+  // Program sessions record which coaches worked. Until someone has, the person
+  // taking attendance is assumed to have.
+  const [team, worked] = session.programId
+    ? await Promise.all([
+        store.listMemberships(coachId),
+        store.listSessionCoaches(coachId, session.id),
+      ])
+    : [[], [] as string[]]
+
   return (
     <AttendanceView
       sessionId={session.id}
@@ -34,6 +43,11 @@ export default async function AttendancePage({ params }: { params: { id: string 
             : 'Group session'
       }
       planned={session.programId !== null}
+      coaches={team.map((m) => ({
+        membershipId: m.id,
+        name: m.name || m.email,
+        worked: worked.length > 0 ? worked.includes(m.id) : m.id === membershipId,
+      }))}
       title={
         session.type === 'private'
           ? (players.get(enrollments[0]?.playerId ?? '')?.name ?? session.name)

@@ -19,6 +19,9 @@ import type {
   Coach,
   Credit,
   Enrollment,
+  Invite,
+  InvitePreview,
+  Membership,
   Payment,
   Player,
   Program,
@@ -58,6 +61,9 @@ interface Tables {
   priceOptions: ProgramPriceOption[]
   programEnrollments: ProgramEnrollment[]
   availability: AvailabilityWindow[]
+  invites: Invite[]
+  /** sessionId -> membership ids who worked it. */
+  sessionCoaches: Record<string, string[]>
 }
 
 function emptyTables(): Tables {
@@ -74,6 +80,8 @@ function emptyTables(): Tables {
     priceOptions: [],
     programEnrollments: [],
     availability: [],
+    invites: [],
+    sessionCoaches: {},
   }
 }
 
@@ -135,7 +143,37 @@ export class MockDataStore implements DataStore {
     return clone({ id, businessName, defaultRateCents, attendanceWindow, theme, timezone })
   }
 
+  /**
+   * Bootstraps an owner with a fresh academy — unless an open invitation for
+   * this address exists, in which case they join the inviter's academy as a
+   * coach (mirroring the database's signup trigger).
+   */
   async createCoach(authId: string, input: { name: string; email: string }): Promise<Coach> {
+    const email = input.email.trim().toLowerCase()
+    const invite = this.db.invites.find(
+      (i) =>
+        i.email === email &&
+        !i.acceptedAt &&
+        !i.revokedAt &&
+        new Date(i.expiresAt).getTime() > Date.now(),
+    )
+    if (invite) {
+      const base = this.db.coaches.find((c) => c.id === invite.coachId)
+      if (base) {
+        const joined: Coach = {
+          ...base,
+          membershipId: nextId('member'),
+          role: 'coach',
+          name: input.name,
+          email: input.email,
+          onboardedAt: null,
+        }
+        this.db.coaches.push(joined)
+        this.db.authLinks[authId] = joined.membershipId
+        invite.acceptedAt = nowISO()
+        return clone(joined)
+      }
+    }
     const coach: Coach = {
       id: nextId('academy'),
       membershipId: nextId('member'),
@@ -401,6 +439,109 @@ export class MockDataStore implements DataStore {
     return clone(
       this.db.charges.find((c) => c.id === chargeId && c.coachId === coachId) ?? null,
     )
+  }
+
+  // ---- team ----
+
+  async listMemberships(coachId: string): Promise<Membership[]> {
+    const authByMembership = Object.fromEntries(
+      Object.entries(this.db.authLinks).map(([auth, member]) => [member, auth]),
+    )
+    return this.db.coaches
+      .filter((c) => c.id === coachId)
+      .map((c) => ({
+        id: c.membershipId,
+        academyId: c.id,
+        authUserId: authByMembership[c.membershipId] ?? '',
+        role: c.role,
+        name: c.name,
+        email: c.email,
+        onboardedAt: c.onboardedAt,
+      }))
+  }
+
+  async removeMembership(coachId: string, membershipId: string): Promise<void> {
+    const target = this.db.coaches.find(
+      (c) => c.membershipId === membershipId && c.id === coachId,
+    )
+    if (!target) throw new Error('Member not found')
+    if (target.role === 'owner') throw new Error('An academy’s owner cannot be removed')
+    this.db.coaches = this.db.coaches.filter((c) => c.membershipId !== membershipId)
+    for (const [auth, member] of Object.entries(this.db.authLinks)) {
+      if (member === membershipId) delete this.db.authLinks[auth]
+    }
+    this.db.availability = this.db.availability.filter((w) => w.membershipId !== membershipId)
+    for (const session of this.db.sessions) {
+      if (session.coachMembershipId === membershipId) session.coachMembershipId = null
+    }
+    for (const [sessionId, ids] of Object.entries(this.db.sessionCoaches)) {
+      this.db.sessionCoaches[sessionId] = ids.filter((id) => id !== membershipId)
+    }
+  }
+
+  async listInvites(coachId: string): Promise<Invite[]> {
+    return clone(this.db.invites.filter((i) => i.coachId === coachId))
+  }
+
+  async createInvite(
+    coachId: string,
+    input: { email: string; invitedBy: string },
+  ): Promise<Invite> {
+    const email = input.email.trim().toLowerCase()
+    const open = this.db.invites.find(
+      (i) => i.coachId === coachId && i.email === email && !i.acceptedAt && !i.revokedAt,
+    )
+    if (open) throw new Error('An invitation for that address is already open')
+    const invite: Invite = {
+      id: nextId('inv'),
+      coachId,
+      email,
+      token: `tok${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`,
+      expiresAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+      acceptedAt: null,
+      revokedAt: null,
+      createdAt: nowISO(),
+    }
+    this.db.invites.push(invite)
+    return clone(invite)
+  }
+
+  async revokeInvite(coachId: string, inviteId: string): Promise<void> {
+    const invite = this.db.invites.find((i) => i.id === inviteId && i.coachId === coachId)
+    if (!invite) throw new Error('Invitation not found')
+    invite.revokedAt = nowISO()
+  }
+
+  async getInvitePreview(token: string): Promise<InvitePreview | null> {
+    const invite = this.db.invites.find((i) => i.token === token)
+    if (!invite) return null
+    const academy = this.db.coaches.find((c) => c.id === invite.coachId)
+    return {
+      businessName: academy?.businessName ?? '',
+      email: invite.email,
+      state: invite.acceptedAt
+        ? 'accepted'
+        : invite.revokedAt
+          ? 'revoked'
+          : new Date(invite.expiresAt).getTime() < Date.now()
+            ? 'expired'
+            : 'open',
+    }
+  }
+
+  async listSessionCoaches(coachId: string, sessionId: string): Promise<string[]> {
+    const session = this.db.sessions.find((s) => s.id === sessionId && s.coachId === coachId)
+    return session ? [...(this.db.sessionCoaches[sessionId] ?? [])] : []
+  }
+
+  async setSessionCoaches(
+    coachId: string,
+    sessionId: string,
+    membershipIds: string[],
+  ): Promise<void> {
+    const session = this.db.sessions.find((s) => s.id === sessionId && s.coachId === coachId)
+    if (!session) throw new Error('Session not found')
+    this.db.sessionCoaches[sessionId] = [...new Set(membershipIds)]
   }
 
   // ---- availability ----

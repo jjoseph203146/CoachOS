@@ -64,8 +64,11 @@ export function SessionDetailView({
   today,
   canManageMoney,
   program,
+  coachesLine,
 }: {
   session: SessionData
+  /** Who worked this session, recorded at attendance (program sessions). */
+  coachesLine: string
   /** The program this session belongs to, if any. */
   program: { id: string; name: string } | null
   typeChip: string
@@ -150,6 +153,7 @@ export function SessionDetailView({
         {session.type === 'group' ? (
           <DetailRow label="Capacity" value={capacityLine} />
         ) : null}
+        {coachesLine ? <DetailRow label="Coaches" value={coachesLine} /> : null}
       </div>
 
       {showTakeAttendance ? (

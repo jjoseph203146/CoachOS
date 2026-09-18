@@ -7,17 +7,28 @@ import { Button, TextInput } from '@/components/ui/controls'
 import { ErrorBanner } from '@/components/ui/primitives'
 import { useToast } from '@/components/ui/overlays'
 import { firstName } from '@/lib/domain/dates'
+import type { MembershipRole } from '@/lib/domain/types'
 
-/** Five-step onboarding, matching the prototype's dot pager and copy. */
+/**
+ * Onboarding, matching the prototype's dot pager and copy. An owner sets up the
+ * business (five steps); an invited coach only says who they are (three) — the
+ * business and its rate already exist.
+ */
 export function OnboardingFlow({
+  role,
+  academyName,
   initialName,
   initialBusiness,
   initialRate,
 }: {
+  role: MembershipRole
+  academyName: string
   initialName: string
   initialBusiness: string
   initialRate: string
 }) {
+  const isOwner = role === 'owner'
+  const STEPS = isOwner ? [0, 1, 2, 3, 4] : [0, 1, 4]
   const router = useRouter()
   const { toast } = useToast()
   const [step, setStep] = useState(0)
@@ -35,8 +46,9 @@ export function OnboardingFlow({
     }
   })()
 
-  const next = () => setStep((current) => Math.min(4, current + 1))
-  const prev = () => setStep((current) => Math.max(0, current - 1))
+  const next = () =>
+    setStep((current) => STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(current) + 1)])
+  const prev = () => setStep((current) => STEPS[Math.max(0, STEPS.indexOf(current) - 1)])
 
   const finish = () => {
     setError('')
@@ -61,7 +73,7 @@ export function OnboardingFlow({
   return (
     <div className="flex-1 overflow-y-auto px-6 pb-10 flex flex-col justify-center">
       <div className="flex justify-center gap-[6px]">
-        {[0, 1, 2, 3, 4].map((index) => (
+        {STEPS.map((index) => (
           <div
             key={index}
             className="w-[7px] h-[7px] rounded-full"
@@ -77,8 +89,9 @@ export function OnboardingFlow({
               Coach<span className="text-accent">OS</span>
             </div>
             <div className="text-t15 text-muted mt-[14px] leading-[1.6] pretty">
-              Know what’s next, what needs doing, and who owes you — from your phone,
-              courtside.
+              {isOwner
+                ? 'Know what’s next, what needs doing, and who owes you — from your phone, courtside.'
+                : `You’ve joined ${academyName || 'your team'} as a coach. Let’s get you set up.`}
             </div>
           </div>
           <div className="mt-[34px]">
@@ -175,7 +188,7 @@ export function OnboardingFlow({
             <div className="text-t14 text-muted mt-2">
               Add players and schedule your first session.
             </div>
-            {detectedTimezone ? (
+            {isOwner && detectedTimezone ? (
               <div className="text-t115 text-subtle mt-3">
                 Timezone set to {detectedTimezone.replace(/_/g, ' ')} — change it any
                 time in Settings.
@@ -195,7 +208,7 @@ export function OnboardingFlow({
         </>
       ) : null}
 
-      {step > 0 && step < 4 ? (
+      {step > 0 && step < 4 && STEPS.includes(step) ? (
         <button
           onClick={prev}
           className="text-center text-t13 font-semibold text-muted py-[14px]"

@@ -52,7 +52,7 @@ export function Sheet({
       <div
         onClick={onClose}
         className="absolute inset-0 animate-fadeIn"
-        style={{ background: 'rgba(23,25,24,.45)', zIndex: zIndex - 1 }}
+        style={{ background: 'rgba(13,27,49,.45)', zIndex: zIndex - 1 }}
       />
       <div
         role="dialog"

@@ -237,6 +237,30 @@ export interface Credit {
   createdAt: string
 }
 
+/**
+ * An invitation for someone to join an academy as a coach. It is a link the
+ * owner shares (there is no email service); the invitee signs up with this
+ * address and joins instead of starting their own academy.
+ */
+export interface Invite {
+  id: string
+  coachId: string
+  email: string
+  /** The secret in the invitation link. Owner-only to read. */
+  token: string
+  expiresAt: string
+  acceptedAt: string | null
+  revokedAt: string | null
+  createdAt: string
+}
+
+/** What the signed-out invitation page may show for a token. */
+export interface InvitePreview {
+  businessName: string
+  email: string
+  state: 'open' | 'accepted' | 'revoked' | 'expired'
+}
+
 /** The hours one coach offers private lessons on one weekday. No row = unavailable. */
 export interface AvailabilityWindow {
   id: string

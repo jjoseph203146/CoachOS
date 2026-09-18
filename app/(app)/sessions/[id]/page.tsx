@@ -35,6 +35,15 @@ export default async function SessionDetailPage({
   const selectable = await listSelectablePlayers(store, coachId)
 
   const program = session.programId ? await store.getProgram(coachId, session.programId) : null
+  const workedNames = program
+    ? await (async () => {
+        const [team, ids] = await Promise.all([
+          store.listMemberships(coachId),
+          store.listSessionCoaches(coachId, session.id),
+        ])
+        return team.filter((m) => ids.includes(m.id)).map((m) => m.name || m.email)
+      })()
+    : []
   const enrolledIds = new Set(enrollments.map((e) => e.playerId))
   const cancelled = session.status === 'cancelled'
   const marked = enrollments.filter(
@@ -91,6 +100,7 @@ export default async function SessionDetailPage({
         isProgram: session.programId !== null,
       }}
       program={program ? { id: program.id, name: program.name } : null}
+      coachesLine={workedNames.join(' · ')}
       typeChip={
         session.type === 'private' ? 'Private Lesson' : program ? 'Program' : 'Group Session'
       }

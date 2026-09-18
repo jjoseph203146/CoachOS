@@ -133,6 +133,7 @@ export function TextInput({
   height = 46,
   ariaLabel,
   autoComplete,
+  readOnly,
 }: {
   value: string
   onChange: (value: string) => void
@@ -143,6 +144,7 @@ export function TextInput({
   height?: number
   ariaLabel?: string
   autoComplete?: string
+  readOnly?: boolean
 }) {
   return (
     <input
@@ -151,6 +153,7 @@ export function TextInput({
       aria-label={ariaLabel}
       autoComplete={autoComplete}
       inputMode={inputMode}
+      readOnly={readOnly}
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       style={{ height }}

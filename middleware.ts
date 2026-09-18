@@ -20,6 +20,8 @@ const PUBLIC_PATHS = [
   '/reset-password',
   // Exchanges the emailed one-time code for a session.
   '/auth/callback',
+  // An invitation link, opened by someone who is not signed in yet.
+  '/invite',
 ]
 
 export async function middleware(request: NextRequest) {

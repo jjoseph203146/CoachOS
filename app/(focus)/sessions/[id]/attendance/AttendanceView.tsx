@@ -6,6 +6,7 @@ import { Segmented } from '@/components/ui/controls'
 import { Avatar, Card, DetailHeader } from '@/components/ui/primitives'
 import { Dialog, useToast } from '@/components/ui/overlays'
 import { saveAttendanceAction, skipAttendanceAction } from '@/lib/actions/sessions'
+import { setSessionCoachesAction } from '@/lib/actions/team'
 import type { AttendanceStatus } from '@/lib/domain/types'
 
 interface Row {
@@ -31,6 +32,7 @@ export function AttendanceView({
   when,
   rows,
   planned,
+  coaches,
 }: {
   sessionId: string
   typeLabel: string
@@ -39,6 +41,8 @@ export function AttendanceView({
   rows: Row[]
   /** Program occurrences have an expected list; show Expected / All Enrolled. */
   planned: boolean
+  /** Team members, for "coaches who worked" (program sessions only). */
+  coaches: Array<{ membershipId: string; name: string; worked: boolean }>
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -47,6 +51,9 @@ export function AttendanceView({
   )
   const [skipOpen, setSkipOpen] = useState(false)
   const [tab, setTab] = useState<'expected' | 'all'>('expected')
+  const [worked, setWorked] = useState<Record<string, boolean>>(
+    Object.fromEntries(coaches.map((c) => [c.membershipId, c.worked])),
+  )
   const [pending, startTransition] = useTransition()
 
   // On the Expected tab, someone who wasn't expected and is still unmarked is
@@ -95,6 +102,16 @@ export function AttendanceView({
       if (!result.ok) {
         toast(result.error)
         return
+      }
+      if (coaches.length > 0) {
+        const recorded = await setSessionCoachesAction({
+          sessionId,
+          membershipIds: coaches.filter((c) => worked[c.membershipId]).map((c) => c.membershipId),
+        })
+        if (!recorded.ok) {
+          toast(recorded.error)
+          return
+        }
       }
       toast('Attendance saved')
       router.push(`/sessions/${sessionId}`)
@@ -220,6 +237,39 @@ export function AttendanceView({
           </div>
         </div>
       )}
+
+      {coaches.length > 0 ? (
+        <div className="mt-6">
+          <div className="text-t17 font-extrabold text-ink">Coaches who worked</div>
+          <Card className="mt-[10px]">
+            {coaches.map((coach, index) => {
+              const on = worked[coach.membershipId]
+              return (
+                <div
+                  key={coach.membershipId}
+                  className={`flex items-center gap-3 px-4 py-[10px] ${
+                    index === 0 ? '' : 'border-t border-divider'
+                  }`}
+                >
+                  <div className="flex-1 text-t14 font-semibold">{coach.name}</div>
+                  <button
+                    onClick={() => setWorked((cur) => ({ ...cur, [coach.membershipId]: !on }))}
+                    aria-pressed={on}
+                    className="h-9 px-3 rounded-r10 text-t13 font-bold"
+                    style={
+                      on
+                        ? { background: '#159A55', color: '#FFFFFF' }
+                        : { background: '#F0F3F7', color: '#7B8796' }
+                    }
+                  >
+                    {on ? 'Worked' : 'Add'}
+                  </button>
+                </div>
+              )
+            })}
+          </Card>
+        </div>
+      ) : null}
 
       <button
         onClick={save}

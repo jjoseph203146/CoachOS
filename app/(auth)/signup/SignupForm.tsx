@@ -6,10 +6,17 @@ import { signUpAction } from '@/lib/actions/auth'
 import { Button, FieldLabel, TextInput } from '@/components/ui/controls'
 import { ErrorBanner } from '@/components/ui/primitives'
 
-export function SignupForm({ demoMode }: { demoMode: boolean }) {
+export function SignupForm({
+  demoMode,
+  invite,
+}: {
+  demoMode: boolean
+  /** Set when arriving from an invitation link: the address is fixed. */
+  invite: { email: string; businessName: string } | null
+}) {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(invite?.email ?? '')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [fields, setFields] = useState<Record<string, string>>({})
@@ -47,7 +54,13 @@ export function SignupForm({ demoMode }: { demoMode: boolean }) {
       <div className="text-center">
         <div className="text-t26 font-extrabold tracking-tight3">Create your account</div>
         <div className="text-t13 text-muted mt-[5px]">
-          Coach<span className="text-accent font-bold">OS</span> — free while in beta
+          {invite
+            ? `Joining ${invite.businessName || 'your team'} as a coach`
+            : (
+                <>
+                  Coach<span className="text-accent font-bold">OS</span> — free while in beta
+                </>
+              )}
         </div>
       </div>
 
@@ -72,13 +85,20 @@ export function SignupForm({ demoMode }: { demoMode: boolean }) {
           <FieldLabel>Email</FieldLabel>
           <TextInput
             value={email}
-            onChange={setEmail}
+            onChange={invite ? () => {} : setEmail}
             placeholder="you@email.com"
             type="email"
             inputMode="email"
             autoComplete="email"
             ariaLabel="Email"
+            className={invite ? 'bg-tile text-muted' : ''}
+            readOnly={!!invite}
           />
+          {invite ? (
+            <div className="text-t115 text-subtle mt-[5px]">
+              This is the address your invitation was made for.
+            </div>
+          ) : null}
           <FieldError name="email" />
         </div>
 

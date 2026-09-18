@@ -22,7 +22,10 @@ import type {
   Coach,
   Credit,
   Enrollment,
+  Invite,
+  InvitePreview,
   ISODate,
+  Membership,
   Payment,
   AvailabilityWindow,
   Player,
@@ -237,6 +240,22 @@ export interface DataStore {
     sessionId: string,
     marks: Array<{ playerId: string; attendance: AttendanceStatus }>,
   ): Promise<void>
+
+  // ---- team ----
+  listMemberships(coachId: string): Promise<Membership[]>
+  /** Owner only (RLS). Removes a coach; never an owner. */
+  removeMembership(coachId: string, membershipId: string): Promise<void>
+  listInvites(coachId: string): Promise<Invite[]>
+  createInvite(coachId: string, input: { email: string; invitedBy: string }): Promise<Invite>
+  revokeInvite(coachId: string, inviteId: string): Promise<void>
+  /**
+   * What the signed-out invitation page may show. Not tenant-scoped: the token
+   * is the credential. `null` for an unknown token.
+   */
+  getInvitePreview(token: string): Promise<InvitePreview | null>
+  /** Who worked a session (membership ids). */
+  listSessionCoaches(coachId: string, sessionId: string): Promise<string[]>
+  setSessionCoaches(coachId: string, sessionId: string, membershipIds: string[]): Promise<void>
 
   // ---- availability ----
   listAvailability(coachId: string): Promise<AvailabilityWindow[]>

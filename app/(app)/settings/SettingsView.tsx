@@ -100,6 +100,7 @@ export function SettingsView({
 
       <Card className="mt-3">
         {isOwner ? <MenuRow href="/payments" label="Revenue" first /> : null}
+        {isOwner ? <MenuRow href="/settings/team" label="Team" /> : null}
         <MenuRow href="/programs" label="Programs" first={!isOwner} />
         <MenuRow href="/settings/availability" label="Private Lesson Availability" />
         <MenuRow href="/help" label="Help" />

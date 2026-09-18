@@ -79,9 +79,10 @@ The migrations are:
 | `0007_charge_price_snapshots.sql` | Every charge records where its price came from and the standard at that moment; snapshots are immutable |
 | `0008_programs.sql` | Programs, their price options, and each participant's price agreement (a snapshot). Program charges must equal the agreement; only the owner defines programs/prices or agrees a custom price |
 | `0009_availability.sql` | Each coach's weekly private-lesson hours (`availability_windows`, editable only by their owner) and `sessions.coach_membership_id` (who runs a session) |
+| `0010_team.sql` | Owner-only invitations, invite-aware signup (an invited address joins the inviter's academy as a coach), owner-only removal of coaches, and `session_coaches` (who worked a session) |
 
 > Upgrading an existing database? Apply `0005_coach_timezone.sql`, then
-> `0006_academy_memberships.sql`, `0007_charge_price_snapshots.sql`, `0008_programs.sql` and `0009_availability.sql`. Rows default to `UTC`; each coach sets their
+> `0006_academy_memberships.sql`, `0007_charge_price_snapshots.sql`, `0008_programs.sql`, `0009_availability.sql` and `0010_team.sql`. Rows default to `UTC`; each coach sets their
 > real zone at onboarding or in Settings. `0006` preserves all existing data:
 > every existing coach becomes the **owner** of an academy that reuses their
 > id, so no data row is rewritten. Apply it as one file — it must not be

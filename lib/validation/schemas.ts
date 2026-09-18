@@ -395,3 +395,15 @@ export const saveAvailabilitySchema = z.object({
     )
     .max(7),
 })
+
+// ---- team ----
+
+export const inviteCoachSchema = z.object({
+  email: z.string().trim().email('Enter a valid email address.').max(200),
+})
+export const inviteIdSchema = z.object({ inviteId: id })
+export const memberIdSchema = z.object({ membershipId: id })
+export const setSessionCoachesSchema = z.object({
+  sessionId: id,
+  membershipIds: z.array(id).max(50),
+})

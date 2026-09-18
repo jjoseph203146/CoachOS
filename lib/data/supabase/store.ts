@@ -29,6 +29,9 @@ import type {
   Coach,
   Credit,
   Enrollment,
+  Invite,
+  InvitePreview,
+  Membership,
   Payment,
   Player,
   Program,
@@ -152,6 +155,31 @@ function mapCharge(row: Row): Charge {
     note: row.note ?? '',
     voidedAt: row.voided_at ?? null,
     voidNote: row.void_note ?? '',
+    createdAt: row.created_at,
+  }
+}
+
+function mapMembership(row: Row): Membership {
+  return {
+    id: row.id,
+    academyId: row.academy_id,
+    authUserId: row.auth_user_id,
+    role: row.role,
+    name: row.name ?? '',
+    email: row.email ?? '',
+    onboardedAt: row.onboarded_at ?? null,
+  }
+}
+
+function mapInvite(row: Row): Invite {
+  return {
+    id: row.id,
+    coachId: row.academy_id,
+    email: row.email,
+    token: row.token,
+    expiresAt: row.expires_at,
+    acceptedAt: row.accepted_at ?? null,
+    revokedAt: row.revoked_at ?? null,
     createdAt: row.created_at,
   }
 }
@@ -705,6 +733,111 @@ export class SupabaseDataStore implements DataStore {
         .eq('player_id', mark.playerId)
       if (error) throw new Error(error.message)
     }
+  }
+
+  // ---- team ----
+
+  async listMemberships(coachId: string): Promise<Membership[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('academy_memberships').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapMembership)
+  }
+
+  async removeMembership(coachId: string, membershipId: string): Promise<void> {
+    // RLS lets only the owner delete, and only a coach who isn't themself; a
+    // refused delete matches zero rows, which is reported rather than ignored.
+    const { data, error } = await this.client
+      .from('academy_memberships')
+      .delete()
+      .eq('academy_id', coachId)
+      .eq('id', membershipId)
+      .select('id')
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) throw new Error('That member could not be removed')
+  }
+
+  async listInvites(coachId: string): Promise<Invite[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('academy_invites').select('*').eq('academy_id', coachId),
+    )
+    return (rows ?? []).map(mapInvite)
+  }
+
+  async createInvite(
+    coachId: string,
+    input: { email: string; invitedBy: string },
+  ): Promise<Invite> {
+    const row = await this.unwrap(
+      this.from('academy_invites')
+        .insert({
+          academy_id: coachId,
+          email: input.email.trim().toLowerCase(),
+          invited_by: input.invitedBy,
+        })
+        .select('*')
+        .single(),
+    )
+    return mapInvite(row)
+  }
+
+  async revokeInvite(coachId: string, inviteId: string): Promise<void> {
+    const { data, error } = await this.client
+      .from('academy_invites')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('academy_id', coachId)
+      .eq('id', inviteId)
+      .select('id')
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) throw new Error('That invitation could not be revoked')
+  }
+
+  async getInvitePreview(token: string): Promise<InvitePreview | null> {
+    const { data, error } = await this.client.rpc('get_invite_preview', { p_token: token })
+    if (error) throw new Error(error.message)
+    const row = Array.isArray(data) ? data[0] : data
+    return row
+      ? { businessName: row.business_name ?? '', email: row.email, state: row.state }
+      : null
+  }
+
+  async listSessionCoaches(coachId: string, sessionId: string): Promise<string[]> {
+    const rows = await this.unwrap<Row[]>(
+      this.from('session_coaches')
+        .select('membership_id')
+        .eq('academy_id', coachId)
+        .eq('session_id', sessionId),
+    )
+    return (rows ?? []).map((r) => r.membership_id)
+  }
+
+  /** Upsert the chosen coaches, then delete the rest, so a failure never empties the list. */
+  async setSessionCoaches(
+    coachId: string,
+    sessionId: string,
+    membershipIds: string[],
+  ): Promise<void> {
+    if (membershipIds.length > 0) {
+      const { error } = await this.client.from('session_coaches').upsert(
+        membershipIds.map((membershipId) => ({
+          academy_id: coachId,
+          session_id: sessionId,
+          membership_id: membershipId,
+        })),
+        { onConflict: 'session_id,membership_id' },
+      )
+      if (error) throw new Error(error.message)
+    }
+    let del = this.client
+      .from('session_coaches')
+      .delete()
+      .eq('academy_id', coachId)
+      .eq('session_id', sessionId)
+    if (membershipIds.length > 0) {
+      del = del.not('membership_id', 'in', `(${membershipIds.join(',')})`)
+    }
+    const { error } = await del
+    if (error) throw new Error(error.message)
   }
 
   // ---- availability ----
