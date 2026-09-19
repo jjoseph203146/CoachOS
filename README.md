@@ -53,13 +53,26 @@ To run against a real database, follow **Database setup** below.
 
 ### 2. Create the schema
 
-Two equivalent options:
+Migrations `0001`–`0005` are **idempotent** on a database that hasn't reached
+`0006` yet: re-running one is safe and does nothing the second time. **`0006`
+onward are one-shot** — `0006` renames tables and columns, and the later ones build
+on that — so apply each of those exactly once, in order. And once `0006` has been
+applied, never re-run an earlier migration either: they refer to the old names.
+See 2b for a read-only check of what is present.
 
-**Option A — SQL editor (simplest).** Open the Supabase **SQL Editor**, paste
-the whole of [`supabase/schema.sql`](supabase/schema.sql), and run it. That file
-is the concatenation of every migration, in order.
+**Fresh project** — open the Supabase **SQL Editor**, paste the whole of
+[`supabase/schema.sql`](supabase/schema.sql), and run it. That file is every
+migration concatenated in order, so it already includes the latest one.
 
-**Option B — Supabase CLI.**
+**Existing project** — run only the migration files you have not applied yet,
+from [`supabase/migrations/`](supabase/migrations), lowest number first.
+
+> `schema.sql` already contains every migration. Don't run it *and* then run an
+> individual migration expecting the migration to be new — it won't be. For
+> `0001`–`0005` that is harmless on a database still before `0006`; from `0006`
+> onward it fails, because those are not re-runnable.
+
+**Or use the Supabase CLI:**
 
 ```bash
 npm i -g supabase
@@ -89,6 +102,20 @@ The migrations are:
 > every existing coach becomes the **owner** of an academy that reuses their
 > id, so no data row is rewritten. Apply it as one file — it must not be
 > applied partially.
+
+### 2b. Verify it worked
+
+Run [`supabase/verify.sql`](supabase/verify.sql) in the SQL editor. It is
+read-only and reports one row per check, with any problem sorted to the top.
+Every row should read `OK`. Pay particular attention to the `0003` rows: if RLS
+is not enabled **and forced** on every table, coaches are not isolated from each
+other.
+
+> **Heads-up:** `verify.sql` was written for the original schema (`0001`–`0005`).
+> `0006` renamed `coaches` to `academy_memberships` and `coach_id` to `academy_id`,
+> so on a current database its `coaches` / `*_same_coach` rows will read `MISSING`
+> even though nothing is wrong. It has not been updated for `0006`–`0012`; the
+> database tests (`bash scripts/test-sql.sh`) are the check that covers them.
 
 ### 3. Configure auth
 

@@ -5,6 +5,8 @@
 -- it. Authorization lives here, in the database, not in the frontend and not
 -- in the application's query builders. A leaked or guessed row id from another
 -- tenant returns nothing.
+--
+-- Safe to re-run: every statement is guarded.
 -- ============================================================================
 
 alter table coaches     enable row level security;
@@ -42,12 +44,15 @@ grant execute on function current_coach_id() to authenticated;
 
 -- ---------------------------------------------------------------- coaches --
 
+drop policy if exists coaches_select_own on coaches;
 create policy coaches_select_own on coaches
   for select using (auth_user_id = auth.uid());
 
+drop policy if exists coaches_insert_own on coaches;
 create policy coaches_insert_own on coaches
   for insert with check (auth_user_id = auth.uid());
 
+drop policy if exists coaches_update_own on coaches;
 create policy coaches_update_own on coaches
   for update using (auth_user_id = auth.uid())
   with check (auth_user_id = auth.uid());
@@ -59,26 +64,32 @@ create policy coaches_update_own on coaches
 -- Each table gets the same shape: you may touch a row only when its coach_id
 -- resolves to your own coach record.
 
+drop policy if exists players_all_own on players;
 create policy players_all_own on players
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());
 
+drop policy if exists sessions_all_own on sessions;
 create policy sessions_all_own on sessions
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());
 
+drop policy if exists enrollments_all_own on enrollments;
 create policy enrollments_all_own on enrollments
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());
 
+drop policy if exists charges_all_own on charges;
 create policy charges_all_own on charges
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());
 
+drop policy if exists payments_all_own on payments;
 create policy payments_all_own on payments
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());
 
+drop policy if exists credits_all_own on credits;
 create policy credits_all_own on credits
   for all using (coach_id = current_coach_id())
   with check (coach_id = current_coach_id());

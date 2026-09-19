@@ -9,22 +9,53 @@
 --    voided rather than removed, and charge amounts are captured at creation
 --    so later rate changes never rewrite the past.
 --  * Every coach-owned table carries coach_id and is protected by RLS.
+--
+-- Safe to re-run: every statement is guarded.
 -- ============================================================================
 
 create extension if not exists "pgcrypto";
 
 -- ---------------------------------------------------------------- enums ----
 
-create type session_type as enum ('private', 'group');
-create type session_status as enum ('scheduled', 'cancelled');
-create type attendance_status as enum ('unmarked', 'present', 'absent', 'skipped');
-create type player_level as enum ('Beginner', 'Intermediate', 'Advanced');
-create type attendance_window as enum ('Same day', '24 hours', '48 hours', '72 hours');
-create type ui_theme as enum ('Light', 'Dark');
+do $$
+begin
+  create type session_type as enum ('private', 'group');
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type session_status as enum ('scheduled', 'cancelled');
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type attendance_status as enum ('unmarked', 'present', 'absent', 'skipped');
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type player_level as enum ('Beginner', 'Intermediate', 'Advanced');
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type attendance_window as enum ('Same day', '24 hours', '48 hours', '72 hours');
+exception when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type ui_theme as enum ('Light', 'Dark');
+exception when duplicate_object then null;
+end $$;
 
 -- --------------------------------------------------------------- coaches ---
 
-create table coaches (
+create table if not exists coaches (
   id                uuid primary key default gen_random_uuid(),
   auth_user_id      uuid not null unique references auth.users (id) on delete cascade,
   name              text not null default '',
@@ -38,11 +69,11 @@ create table coaches (
   updated_at        timestamptz not null default now()
 );
 
-create index coaches_auth_user_id_idx on coaches (auth_user_id);
+create index if not exists coaches_auth_user_id_idx on coaches (auth_user_id);
 
 -- --------------------------------------------------------------- players ---
 
-create table players (
+create table if not exists players (
   id                 uuid primary key default gen_random_uuid(),
   coach_id           uuid not null references coaches (id) on delete cascade,
   name               text not null check (length(btrim(name)) > 0),
@@ -59,12 +90,12 @@ create table players (
   updated_at         timestamptz not null default now()
 );
 
-create index players_coach_idx on players (coach_id);
-create index players_coach_active_idx on players (coach_id, archived) where deleted_at is null;
+create index if not exists players_coach_idx on players (coach_id);
+create index if not exists players_coach_active_idx on players (coach_id, archived) where deleted_at is null;
 
 -- -------------------------------------------------------------- sessions ---
 
-create table sessions (
+create table if not exists sessions (
   id                 uuid primary key default gen_random_uuid(),
   coach_id           uuid not null references coaches (id) on delete cascade,
   type               session_type not null,
@@ -92,12 +123,12 @@ create table sessions (
   )
 );
 
-create index sessions_coach_date_idx on sessions (coach_id, date);
-create index sessions_coach_status_idx on sessions (coach_id, status);
+create index if not exists sessions_coach_date_idx on sessions (coach_id, date);
+create index if not exists sessions_coach_status_idx on sessions (coach_id, status);
 
 -- ----------------------------------------------------------- enrollments ---
 
-create table enrollments (
+create table if not exists enrollments (
   id         uuid primary key default gen_random_uuid(),
   coach_id   uuid not null references coaches (id) on delete cascade,
   session_id uuid not null references sessions (id) on delete cascade,
@@ -109,13 +140,13 @@ create table enrollments (
   unique (session_id, player_id)
 );
 
-create index enrollments_coach_idx on enrollments (coach_id);
-create index enrollments_session_idx on enrollments (session_id);
-create index enrollments_player_idx on enrollments (player_id);
+create index if not exists enrollments_coach_idx on enrollments (coach_id);
+create index if not exists enrollments_session_idx on enrollments (session_id);
+create index if not exists enrollments_player_idx on enrollments (player_id);
 
 -- --------------------------------------------------------------- charges ---
 
-create table charges (
+create table if not exists charges (
   id           uuid primary key default gen_random_uuid(),
   coach_id     uuid not null references coaches (id) on delete cascade,
   player_id    uuid not null references players (id) on delete restrict,
@@ -133,15 +164,15 @@ create table charges (
   updated_at   timestamptz not null default now()
 );
 
-create index charges_coach_idx on charges (coach_id);
-create index charges_player_idx on charges (player_id);
-create index charges_session_idx on charges (session_id);
-create index charges_coach_due_idx on charges (coach_id, due_date) where voided_at is null;
+create index if not exists charges_coach_idx on charges (coach_id);
+create index if not exists charges_player_idx on charges (player_id);
+create index if not exists charges_session_idx on charges (session_id);
+create index if not exists charges_coach_due_idx on charges (coach_id, due_date) where voided_at is null;
 
 -- -------------------------------------------------------------- payments ---
 -- Money actually received. Revenue is the sum of these — never of charges.
 
-create table payments (
+create table if not exists payments (
   id           uuid primary key default gen_random_uuid(),
   coach_id     uuid not null references coaches (id) on delete cascade,
   charge_id    uuid not null references charges (id) on delete cascade,
@@ -151,14 +182,14 @@ create table payments (
   created_at   timestamptz not null default now()
 );
 
-create index payments_coach_idx on payments (coach_id);
-create index payments_charge_idx on payments (charge_id);
-create index payments_coach_paid_on_idx on payments (coach_id, paid_on);
+create index if not exists payments_coach_idx on payments (coach_id);
+create index if not exists payments_charge_idx on payments (charge_id);
+create index if not exists payments_coach_paid_on_idx on payments (coach_id, paid_on);
 
 -- --------------------------------------------------------------- credits ---
 -- A reduction of an obligation that is NOT money received.
 
-create table credits (
+create table if not exists credits (
   id           uuid primary key default gen_random_uuid(),
   coach_id     uuid not null references coaches (id) on delete cascade,
   charge_id    uuid not null references charges (id) on delete cascade,
@@ -167,8 +198,8 @@ create table credits (
   created_at   timestamptz not null default now()
 );
 
-create index credits_coach_idx on credits (coach_id);
-create index credits_charge_idx on credits (charge_id);
+create index if not exists credits_coach_idx on credits (coach_id);
+create index if not exists credits_charge_idx on credits (charge_id);
 
 -- ------------------------------------------------------- updated_at hook ---
 
@@ -182,13 +213,18 @@ begin
 end;
 $$;
 
+drop trigger if exists coaches_updated_at on coaches;
 create trigger coaches_updated_at before update on coaches
   for each row execute function set_updated_at();
+drop trigger if exists players_updated_at on players;
 create trigger players_updated_at before update on players
   for each row execute function set_updated_at();
+drop trigger if exists sessions_updated_at on sessions;
 create trigger sessions_updated_at before update on sessions
   for each row execute function set_updated_at();
+drop trigger if exists enrollments_updated_at on enrollments;
 create trigger enrollments_updated_at before update on enrollments
   for each row execute function set_updated_at();
+drop trigger if exists charges_updated_at on charges;
 create trigger charges_updated_at before update on charges
   for each row execute function set_updated_at();
