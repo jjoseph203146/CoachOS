@@ -8,10 +8,69 @@ export interface SupabaseEnv {
   anonKey: string
 }
 
+/** The URL or key is set, but is not something Supabase could work with. */
+export class SupabaseConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SupabaseConfigError'
+  }
+}
+
+/**
+ * Pasting a value into a hosting dashboard often adds a trailing newline or
+ * wraps it in quotes. None of that is meaningful, so it is removed rather than
+ * turned into an outage.
+ */
+function clean(value: string | undefined): string {
+  let v = (value ?? '').trim()
+  const first = v[0]
+  if (v.length >= 2 && (first === '"' || first === "'") && v[v.length - 1] === first) {
+    v = v.slice(1, -1).trim()
+  }
+  return v
+}
+
+/**
+ * The project's origin (`https://<ref>.supabase.co`), or null if `raw` is not a
+ * usable URL. A missing scheme is assumed to be https, and any path is dropped:
+ * the client appends its own (`/auth/v1`, `/rest/v1`).
+ */
+function normaliseUrl(raw: string): string | null {
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`
+  try {
+    const url = new URL(candidate)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
+    // "your-project-url" and friends: a real host has a dot (or is localhost).
+    if (!url.hostname.includes('.') && url.hostname !== 'localhost') return null
+    return url.origin
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The Supabase settings, tidied. `null` means "not configured" (either value
+ * absent). A value that IS set but cannot work throws `SupabaseConfigError` —
+ * naming the variable, never echoing its value — instead of surfacing later as
+ * an opaque crash from inside the Supabase client.
+ */
 export function readSupabaseEnv(): SupabaseEnv | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !anonKey) return null
+  const rawUrl = clean(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const anonKey = clean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  if (!rawUrl || !anonKey) return null
+
+  const url = normaliseUrl(rawUrl)
+  if (!url) {
+    throw new SupabaseConfigError(
+      'NEXT_PUBLIC_SUPABASE_URL is not a valid URL. It should look like ' +
+        'https://<project-ref>.supabase.co (Supabase → Project Settings → API → Project URL).',
+    )
+  }
+  if (/\s/.test(anonKey)) {
+    throw new SupabaseConfigError(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY contains whitespace. Paste the key as a single line.',
+    )
+  }
   return { url, anonKey }
 }
 

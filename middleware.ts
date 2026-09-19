@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { readSupabaseEnv, SupabaseConfigError } from '@/lib/supabase/env'
 
 /**
  * Refreshes the Supabase auth session on every request and mirrors the rotated
@@ -24,15 +25,38 @@ const PUBLIC_PATHS = [
   '/invite',
 ]
 
+/**
+ * A response a person can act on. Without this, a throw inside middleware
+ * reaches the visitor as an opaque platform error ("MIDDLEWARE_INVOCATION_FAILED")
+ * with nothing to say what is wrong. Never includes a configuration value.
+ */
+function plain(status: number, message: string) {
+  return new NextResponse(message, {
+    status,
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
+  })
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } })
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  let env
+  try {
+    env = readSupabaseEnv()
+  } catch (error) {
+    const message = error instanceof SupabaseConfigError ? error.message : 'Supabase is misconfigured.'
+    console.error(`[middleware] ${message}`)
+    return plain(
+      503,
+      `CoachOS is not configured correctly.\n\n${message}\n\n` +
+        'Fix the environment variable and redeploy (NEXT_PUBLIC_ values are baked in at build time).',
+    )
+  }
 
   // Without Supabase configured the app runs on the in-memory dev store and
   // there is no session to refresh.
-  if (!url || !anonKey) return response
+  if (!env) return response
+  const { url, anonKey } = env
 
   const supabase = createServerClient(url, anonKey, {
     cookies: {
@@ -52,9 +76,16 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (error) {
+    // Not "signed out": we could not find out. Say so, rather than letting the
+    // platform show an opaque error (or wrongly treating everyone as signed out).
+    console.error('[middleware] could not check the session', error)
+    return plain(503, 'CoachOS is temporarily unavailable. Please try again in a moment.')
+  }
 
   const path = request.nextUrl.pathname
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + '/'))
